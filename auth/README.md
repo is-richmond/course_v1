@@ -287,7 +287,7 @@ DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/dbname
 
 ## Security
 
-- Passwords are hashed using bcrypt
+- Passwords are hashed using Argon2id (more secure than bcrypt)
 - JWT tokens have configurable expiration times
 - Email verification and password reset tokens are secure
 - Strong SECRET_KEY is recommended for production
@@ -303,7 +303,7 @@ The User model includes:
 
 - `id` (UUID) - Primary key
 - `email` (String) - Unique email address
-- `hashed_password` (String) - Bcrypt hashed password
+- `hashed_password` (String) - Argon2id hashed password
 - `is_active` (Boolean) - Account active status (default: True)
 - `is_superuser` (Boolean) - Superuser privileges (default: False)
 - `is_verified` (Boolean) - Email verified status (default: False)
