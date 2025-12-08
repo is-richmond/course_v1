@@ -2,10 +2,25 @@
 
 from fastapi import APIRouter
 
-from auth.src.app.api.endpoints import auth, users
+from core.src.app.api.endpoints import (
+    courses,
+    modules,
+    lessons,
+    media,
+    tests,
+    questions,
+    options,
+    progress,
+)
 
 api_router = APIRouter()
 
 # Include all endpoint routers
-api_router.include_router(auth.router)
-api_router.include_router(users.router)
+api_router.include_router(courses.router)
+api_router.include_router(modules.router)
+api_router.include_router(lessons.router)
+api_router.include_router(media.router)
+api_router.include_router(tests.router)
+api_router.include_router(questions.router)
+api_router.include_router(options.router)
+api_router.include_router(progress.router)

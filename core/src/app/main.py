@@ -1,20 +1,20 @@
-"""Main FastAPI application with authentication."""
+"""Main FastAPI application for course platform."""
 
 import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from fastapi. exceptions import RequestValidationError
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic_core import ValidationError
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 
-from auth.src.app.api import api_router
-from auth.src.app.core.config import settings
-from auth.src.app. db.database import create_db_and_tables
-from auth.src.app.exceptions import (
+from core.src.app.api import api_router
+from core.src.app.core.config import settings
+from core.src.app.db.database import create_db_and_tables
+from core.src.app.exceptions import (
     validation_error_handler,
     integrity_error_handler,
     sqlalchemy_error_handler,

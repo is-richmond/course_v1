@@ -14,14 +14,22 @@ import sys
 from pathlib import Path
 
 # Add parent directory to path
-sys.path. insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from auth.src.app.db.database import Base
-from auth. src.app.core.config import settings
+from core.src.app.db.database import Base
+from core.src.app.core.config import settings
 
 # Import all models so Alembic can detect them
-from auth.src.app.models.user import User  # noqa
-from auth.src.app.models.session import Session  # noqa
+from core.src.app.models.course import (  # noqa
+    Course,
+    CourseModule,
+    Lesson,
+    LessonMedia,
+    Test,
+    TestQuestion,
+    QuestionOption,
+    UserProgress,
+)
 # this is the Alembic Config object
 config = context.config
 
