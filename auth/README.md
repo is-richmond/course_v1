@@ -16,13 +16,54 @@ A complete authentication system built with FastAPI and FastAPI Users library, f
 
 ## Installation
 
+### Option 1: Docker (Recommended)
+
+1. **Copy the environment file:**
+
+```bash
+cp .env.example .env
+```
+
+2. **Edit `.env` file with your credentials** (generate a secure SECRET_KEY for production)
+
+3. **Build and run with Docker Compose:**
+
+```bash
+docker compose up -d
+```
+
+The API will be available at:
+- Application: http://localhost:8000
+- Interactive API docs (Swagger UI): http://localhost:8000/docs
+- Alternative API docs (ReDoc): http://localhost:8000/redoc
+
+4. **View logs:**
+
+```bash
+docker compose logs -f app
+```
+
+5. **Stop the application:**
+
+```bash
+docker compose down
+```
+
+### Option 2: Local Installation
+
 1. **Install dependencies:**
 
 ```bash
-pip install -r requirements.txt
+pip install -r auth/requirements.txt
 ```
 
-2. **Optional: Create a `.env` file for custom configuration:**
+2. **Create a `.env` file in the project root:**
+
+```bash
+cp .env.example .env
+```
+
+Edit the `.env` file with your configuration:
 
 ```env
 SECRET_KEY=your-secret-key-here
@@ -31,9 +72,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
 DEBUG=True
 ```
 
-## Running the Application
-
-Start the application with:
+3. **Run the application:**
 
 ```bash
 uvicorn auth.main:app --reload

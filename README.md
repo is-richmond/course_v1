@@ -17,14 +17,34 @@ See the [auth/README.md](auth/README.md) for detailed documentation and usage in
 
 ## Quick Start
 
-1. Navigate to the auth directory:
+### Using Docker (Recommended)
+
+1. Copy the environment file and configure credentials:
 ```bash
-cd auth
+cp .env.example .env
+# Edit .env with your SECRET_KEY and other settings
 ```
 
-2. Install dependencies:
+2. Build and run with Docker Compose:
 ```bash
-pip install -r requirements.txt
+docker compose up -d
+```
+
+3. Access the application:
+- API: http://localhost:8000
+- Interactive docs: http://localhost:8000/docs
+
+### Local Development
+
+1. Install dependencies:
+```bash
+pip install -r auth/requirements.txt
+```
+
+2. Configure environment:
+```bash
+cp .env.example .env
+# Edit .env with your configuration
 ```
 
 3. Run the application:

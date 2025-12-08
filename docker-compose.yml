@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # FastAPI Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fastapi-auth-app
+    ports:
+      - "8000:8000"
+    environment:
+      - SECRET_KEY=${SECRET_KEY}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      - DATABASE_URL=${DATABASE_URL:-sqlite+aiosqlite:///./data/auth.db}
+      - DEBUG=${DEBUG:-True}
+    volumes:
+      - ./auth:/app/auth
+      - sqlite-data:/app/data
+    env_file:
+      - .env
+    restart: unless-stopped
+    networks:
+      - auth-network
+
+  # PostgreSQL Database (optional - uncomment if using PostgreSQL)
+  # postgres:
+  #   image: postgres:16-alpine
+  #   container_name: fastapi-auth-postgres
+  #   environment:
+  #     - POSTGRES_USER=${POSTGRES_USER:-authuser}
+  #     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-authpass}
+  #     - POSTGRES_DB=${POSTGRES_DB:-authdb}
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres-data:/var/lib/postgresql/data
+  #   networks:
+  #     - auth-network
+  #   restart: unless-stopped
+
+volumes:
+  sqlite-data:
+  # postgres-data:
+
+networks:
+  auth-network:
+    driver: bridge
