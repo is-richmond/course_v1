@@ -220,31 +220,31 @@ async def refresh_token(
         )
 
 
-@router. post(
-    "/logout",
-    status_code=status.HTTP_200_OK,
-    description="Logout current user",
-)
-async def logout(
-    current_user: User = Depends(get_current_active_user),
-    session: AsyncSession = Depends(get_async_session),
-):
-    """
-    Logout current user and invalidate session. 
+# @router. post(
+#     "/logout",
+#     status_code=status.HTTP_200_OK,
+#     description="Logout current user",
+# )
+# async def logout(
+#     current_user: User = Depends(get_current_active_user),
+#     session: AsyncSession = Depends(get_async_session),
+# ):
+#     """
+#     Logout current user and invalidate session. 
     
-    Args:
-        current_user: Current authenticated user
-        session: Database session
+#     Args:
+#         current_user: Current authenticated user
+#         session: Database session
         
-    Returns:
-        Success message
-    """
-    logger.info(f"User logged out: {current_user.email}")
+#     Returns:
+#         Success message
+#     """
+#     logger.info(f"User logged out: {current_user.email}")
     
-    # Here you can add logic to blacklist tokens or delete sessions
-    # For now, we just return success
+#     # Here you can add logic to blacklist tokens or delete sessions
+#     # For now, we just return success
     
-    return {"message": "Successfully logged out"}
+#     return {"message": "Successfully logged out"}
 
 
 @router.post(
@@ -377,7 +377,7 @@ async def change_password(
 
 
 @router.post(
-    "/grant-admin",
+    "/admin",
     status_code=status.HTTP_200_OK,
     response_model=UserRead,
     description="Grant admin role to a user (superuser only)",
