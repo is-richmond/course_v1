@@ -75,11 +75,12 @@ class BaseRepository(Generic[ModelType]):
         """
         instance = self.model(**kwargs)
         self.session.add(instance)
-        await self.session.flush()
-        
-        logger.info(f"Created {self.model.__name__} with ID: {instance.id}")
-        
         await self.session.commit()
+        await self.session.refresh(instance)
+        
+        # For models with auto-increment IDs, the ID should be available after commit
+        if hasattr(instance, 'id') and instance.id:
+            logger.info(f"Created {self.model.__name__} with ID: {instance.id}")
         
         return instance
     

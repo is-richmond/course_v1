@@ -44,7 +44,7 @@ class Course(Base):
     __tablename__ = "courses"
     __mapper_args__ = {"eager_defaults": False}
     
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     author_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
@@ -82,7 +82,7 @@ class CourseModule(Base):
     
     __tablename__ = "course_modules"
     
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     course_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     order_index: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -101,7 +101,7 @@ class Lesson(Base):
     
     __tablename__ = "lessons"
     
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     module_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("course_modules.id", ondelete="CASCADE"), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     content: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -136,7 +136,7 @@ class LessonMedia(Base):
     
     __tablename__ = "lesson_media"
     
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     lesson_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("lessons.id", ondelete="CASCADE"), nullable=False)
     media_url: Mapped[str] = mapped_column(String(500), nullable=False)
     media_type: Mapped[MediaType] = mapped_column(
@@ -155,7 +155,7 @@ class Test(Base):
     
     __tablename__ = "tests"
     
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     lesson_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("lessons.id", ondelete="CASCADE"), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     passing_score: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -174,7 +174,7 @@ class TestQuestion(Base):
     
     __tablename__ = "test_questions"
     
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     test_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("tests.id", ondelete="CASCADE"), nullable=False)
     question_text: Mapped[str] = mapped_column(Text, nullable=False)
     question_type: Mapped[QuestionType] = mapped_column(
@@ -199,7 +199,7 @@ class QuestionOption(Base):
     
     __tablename__ = "question_options"
     
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     question_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("test_questions.id", ondelete="CASCADE"), nullable=False)
     option_text: Mapped[str] = mapped_column(Text, nullable=False)
     is_correct: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -213,7 +213,7 @@ class UserProgress(Base):
     
     __tablename__ = "user_progress"
     
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     course_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
     lesson_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("lessons.id", ondelete="CASCADE"), nullable=True)
