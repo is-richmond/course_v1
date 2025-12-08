@@ -7,7 +7,7 @@ from fastapi_users.db import SQLAlchemyBaseUserTableUUID
 from sqlalchemy import DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from auth.database import Base
+from auth.src.app.db.database import Base
 
 
 class User(SQLAlchemyBaseUserTableUUID, Base):

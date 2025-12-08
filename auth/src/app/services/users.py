@@ -1,4 +1,3 @@
-"""FastAPI Users configuration and setup."""
 
 from typing import Optional
 from uuid import UUID
@@ -12,9 +11,9 @@ from fastapi_users.authentication import (
 )
 from fastapi_users.db import SQLAlchemyUserDatabase
 
-from auth.config import settings
-from auth.database import get_async_session
-from auth.models import User
+from auth.src.app.core.config import settings
+from auth.src.app.db.database import get_async_session
+from auth.src.app.models import User
 
 
 class UserManager(UUIDIDMixin, BaseUserManager[User, UUID]):
