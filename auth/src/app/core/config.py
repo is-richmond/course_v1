@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
     # Database Settings
-    DATABASE_URL: str = "postgresql+asyncpg://authuser:authpass@postgres:5432/authdb"
+    DATABASE_URL: str = "sqlite+aiosqlite:///./data/auth.db"
     
     # Application Settings
     APP_NAME: str = "FastAPI Users Authentication"
