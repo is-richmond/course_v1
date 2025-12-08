@@ -12,9 +12,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 
 from auth.src.app.api import api_router
-from auth. src.app.core.config import settings
-from auth. src.app.db.database import create_db_and_tables
-from auth.src.app.exceptions. handler import (
+from auth.src.app.core.config import settings
+from auth.src.app.db.database import create_db_and_tables
+from auth.src.app.exceptions import (
     validation_error_handler,
     integrity_error_handler,
     sqlalchemy_error_handler,
@@ -28,7 +28,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
-logger = logging. getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager

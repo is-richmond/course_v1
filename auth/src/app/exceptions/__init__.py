@@ -29,7 +29,7 @@ class UserInactiveError(HTTPException):
     
     def __init__(self):
         super().__init__(
-            status_code=status. HTTP_403_FORBIDDEN,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="User is inactive"
         )
 
@@ -69,14 +69,14 @@ async def validation_error_handler(
         errors = exc.errors()
     
     return JSONResponse(
-        status_code=status. HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={
             "detail": "Validation error",
             "errors": [
                 {
-                    "loc": error. get("loc"),
+                    "loc": error.get("loc"),
                     "msg": error.get("msg"),
-                    "type": error. get("type"),
+                    "type": error.get("type"),
                 }
                 for error in errors
             ],
@@ -123,7 +123,7 @@ async def sqlalchemy_error_handler(
     Returns:
         JSONResponse: Error response
     """
-    logger. error(f"Database error at {request.url}: {exc}")
+    logger.error(f"Database error at {request.url}: {exc}")
     
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -189,15 +189,15 @@ async def log_requests(request: Request, call_next: Callable) -> Response:
         Response: HTTP response
     """
     logger.info(
-        f"{request.method} {request.url. path} "
+        f"{request.method} {request.url.path} "
         f"- Client: {request.client.host if request.client else 'unknown'}"
     )
     
     response = await call_next(request)
     
-    logger. info(
+    logger.info(
         f"Status: {response.status_code} "
-        f"- {request. method} {request.url.path}"
+        f"- {request.method} {request.url.path}"
     )
     
     return response
