@@ -11,10 +11,10 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 
-from core.src.app.api import api_router
-from core.src.app.core.config import settings
-from core.src.app.db.database import create_db_and_tables
-from core.src.app.exceptions import (
+from src.app.api import api_router
+from src.app.core.config import settings
+from src.app.db.database import create_db_and_tables
+from src.app.exceptions import (
     validation_error_handler,
     integrity_error_handler,
     sqlalchemy_error_handler,

@@ -1,6 +1,23 @@
 """Data repositories."""
 
-from auth.src.app.repositories.user import UserRepository
-from auth.src.app.repositories.session import SessionRepository
+from src.app.repositories.course import (
+    CourseRepository,
+    CourseModuleRepository,
+    LessonRepository,
+    LessonMediaRepository,
+    TestRepository,
+    TestQuestionRepository,
+    QuestionOptionRepository,
+    UserProgressRepository,
+)
 
-__all__ = ["UserRepository", "SessionRepository"]
+__all__ = [
+    "CourseRepository",
+    "CourseModuleRepository",
+    "LessonRepository",
+    "LessonMediaRepository",
+    "TestRepository",
+    "TestQuestionRepository",
+    "QuestionOptionRepository",
+    "UserProgressRepository",
+]

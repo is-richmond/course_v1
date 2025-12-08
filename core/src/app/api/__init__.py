@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from core.src.app.api.endpoints import (
+from src.app.api.endpoints import (
     courses,
     modules,
     lessons,

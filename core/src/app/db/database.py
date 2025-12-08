@@ -5,7 +5,7 @@ from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
-from core.src.app.core.config import settings
+from src.app.core.config import settings
 
 
 class Base(DeclarativeBase):
@@ -20,12 +20,14 @@ engine = create_async_engine(
     pool_pre_ping=True,  
     pool_size=10,
     max_overflow=20,
+    # Disable INSERT...RETURNING for SQLite compatibility
+    connect_args={"check_same_thread": False} if "sqlite" in settings.DATABASE_URL else {},
 )
 
 async_session_maker = async_sessionmaker(
     engine,
     class_=AsyncSession,
-    expire_on_commit=False
+    expire_on_commit=False,
 )
 
 

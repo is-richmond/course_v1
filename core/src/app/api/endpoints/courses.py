@@ -4,14 +4,14 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.src.app.db.database import get_async_session
-from core.src.app.schemas.course import (
+from src.app.db.database import get_async_session
+from src.app.schemas.course import (
     CourseCreate,
     CourseUpdate,
     CourseResponse,
     CourseWithModules,
 )
-from core.src.app.repositories.course import CourseRepository
+from src.app.repositories.course import CourseRepository
 
 router = APIRouter(prefix="/courses", tags=["courses"])
 

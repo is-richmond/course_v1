@@ -7,7 +7,7 @@ from enum import Enum as PyEnum
 from sqlalchemy import String, Text, BigInteger, Integer, Boolean, DateTime, Enum, ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from core.src.app.db.database import Base
+from src.app.db.database import Base
 
 
 class CourseStatus(str, PyEnum):
@@ -42,13 +42,14 @@ class Course(Base):
     """Course model."""
     
     __tablename__ = "courses"
+    __mapper_args__ = {"eager_defaults": False}
     
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     author_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
     status: Mapped[CourseStatus] = mapped_column(
-        Enum(CourseStatus), 
+        Enum(CourseStatus, values_callable=lambda x: [e.value for e in x]), 
         default=CourseStatus.DRAFT, 
         nullable=False
     )
@@ -105,7 +106,7 @@ class Lesson(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     content: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     lesson_type: Mapped[LessonType] = mapped_column(
-        Enum(LessonType),
+        Enum(LessonType, values_callable=lambda x: [e.value for e in x]),
         default=LessonType.THEORY,
         nullable=False
     )
@@ -139,7 +140,7 @@ class LessonMedia(Base):
     lesson_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("lessons.id", ondelete="CASCADE"), nullable=False)
     media_url: Mapped[str] = mapped_column(String(500), nullable=False)
     media_type: Mapped[MediaType] = mapped_column(
-        Enum(MediaType),
+        Enum(MediaType, values_callable=lambda x: [e.value for e in x]),
         default=MediaType.IMAGE,
         nullable=False
     )
@@ -177,7 +178,7 @@ class TestQuestion(Base):
     test_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("tests.id", ondelete="CASCADE"), nullable=False)
     question_text: Mapped[str] = mapped_column(Text, nullable=False)
     question_type: Mapped[QuestionType] = mapped_column(
-        Enum(QuestionType),
+        Enum(QuestionType, values_callable=lambda x: [e.value for e in x]),
         default=QuestionType.SINGLE_CHOICE,
         nullable=False
     )

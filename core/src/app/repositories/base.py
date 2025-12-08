@@ -7,7 +7,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.src.app.db.database import Base
+from src.app.db.database import Base
 
 logger = logging.getLogger(__name__)
 
@@ -75,10 +75,11 @@ class BaseRepository(Generic[ModelType]):
         """
         instance = self.model(**kwargs)
         self.session.add(instance)
-        await self.session.commit()
-        await self.session.refresh(instance)
+        await self.session.flush()
         
         logger.info(f"Created {self.model.__name__} with ID: {instance.id}")
+        
+        await self.session.commit()
         
         return instance
     

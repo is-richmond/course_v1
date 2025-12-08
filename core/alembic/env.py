@@ -14,13 +14,13 @@ import sys
 from pathlib import Path
 
 # Add parent directory to path
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from core.src.app.db.database import Base
-from core.src.app.core.config import settings
+from src.app.db.database import Base
+from src.app.core.config import settings
 
 # Import all models so Alembic can detect them
-from core.src.app.models.course import (  # noqa
+from src.app.models.course import (  # noqa
     Course,
     CourseModule,
     Lesson,

@@ -4,7 +4,7 @@ import logging
 from typing import Optional
 from io import BytesIO
 
-from core.src.app.core.config import settings
+from src.app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
