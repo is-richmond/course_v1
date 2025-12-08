@@ -13,7 +13,7 @@ from auth.src.app.api.deps import (
     get_current_active_user,
     get_current_superuser,
 )
-from auth.src.app.core import (
+from auth.src.app.core.security import (
     create_access_token,
     create_refresh_token,
     verify_password,
@@ -26,7 +26,7 @@ from auth.src.app.exceptions import (
     UserNotFoundError,
     UserInactiveError,
 )
-from auth.src.app.models import User
+from auth.src.app.models.user import User
 from auth.src.app.repositories import UserRepository, SessionRepository
 from auth.src.app.schemas import (
     UserCreate,

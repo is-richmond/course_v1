@@ -1,6 +1,6 @@
 """Configuration settings for the authentication application."""
 
-from typing import Optional
+from typing import List
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -12,11 +12,15 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
     # Database Settings
-    DATABASE_URL: str = "sqlite+aiosqlite:///./auth.db"
+    DATABASE_URL: str = "postgresql+asyncpg://authuser:authpass@postgres:5432/authdb"
     
     # Application Settings
     APP_NAME: str = "FastAPI Users Authentication"
+    API_PREFIX: str = "/api/v1"
     DEBUG: bool = True
+    
+    # CORS Settings
+    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
     
     model_config = SettingsConfigDict(
         env_file=".env",

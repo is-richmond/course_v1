@@ -1,29 +1,7 @@
 version: '3.8'
 
 services:
-  # FastAPI Application
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: fastapi-auth-app
-    ports:
-      - "8000:8000"
-    environment:
-      - SECRET_KEY=${SECRET_KEY}
-      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
-      - DATABASE_URL=${DATABASE_URL:-sqlite+aiosqlite:///./data/auth.db}
-      - DEBUG=${DEBUG:-True}
-    volumes:
-      - ./auth:/app/auth
-      - sqlite-data:/app/data
-    env_file:
-      - .env
-    restart: unless-stopped
-    networks:
-      - auth-network
-
-
+  # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
     container_name: fastapi-auth-postgres
@@ -38,9 +16,37 @@ services:
     networks:
       - auth-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U authuser -d authdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI Application
+  app:
+    build:
+      context: . 
+      dockerfile: Dockerfile
+    container_name: fastapi-auth-app
+    ports:
+      - "8000:8000"
+    environment:
+      - SECRET_KEY=${SECRET_KEY}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-authuser}:${POSTGRES_PASSWORD:-authpass}@postgres:5432/${POSTGRES_DB:-authdb}
+      - DEBUG=${DEBUG:-True}
+    volumes:
+      - ./src:/app/auth/src
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - auth-network
 
 volumes:
-  sqlite-data:
   postgres-data:
 
 networks:

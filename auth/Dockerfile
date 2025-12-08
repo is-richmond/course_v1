@@ -13,27 +13,25 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
+    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements file
-COPY auth/requirements.txt .
+# Copy requirements file (правильный путь!)
+COPY requirements.txt /app/requirements.txt
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # Copy application code
-COPY auth/ /app/auth/
+COPY src/ /app/auth/src/
 COPY README.md /app/
-
-# Create directory for SQLite database (if using SQLite)
-RUN mkdir -p /app/data
 
 # Expose port
 EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/', timeout=5)" || exit 1
+    CMD python -c "import urllib. request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)" || exit 1
 
 # Run the application
-CMD ["uvicorn", "auth.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "auth.src.app.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -15,7 +15,7 @@ from auth.src.app.api.deps import (
 )
 from auth.src.app.db.database import get_async_session
 from auth.src.app.exceptions import UserNotFoundError
-from auth.src.app.models import User
+from auth.src.app.models.user import User
 from auth.src.app.repositories import UserRepository
 from auth.src.app.schemas import UserRead, UserUpdate, UserCreate
 from auth.src.app.services.users import fastapi_users

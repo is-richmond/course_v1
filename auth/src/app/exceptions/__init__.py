@@ -4,7 +4,7 @@ import logging
 import time
 from typing import Callable
 
-from fastapi import Request, Response, status
+from fastapi import Request, Response, status, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic_core import ValidationError
@@ -13,6 +13,39 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 logger = logging.getLogger(__name__)
 
 
+# Custom Exception Classes
+class UserNotFoundError(HTTPException):
+    """Exception raised when user is not found."""
+    
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+
+class UserInactiveError(HTTPException):
+    """Exception raised when user is inactive."""
+    
+    def __init__(self):
+        super().__init__(
+            status_code=status. HTTP_403_FORBIDDEN,
+            detail="User is inactive"
+        )
+
+
+class InvalidCredentialsError(HTTPException):
+    """Exception raised when credentials are invalid."""
+    
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+
+
+# Exception Handlers
 async def validation_error_handler(
     request: Request,
     exc: RequestValidationError | ValidationError
@@ -36,12 +69,12 @@ async def validation_error_handler(
         errors = exc.errors()
     
     return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status. HTTP_422_UNPROCESSABLE_ENTITY,
         content={
             "detail": "Validation error",
             "errors": [
                 {
-                    "loc": error.get("loc"),
+                    "loc": error. get("loc"),
                     "msg": error.get("msg"),
                     "type": error. get("type"),
                 }
@@ -56,7 +89,7 @@ async def integrity_error_handler(
     exc: IntegrityError
 ) -> JSONResponse:
     """
-    Handle database integrity errors. 
+    Handle database integrity errors.
     
     Args:
         request: HTTP request
@@ -90,7 +123,7 @@ async def sqlalchemy_error_handler(
     Returns:
         JSONResponse: Error response
     """
-    logger.error(f"Database error at {request.url}: {exc}")
+    logger. error(f"Database error at {request.url}: {exc}")
     
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -115,7 +148,7 @@ async def general_exception_handler(
     Returns:
         JSONResponse: Error response
     """
-    logger. error(f"Unhandled exception at {request.url}: {exc}", exc_info=True)
+    logger.error(f"Unhandled exception at {request.url}: {exc}", exc_info=True)
     
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -146,7 +179,7 @@ async def add_process_time_header(request: Request, call_next: Callable) -> Resp
 
 async def log_requests(request: Request, call_next: Callable) -> Response:
     """
-    Log all incoming requests.
+    Log all incoming requests. 
     
     Args:
         request: HTTP request
@@ -156,15 +189,15 @@ async def log_requests(request: Request, call_next: Callable) -> Response:
         Response: HTTP response
     """
     logger.info(
-        f"{request.method} {request.url.path} "
+        f"{request.method} {request.url. path} "
         f"- Client: {request.client.host if request.client else 'unknown'}"
     )
     
     response = await call_next(request)
     
-    logger.info(
+    logger. info(
         f"Status: {response.status_code} "
-        f"- {request.method} {request.url.path}"
+        f"- {request. method} {request.url.path}"
     )
     
     return response

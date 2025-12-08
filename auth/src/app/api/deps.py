@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from auth.src.app.core.security import decode_access_token
 from auth.src. app.db.database import get_async_session
 from auth.src.app.exceptions import UserNotFoundError, UserInactiveError
-from auth.src.app.models import User
+from auth.src.app.models.user import User
 from auth.src.app.repositories import UserRepository
 
 logger = logging.getLogger(__name__)
