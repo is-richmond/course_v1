@@ -18,7 +18,7 @@ from auth.src.app.exceptions import UserNotFoundError
 from auth.src.app.models.user import User
 from auth.src.app.repositories import UserRepository
 from auth.src.app.schemas import UserRead, UserUpdate, UserCreate
-from auth.src.app.services.users import fastapi_users
+
 
 logger = logging. getLogger(__name__)
 router = APIRouter(prefix="/users", tags=["users"])
@@ -234,7 +234,7 @@ async def delete_user_by_id(
     logger.info(f"Admin {current_user.email} deleted user: {user.email}")
 
 
-# Include FastAPI Users router
-router.include_router(
-    fastapi_users.get_users_router(UserRead, UserUpdate),
-)
+# # Include FastAPI Users router
+# router.include_router(
+#     fastapi_users.get_users_router(UserRead, UserUpdate),
+# )

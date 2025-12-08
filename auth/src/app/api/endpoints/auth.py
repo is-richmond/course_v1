@@ -7,13 +7,13 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from auth.src.app.api.deps import (
+from auth.src.app.api. deps import (
     get_db_session,
     get_current_user,
     get_current_active_user,
     get_current_superuser,
 )
-from auth.src.app.core.security import (
+from auth.src.app. core.security import (
     create_access_token,
     create_refresh_token,
     verify_password,
@@ -26,7 +26,7 @@ from auth.src.app.exceptions import (
     UserNotFoundError,
     UserInactiveError,
 )
-from auth.src.app.models.user import User
+from auth.src. app.models.user import User
 from auth.src.app.repositories import UserRepository, SessionRepository
 from auth.src.app.schemas import (
     UserCreate,
@@ -37,12 +37,9 @@ from auth.src.app.schemas import (
     RefreshTokenRequest,
     PasswordChangeRequest,
     PasswordResetRequest,
+    GrantAdminRequest,
 )
-from auth.src.app.services.users import (
-    get_user_manager,
-    fastapi_users,
-    auth_backend,
-)
+
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -50,7 +47,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post(
     "/register",
-    status_code=status.HTTP_201_CREATED,
+    status_code=status. HTTP_201_CREATED,
     response_model=TokenOut,
     description="Register a new user",
     response_model_exclude_none=True,
@@ -78,14 +75,19 @@ async def register(
     existing_user = await user_repo.get_by_email(email=user_in.email)
     if existing_user:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
+            status_code=status. HTTP_409_CONFLICT,
             detail="User with this email already exists"
         )
     
-    # Create new user
+    # Create new user with default values
     hashed_password = get_password_hash(user_in.password)
-    user_data = user_in.model_dump(exclude={"password"})
-    user_data["hashed_password"] = hashed_password
+    user_data = {
+        "email": user_in.email,
+        "hashed_password": hashed_password,
+        "is_active": True,
+        "is_superuser": False,
+        "is_verified": False,
+    }
     
     new_user = await user_repo. create(**user_data)
     logger.info(f"New user registered: {new_user.email} (ID: {new_user.id})")
@@ -135,12 +137,12 @@ async def login(
     
     # Verify password
     if not verify_password(login_data.password, user.hashed_password):
-        logger.warning(f"Failed login attempt for user: {user.email}")
+        logger. warning(f"Failed login attempt for user: {user.email}")
         raise InvalidCredentialsError()
     
     # Check if user is active
-    if not user.is_active:
-        logger.warning(f"Inactive user login attempt: {user.email}")
+    if not user. is_active:
+        logger. warning(f"Inactive user login attempt: {user.email}")
         raise UserInactiveError()
     
     # Create tokens
@@ -218,7 +220,7 @@ async def refresh_token(
         )
 
 
-@router.post(
+@router. post(
     "/logout",
     status_code=status.HTTP_200_OK,
     description="Logout current user",
@@ -228,7 +230,7 @@ async def logout(
     session: AsyncSession = Depends(get_async_session),
 ):
     """
-    Logout current user and invalidate session.
+    Logout current user and invalidate session. 
     
     Args:
         current_user: Current authenticated user
@@ -266,7 +268,7 @@ async def forgot_password(
     """
     user_repo = UserRepository(session)
     
-    user = await user_repo.get_by_email(email=reset_data.email)
+    user = await user_repo.get_by_email(email=reset_data. email)
     
     if user:
         # Generate password reset token
@@ -310,7 +312,7 @@ async def reset_password(
         
         if not user_id:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=status. HTTP_400_BAD_REQUEST,
                 detail="Invalid reset token"
             )
         
@@ -360,7 +362,7 @@ async def change_password(
     # Verify old password
     if not verify_password(password_data.old_password, current_user.hashed_password):
         raise HTTPException(
-            status_code=status. HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="Incorrect old password"
         )
     
@@ -374,20 +376,78 @@ async def change_password(
     return {"message": "Password changed successfully"}
 
 
-# Include FastAPI Users routers
-router.include_router(
-    fastapi_users.get_auth_router(auth_backend),
-    prefix="/jwt",
+@router.post(
+    "/grant-admin",
+    status_code=status.HTTP_200_OK,
+    response_model=UserRead,
+    description="Grant admin role to a user (superuser only)",
 )
+async def grant_admin_role(
+    grant_data: GrantAdminRequest,
+    current_user: User = Depends(get_current_superuser),
+    session: AsyncSession = Depends(get_async_session),
+) -> UserRead:
+    """
+    Grant administrator role to a user.
+    Only superusers can grant admin roles.
+    
+    Args:
+        grant_data: User ID to grant admin role
+        current_user: Current authenticated superuser
+        session: Database session
+        
+    Returns:
+        UserRead: Updated user data
+        
+    Raises:
+        HTTPException: If user not found or requester is not superuser
+    """
+    user_repo = UserRepository(session)
+    
+    # Get target user
+    target_user = await user_repo.get(grant_data.user_id)
+    
+    if not target_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Check if user is already a superuser
+    if target_user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User is already an administrator"
+        )
+    
+    # Grant admin role
+    updated_user = await user_repo. update(
+        target_user.id,
+        is_superuser=True
+    )
+    
+    logger. info(
+        f"Admin role granted to user {target_user.email} (ID: {target_user.id}) "
+        f"by {current_user.email} (ID: {current_user.id})"
+    )
+    
+    return UserRead. model_validate(updated_user)
 
-router.include_router(
-    fastapi_users.get_register_router(UserRead, UserCreate),
-)
 
-router.include_router(
-    fastapi_users.get_verify_router(UserRead),
-)
+# # Include FastAPI Users routers
+# router. include_router(
+#     fastapi_users.get_auth_router(auth_backend),
+#     prefix="/jwt",
+# )
 
-router.include_router(
-    fastapi_users.get_reset_password_router(),
-)
+# router.include_router(
+#     fastapi_users.get_register_router(UserRead, UserCreate),
+# )
+
+# router.include_router(
+#     fastapi_users.get_verify_router(UserRead),
+# )
+
+# router.include_router(
+#     fastapi_users.get_reset_password_router(),
+# )

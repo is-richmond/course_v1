@@ -1,7 +1,4 @@
-version: '3.8'
-
 services:
-  # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
     container_name: fastapi-auth-postgres
@@ -22,10 +19,9 @@ services:
       timeout: 5s
       retries: 5
 
-  # FastAPI Application
   app:
     build:
-      context: . 
+      context: .  
       dockerfile: Dockerfile
     container_name: fastapi-auth-app
     ports:
@@ -35,8 +31,12 @@ services:
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-authuser}:${POSTGRES_PASSWORD:-authpass}@postgres:5432/${POSTGRES_DB:-authdb}
       - DEBUG=${DEBUG:-True}
+      - PYTHONPATH=/app
     volumes:
-      - ./src:/app/auth/src
+      - ./src:/app/auth/src:rw
+      - ./alembic:/app/alembic:rw
+      - ./alembic. ini:/app/alembic. ini:ro
+      - ./alembic/versions:/app/alembic/versions:rw
     env_file:
       - .env
     depends_on:
@@ -45,6 +45,14 @@ services:
     restart: unless-stopped
     networks:
       - auth-network
+    # Переопределяем ENTRYPOINT для hot reload
+    entrypoint: []
+    command: >
+      sh -c "
+      until pg_isready -h postgres -U authuser; do sleep 1; done &&
+      alembic upgrade head &&
+      uvicorn auth.src.app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
 
 volumes:
   postgres-data:

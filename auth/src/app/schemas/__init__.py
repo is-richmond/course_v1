@@ -4,6 +4,7 @@ from auth.src.app.schemas.user import (
     UserCreate,
     UserRead,
     UserUpdate,
+    GrantAdminRequest,
 )
 from auth.src.app. schemas.token import (
     TokenOut,
@@ -22,4 +23,5 @@ __all__ = [
     "RefreshTokenRequest",
     "PasswordChangeRequest",
     "PasswordResetRequest",
+    "GrantAdminRequest",
 ]

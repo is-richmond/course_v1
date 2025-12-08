@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 class UserBase(BaseModel):
@@ -16,10 +16,20 @@ class UserBase(BaseModel):
     is_verified: bool = False
 
 
-class UserCreate(UserBase):
+class UserCreate(BaseModel):
     """Schema for creating a user."""
     
+    email: EmailStr
     password: str = Field(..., min_length=8, max_length=100)
+    confirm_password: str = Field(..., min_length=8, max_length=100)
+    
+    @field_validator('confirm_password')
+    @classmethod
+    def passwords_match(cls, v, info):
+        """Validate that passwords match."""
+        if 'password' in info.data and v != info.data['password']:
+            raise ValueError('Passwords do not match')
+        return v
 
 
 class UserUpdate(BaseModel):
@@ -53,3 +63,9 @@ class UserInDB(UserBase):
     
     class Config:
         from_attributes = True
+
+
+class GrantAdminRequest(BaseModel):
+    """Schema for granting admin role."""
+    
+    user_id: UUID
