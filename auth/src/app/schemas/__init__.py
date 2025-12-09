@@ -13,6 +13,11 @@ from auth.src.app. schemas.token import (
     PasswordChangeRequest,
     PasswordResetRequest,
 )
+from auth.src.app.schemas.enrollment import (
+    EnrollmentResponse,
+    CourseEnrollmentStatus,
+    MyCoursesResponse,
+)
 
 __all__ = [
     "UserCreate",
@@ -24,4 +29,7 @@ __all__ = [
     "PasswordChangeRequest",
     "PasswordResetRequest",
     "GrantAdminRequest",
+    "EnrollmentResponse",
+    "CourseEnrollmentStatus",
+    "MyCoursesResponse",
 ]
