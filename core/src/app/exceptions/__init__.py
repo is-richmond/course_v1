@@ -13,38 +13,6 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 logger = logging.getLogger(__name__)
 
 
-# Custom Exception Classes
-class UserNotFoundError(HTTPException):
-    """Exception raised when user is not found."""
-    
-    def __init__(self):
-        super().__init__(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-
-
-class UserInactiveError(HTTPException):
-    """Exception raised when user is inactive."""
-    
-    def __init__(self):
-        super().__init__(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User is inactive"
-        )
-
-
-class InvalidCredentialsError(HTTPException):
-    """Exception raised when credentials are invalid."""
-    
-    def __init__(self):
-        super().__init__(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials",
-            headers={"WWW-Authenticate": "Bearer"}
-        )
-
-
 # Exception Handlers
 async def validation_error_handler(
     request: Request,
