@@ -54,9 +54,9 @@ async def enroll_in_course(
             detail=f"User is already enrolled in course {course_id}"
         )
     
-    # Add course to enrolled courses
-    enrolled_courses.append(course_id)
-    current_user.enrolled_courses = enrolled_courses
+    # Add course to enrolled courses (create new list to avoid mutation issues)
+    updated_courses = enrolled_courses + [course_id]
+    current_user.enrolled_courses = updated_courses
     
     # Save to database
     user_repo = UserRepository(session)
@@ -67,7 +67,7 @@ async def enroll_in_course(
     
     return EnrollmentResponse(
         message="Successfully enrolled",
-        enrolled_courses=enrolled_courses
+        enrolled_courses=updated_courses
     )
 
 
@@ -106,9 +106,9 @@ async def unenroll_from_course(
             detail=f"User is not enrolled in course {course_id}"
         )
     
-    # Remove course from enrolled courses
-    enrolled_courses.remove(course_id)
-    current_user.enrolled_courses = enrolled_courses
+    # Remove course from enrolled courses (create new list to avoid mutation issues)
+    updated_courses = [c for c in enrolled_courses if c != course_id]
+    current_user.enrolled_courses = updated_courses
     
     # Save to database
     user_repo = UserRepository(session)
@@ -119,7 +119,7 @@ async def unenroll_from_course(
     
     return EnrollmentResponse(
         message="Successfully unenrolled",
-        enrolled_courses=enrolled_courses
+        enrolled_courses=updated_courses
     )
 
 
