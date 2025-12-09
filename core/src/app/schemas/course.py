@@ -19,6 +19,7 @@ class CourseBase(BaseModel):
     description: Optional[str] = None
     author_id: Optional[int] = None
     status: CourseStatus = CourseStatus.DRAFT
+    price: Optional[float] = Field(default=0.0, ge=0)
 
 
 class CourseCreate(CourseBase):
@@ -32,6 +33,7 @@ class CourseUpdate(BaseModel):
     description: Optional[str] = None
     author_id: Optional[int] = None
     status: Optional[CourseStatus] = None
+    price: Optional[float] = Field(None, ge=0)
 
 
 class CourseResponse(CourseBase):
@@ -244,8 +246,8 @@ class LessonWithMedia(LessonResponse):
 
 
 class TestWithQuestions(TestResponse):
-    """Test response with questions."""
-    questions: List[TestQuestionResponse] = []
+    """Test response with questions and their options."""
+    questions: List["QuestionWithOptions"] = []
 
 
 class QuestionWithOptions(TestQuestionResponse):
@@ -266,3 +268,59 @@ class CourseWithModules(CourseResponse):
 class CourseDetail(CourseResponse):
     """Detailed course response with nested data."""
     modules: List[ModuleWithLessons] = []
+
+
+# Test Taking Schemas
+class TestAnswerSubmit(BaseModel):
+    """Schema for submitting an answer to a question."""
+    question_id: int
+    selected_option_ids: Optional[List[int]] = None  # For single/multiple choice
+    text_answer: Optional[str] = None  # For text questions
+
+
+class TestSubmission(BaseModel):
+    """Schema for submitting a complete test."""
+    answers: List[TestAnswerSubmit]
+
+
+class TestAnswerResult(BaseModel):
+    """Schema for test answer result."""
+    question_id: int
+    question_text: str
+    selected_option_ids: Optional[List[int]] = None
+    text_answer: Optional[str] = None
+    is_correct: Optional[bool] = None
+    points_earned: int
+    points_possible: int
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TestResult(BaseModel):
+    """Schema for test result response."""
+    attempt_id: int
+    test_id: int
+    test_title: str
+    score: int
+    total_points: int
+    passing_score: int
+    passed: bool
+    started_at: datetime
+    completed_at: Optional[datetime] = None
+    answers: List[TestAnswerResult] = []
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TestAttemptResponse(BaseModel):
+    """Schema for test attempt response."""
+    id: int
+    user_id: int
+    test_id: int
+    score: int
+    total_points: int
+    passed: bool
+    started_at: datetime
+    completed_at: Optional[datetime] = None
+    
+    model_config = ConfigDict(from_attributes=True)

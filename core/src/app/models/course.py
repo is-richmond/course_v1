@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional, List
 from enum import Enum as PyEnum
 
-from sqlalchemy import String, Text, BigInteger, Integer, Boolean, DateTime, Enum, ForeignKey, func
+from sqlalchemy import String, Text, BigInteger, Integer, Boolean, DateTime, Enum, ForeignKey, Numeric, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.src.app.db.database import Base
@@ -53,6 +53,7 @@ class Course(Base):
         default=CourseStatus.DRAFT, 
         nullable=False
     )
+    price: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True, default=0.0)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -226,3 +227,51 @@ class UserProgress(Base):
     # Relationships
     course: Mapped["Course"] = relationship("Course", back_populates="user_progress")
     lesson: Mapped[Optional["Lesson"]] = relationship("Lesson", back_populates="user_progress")
+
+
+class TestAttempt(Base):
+    """Test attempt tracking model."""
+    
+    __tablename__ = "test_attempts"
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    test_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("tests.id", ondelete="CASCADE"), nullable=False)
+    score: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    total_points: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    passed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
+    completed_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True
+    )
+    
+    # Relationships
+    test: Mapped["Test"] = relationship("Test", backref="attempts")
+    answers: Mapped[List["TestAnswer"]] = relationship(
+        "TestAnswer",
+        back_populates="attempt",
+        cascade="all, delete-orphan"
+    )
+
+
+class TestAnswer(Base):
+    """Test answer model for storing user answers."""
+    
+    __tablename__ = "test_answers"
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    attempt_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("test_attempts.id", ondelete="CASCADE"), nullable=False)
+    question_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("test_questions.id", ondelete="CASCADE"), nullable=False)
+    selected_option_ids: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON array
+    text_answer: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    is_correct: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    points_earned: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    
+    # Relationships
+    attempt: Mapped["TestAttempt"] = relationship("TestAttempt", back_populates="answers")
+    question: Mapped["TestQuestion"] = relationship("TestQuestion", backref="answers")

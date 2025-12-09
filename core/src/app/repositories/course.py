@@ -135,10 +135,12 @@ class TestRepository(BaseRepository[Test]):
         return list(result.scalars().all())
     
     async def get_with_questions(self, test_id: int) -> Optional[Test]:
-        """Get test with questions loaded."""
+        """Get test with questions and their options loaded."""
         stmt = (
             select(Test)
-            .options(selectinload(Test.questions))
+            .options(
+                selectinload(Test.questions).selectinload(TestQuestion.options)
+            )
             .where(Test.id == test_id)
         )
         result = await self.session.execute(stmt)
@@ -225,3 +227,42 @@ class UserProgressRepository(BaseRepository[UserProgress]):
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
+
+
+class TestAttemptRepository(BaseRepository):
+    """Repository for TestAttempt model."""
+    
+    def __init__(self, session: AsyncSession):
+        from core.src.app.models.course import TestAttempt
+        super().__init__(TestAttempt, session)
+    
+    async def get_by_user_and_test(self, user_id: int, test_id: int) -> List:
+        """Get all attempts for a user and test."""
+        from core.src.app.models.course import TestAttempt
+        stmt = select(TestAttempt).where(
+            and_(
+                TestAttempt.user_id == user_id,
+                TestAttempt.test_id == test_id
+            )
+        ).order_by(TestAttempt.started_at.desc())
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+    
+    async def get_with_answers(self, attempt_id: int):
+        """Get attempt with answers loaded."""
+        from core.src.app.models.course import TestAttempt, TestAnswer
+        stmt = (
+            select(TestAttempt)
+            .options(selectinload(TestAttempt.answers))
+            .where(TestAttempt.id == attempt_id)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+
+class TestAnswerRepository(BaseRepository):
+    """Repository for TestAnswer model."""
+    
+    def __init__(self, session: AsyncSession):
+        from core.src.app.models.course import TestAnswer
+        super().__init__(TestAnswer, session)
