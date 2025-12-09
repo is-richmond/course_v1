@@ -1,7 +1,7 @@
 """API endpoints for test management."""
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -177,7 +177,7 @@ async def submit_test(
         score=0,
         total_points=0,
         passed=False,
-        started_at=datetime.utcnow()
+        started_at=datetime.now(timezone.utc)
     )
     
     # Process answers
@@ -238,7 +238,7 @@ async def submit_test(
         score=total_score,
         total_points=total_points,
         passed=passed,
-        completed_at=datetime.utcnow()
+        completed_at=datetime.now(timezone.utc)
     )
     
     return TestResult(
@@ -250,7 +250,7 @@ async def submit_test(
         passing_score=test.passing_score,
         passed=passed,
         started_at=attempt.started_at,
-        completed_at=datetime.utcnow(),
+        completed_at=datetime.now(timezone.utc),
         answers=answer_results
     )
 
@@ -327,7 +327,7 @@ async def get_test_result(
         if answer.selected_option_ids:
             try:
                 selected_ids = json.loads(answer.selected_option_ids)
-            except:
+            except json.JSONDecodeError:
                 pass
         
         answer_results.append(TestAnswerResult(

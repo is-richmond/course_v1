@@ -229,7 +229,7 @@ class UserProgressRepository(BaseRepository[UserProgress]):
         return result.scalar_one_or_none()
 
 
-class TestAttemptRepository(BaseRepository):
+class TestAttemptRepository(BaseRepository["TestAttempt"]):
     """Repository for TestAttempt model."""
     
     def __init__(self, session: AsyncSession):
@@ -260,7 +260,7 @@ class TestAttemptRepository(BaseRepository):
         return result.scalar_one_or_none()
 
 
-class TestAnswerRepository(BaseRepository):
+class TestAnswerRepository(BaseRepository["TestAnswer"]):
     """Repository for TestAnswer model."""
     
     def __init__(self, session: AsyncSession):

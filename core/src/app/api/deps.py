@@ -15,6 +15,9 @@ logger = logging.getLogger(__name__)
 
 security = HTTPBearer()
 
+# Constant for UUID to int conversion
+USER_ID_HASH_MODULO = 10 ** 10
+
 
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     """
@@ -65,7 +68,7 @@ async def get_current_user_id(
             user_id = int(user_id_str)
         except ValueError:
             # If it's a UUID string, hash it to get an int
-            user_id = abs(hash(user_id_str)) % (10 ** 10)
+            user_id = abs(hash(user_id_str)) % USER_ID_HASH_MODULO
         
         return user_id
         

@@ -7,27 +7,8 @@ from typing import Optional, List
 from fastapi_users.db import SQLAlchemyBaseUserTableUUID
 from sqlalchemy import DateTime, func, Text
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.ext.mutable import MutableList
 
 from auth.src.app.db.database import Base
-
-
-class JSONEncodedList(MutableList):
-    """Mutable list for JSON-encoded array in SQLite."""
-    
-    @classmethod
-    def coerce(cls, key, value):
-        """Convert value to mutable list."""
-        if isinstance(value, cls):
-            return value
-        if isinstance(value, list):
-            return cls(value)
-        if isinstance(value, str):
-            try:
-                return cls(json.loads(value))
-            except:
-                return cls([])
-        return cls([])
 
 
 class User(SQLAlchemyBaseUserTableUUID, Base):
@@ -59,7 +40,7 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
             return []
         try:
             return json.loads(self._enrolled_courses)
-        except:
+        except json.JSONDecodeError:
             return []
     
     @enrolled_courses.setter
