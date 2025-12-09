@@ -14,13 +14,13 @@ import sys
 from pathlib import Path
 
 # Add parent directory to path
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+sys.path. insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.app.db.database import Base
-from src.app.core.config import settings
+from core.src.app.db.database import Base
+from core.src. app.core.config import settings
 
 # Import all models so Alembic can detect them
-from src.app.models.course import (  # noqa
+from core.src.app.models.course import (  # noqa
     Course,
     CourseModule,
     Lesson,
@@ -30,6 +30,7 @@ from src.app.models.course import (  # noqa
     QuestionOption,
     UserProgress,
 )
+
 # this is the Alembic Config object
 config = context.config
 
@@ -38,7 +39,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Set the SQLAlchemy URL from settings
-config.set_main_option("sqlalchemy.url", settings. DATABASE_URL)
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 # add your model's MetaData object here for 'autogenerate' support
 target_metadata = Base.metadata
@@ -46,7 +47,7 @@ target_metadata = Base.metadata
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
-    url = config.get_main_option("sqlalchemy.url")
+    url = config.get_main_option("sqlalchemy. url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -76,7 +77,7 @@ def do_run_migrations(connection: Connection) -> None:
 async def run_async_migrations() -> None:
     """Run migrations in 'online' mode with async engine."""
     configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = settings. DATABASE_URL
+    configuration["sqlalchemy.url"] = settings.DATABASE_URL
     
     connectable = async_engine_from_config(
         configuration,

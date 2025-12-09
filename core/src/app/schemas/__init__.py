@@ -1,6 +1,6 @@
 """Pydantic schemas for API."""
 
-from src.app.schemas.course import (
+from core.src.app.schemas.course import (
     CourseCreate,
     CourseUpdate,
     CourseResponse,

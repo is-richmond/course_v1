@@ -7,7 +7,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.app.db.database import Base
+from core.src.app.db.database import Base
 
 logger = logging.getLogger(__name__)
 

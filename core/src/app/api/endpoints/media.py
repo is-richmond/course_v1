@@ -4,13 +4,13 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.app.db.database import get_async_session
-from src.app.schemas.course import (
+from core.src.app.db.database import get_async_session
+from core.src.app.schemas.course import (
     LessonMediaCreate,
     LessonMediaUpdate,
     LessonMediaResponse,
 )
-from src.app.repositories.course import LessonMediaRepository
+from core.src.app.repositories.course import LessonMediaRepository
 
 router = APIRouter(prefix="/media", tags=["media"])
 

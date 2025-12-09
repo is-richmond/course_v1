@@ -7,7 +7,7 @@ from enum import Enum as PyEnum
 from sqlalchemy import String, Text, BigInteger, Integer, Boolean, DateTime, Enum, ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.app.db.database import Base
+from core.src.app.db.database import Base
 
 
 class CourseStatus(str, PyEnum):

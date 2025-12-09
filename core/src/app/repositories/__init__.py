@@ -1,6 +1,6 @@
 """Data repositories."""
 
-from src.app.repositories.course import (
+from core.src.app.repositories.course import (
     CourseRepository,
     CourseModuleRepository,
     LessonRepository,

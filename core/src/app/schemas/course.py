@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, Field, ConfigDict
 
-from src.app.models.course import (
+from core.src.app.models.course import (
     CourseStatus,
     LessonType,
     MediaType,

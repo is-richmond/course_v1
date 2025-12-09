@@ -5,7 +5,7 @@ from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.app.models.course import (
+from core.src.app.models.course import (
     Course,
     CourseModule,
     Lesson,
@@ -15,7 +15,7 @@ from src.app.models.course import (
     QuestionOption,
     UserProgress
 )
-from src.app.repositories.base import BaseRepository
+from core.src.app.repositories.base import BaseRepository
 
 
 class CourseRepository(BaseRepository[Course]):

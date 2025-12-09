@@ -1,0 +1,129 @@
+services:
+  # Auth service database
+  postgres-auth:
+    image: postgres:16-alpine
+    container_name: course-postgres-auth
+    environment:
+      - POSTGRES_USER=${AUTH_POSTGRES_USER:-authuser}
+      - POSTGRES_PASSWORD=${AUTH_POSTGRES_PASSWORD:-authpass}
+      - POSTGRES_DB=${AUTH_POSTGRES_DB:-authdb}
+    ports:
+      - "5432:5432"
+    volumes: 
+      - postgres-auth-data:/var/lib/postgresql/data
+    networks:
+      - auth-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AUTH_POSTGRES_USER:-authuser} -d ${AUTH_POSTGRES_DB:-authdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Core service database
+  postgres-core:
+    image: postgres:16-alpine
+    container_name: course-postgres-core
+    environment:
+      - POSTGRES_USER=${CORE_POSTGRES_USER:-coreuser}
+      - POSTGRES_PASSWORD=${CORE_POSTGRES_PASSWORD:-corepass}
+      - POSTGRES_DB=${CORE_POSTGRES_DB:-coredb}
+    ports: 
+      - "5433:5432"
+    volumes: 
+      - postgres-core-data:/var/lib/postgresql/data
+    networks:
+      - core-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CORE_POSTGRES_USER:-coreuser} -d ${CORE_POSTGRES_DB:-coredb}"]
+      interval:  10s
+      timeout: 5s
+      retries: 5
+
+  # Auth service
+  auth:
+    build: 
+      context: ./auth
+      dockerfile: Dockerfile
+    container_name: course-auth-app
+    ports:
+      - "8000:8000"
+    environment:
+      - SECRET_KEY=${AUTH_SECRET_KEY}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      - DATABASE_URL=postgresql+asyncpg://${AUTH_POSTGRES_USER:-authuser}:${AUTH_POSTGRES_PASSWORD:-authpass}@postgres-auth:5432/${AUTH_POSTGRES_DB:-authdb}
+      - DEBUG=${DEBUG:-True}
+      - PYTHONPATH=/app
+    volumes:
+      - ./auth/src:/app/auth/src:rw
+      - ./auth/alembic:/app/alembic:rw
+      - ./auth/alembic. ini:/app/alembic. ini:ro
+      - ./auth/alembic/versions:/app/alembic/versions:rw
+    env_file:
+      - ./auth/.env
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: 
+      - auth-network
+      - shared-network
+    entrypoint: []
+    command: >
+      sh -c "
+      until pg_isready -h postgres-auth -U ${AUTH_POSTGRES_USER:-authuser}; do sleep 1; done &&
+      alembic upgrade head &&
+      uvicorn auth.src.app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+
+  # Core service
+  core:
+    build:
+      context: ./core
+      dockerfile: Dockerfile
+    container_name: course-core-app
+    ports:
+      - "8001:8000"
+    environment:
+      - SECRET_KEY=${CORE_SECRET_KEY}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      - DATABASE_URL=postgresql+asyncpg://${CORE_POSTGRES_USER:-coreuser}:${CORE_POSTGRES_PASSWORD:-corepass}@postgres-core:5432/${CORE_POSTGRES_DB:-coredb}
+      - DEBUG=${DEBUG:-True}
+      - PYTHONPATH=/app
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL:-http://auth:8000}
+    volumes:
+      - ./core/src:/app/core/src:rw
+      - ./core/alembic:/app/alembic:rw
+      - ./core/alembic.ini:/app/alembic.ini:ro
+      - ./core/alembic/versions:/app/alembic/versions:rw
+    env_file:
+      - ./core/.env
+    depends_on:
+      postgres-core: 
+        condition: service_healthy
+      auth:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - core-network
+      - shared-network
+    entrypoint: []
+    command: >
+      sh -c "
+      until pg_isready -h postgres-core -U ${CORE_POSTGRES_USER:-coreuser}; do sleep 1; done &&
+      alembic upgrade head &&
+      uvicorn core.src.app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+
+volumes:
+  postgres-auth-data:
+  postgres-core-data: 
+
+networks:
+  auth-network: 
+    driver: bridge
+  core-network:
+    driver: bridge
+  shared-network:
+    driver:  bridge

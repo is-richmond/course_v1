@@ -17,7 +17,7 @@ from pathlib import Path
 sys.path. insert(0, str(Path(__file__).resolve().parents[1]))
 
 from auth.src.app.db.database import Base
-from auth. src.app.core.config import settings
+from auth.src.app.core.config import settings
 
 # Import all models so Alembic can detect them
 from auth.src.app.models.user import User  # noqa
