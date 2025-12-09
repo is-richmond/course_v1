@@ -1,0 +1,33 @@
+{{- if .Values.ingressroute.enabled }}
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ include "app.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ include "app.name" . }}
+spec:
+  entryPoints:
+{{ toYaml .Values.ingressroute.entry_point | indent 4 }}
+  routes:
+    - kind: Rule
+      match: {{ .Values.ingressroute.match | quote }}
+      {{- if .Values.ingressroute.middlewares.enabled }}
+      middlewares:
+        - name: {{ .Values.ingressroute.middlewares.name }}
+      {{- end }}
+      {{- if .Values.ingressroute.priority.enabled }}
+      priority: {{ .Values.ingressroute.priority.value }}
+      {{- end }}
+      services:
+        - kind: Service
+          name: {{ include "app.fullname" . }}
+          port: {{ (index .Values.ports 0).targetPort }}
+  {{- if .Values.ingressroute.tls.enabled }}
+  tls:
+    secretName: {{ .Values.ingressroute.tls.secretName }}
+  {{- end }}
+{{- end }}
+

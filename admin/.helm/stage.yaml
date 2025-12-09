@@ -1,0 +1,62 @@
+nameOverride: "admin"
+fullnameOverride: "admin"
+
+replicaCount: 1
+
+image:
+  name: nginx:latest
+  pullPolicy: IfNotPresent
+
+env: {}
+  # TEST: test
+
+envFrom:
+  - secretRef:
+      name: admin
+
+service:
+  type: ClusterIP
+
+ingressroute:
+  enabled: true
+  match: "Host(`stage-dashboard.owallet.kz`) && PathPrefix(`/`)"
+  entry_point:
+    - websecure
+  tls:
+    enabled: true
+    secretName: 'owallet-tls'
+  middlewares:
+    enabled: false
+    name: default
+  priority:
+    enabled: false
+    value: 1000
+
+ports:
+  - name: app
+    port: 3000
+    targetPort: 3000
+    protocol: TCP
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+persistence: {}
+VolumeMounts: {}
+Volumes: {}
+livenessProbe: {}
+readinessProbe: {}
+imagePullSecrets: []
+nodeSelector: {}
+tolerations: []
+affinity: {}
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+volumes: {}
+secret: {}

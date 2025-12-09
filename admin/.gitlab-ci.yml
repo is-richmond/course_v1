@@ -1,0 +1,9 @@
+stages:
+  - build
+  - deploy
+  
+include:
+  - project: 'devops/templates'
+    file: 'containerize/docker-build.yml'
+  - project: 'devops/templates'
+    file: 'deploy/deploy.yml'

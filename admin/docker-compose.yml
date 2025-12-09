@@ -1,0 +1,29 @@
+services:
+  web:
+    build: .
+    networks:
+      - common-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=common-net"
+      - "traefik.http.routers.web.rule=PathPrefix(`/auth`, `/dashboard`, `/api`,`/_next`)"
+      - "traefik.http.routers.web.entrypoints=web"
+      - "traefik.http.services.web.loadbalancer.server.port=3000"
+    environment:
+      - NODE_ENV=production # Или development, если разрабатываете локально
+    # volumes:
+    #   - .:/app # Раскомментируйте для локальной разработки с горячей перезагрузкой
+    command: npm start
+
+networks:
+  default:
+    driver: bridge
+  common-net:
+    external: true
+
+
+
+
+
+
+
