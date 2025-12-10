@@ -16,7 +16,7 @@ from auth.src.app.schemas.enrollment import (
 )
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/enrollment", tags=["enrollment"])
+router = APIRouter()
 
 
 @router.post(

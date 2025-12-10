@@ -21,7 +21,7 @@ from auth.src.app.schemas import UserRead, UserUpdate, UserCreate
 
 
 logger = logging. getLogger(__name__)
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter()
 
 
 @router. get(

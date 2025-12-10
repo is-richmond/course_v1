@@ -13,8 +13,7 @@ from core.src.app.schemas.course import (
 )
 from core.src.app.repositories.course import LessonRepository
 
-router = APIRouter(prefix="/lessons", tags=["lessons"])
-
+router = APIRouter()
 
 @router.post("/", response_model=LessonResponse, status_code=status.HTTP_201_CREATED)
 async def create_lesson(

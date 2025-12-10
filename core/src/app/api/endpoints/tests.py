@@ -26,8 +26,7 @@ from core.src.app.repositories.course import (
     TestAnswerRepository,
 )
 
-router = APIRouter(prefix="/tests", tags=["tests"])
-
+router = APIRouter()
 
 @router.post("/", response_model=TestResponse, status_code=status.HTTP_201_CREATED)
 async def create_test(

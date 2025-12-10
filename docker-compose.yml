@@ -47,8 +47,6 @@ services:
       context: ./auth
       dockerfile: Dockerfile
     container_name: course-auth-app
-    ports:
-      - "8000:8000"
     environment:
       - SECRET_KEY=${AUTH_SECRET_KEY}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
@@ -58,7 +56,7 @@ services:
     volumes:
       - ./auth/src:/app/auth/src:rw
       - ./auth/alembic:/app/alembic:rw
-      - ./auth/alembic. ini:/app/alembic. ini:ro
+      - ./auth/alembic.ini:/app/alembic.ini:ro
       - ./auth/alembic/versions:/app/alembic/versions:rw
     env_file:
       - ./auth/.env
@@ -69,6 +67,25 @@ services:
     networks: 
       - auth-network
       - shared-network
+      - traefik-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth-api.rule=Host(`localhost`) && (PathPrefix(`/v1/auth`) || PathPrefix(`/v1/user`) || PathPrefix(`/v1/enrollment`))"
+      - "traefik.http.routers.auth-api.entrypoints=web"
+      - "traefik.http.routers.auth-api.service=auth"
+      - "traefik.http.routers.auth-api.priority=10"
+      
+      # Docs routes - ИЗМЕНИТЬ правило и УБРАТЬ middleware
+      - "traefik.http.routers.auth-docs.rule=Host(`localhost`) && PathPrefix(`/auth`)"  # Изменено!
+      - "traefik.http.routers.auth-docs.entrypoints=web"
+      # - "traefik.http.routers.auth-docs.middlewares=auth-docs-strip"  # УБРАТЬ!
+      - "traefik.http.routers.auth-docs.service=auth"
+      - "traefik.http.routers.auth-docs.priority=100"
+      
+      # Middleware - МОЖНО УДАЛИТЬ
+      # - "traefik.http.middlewares.auth-docs-strip.stripprefix.prefixes=/auth"
+      
+      - "traefik.http.services.auth.loadbalancer.server.port=8000"
     entrypoint: []
     command: >
       sh -c "
@@ -83,8 +100,6 @@ services:
       context: ./core
       dockerfile: Dockerfile
     container_name: course-core-app
-    ports:
-      - "8001:8000"
     environment:
       - SECRET_KEY=${CORE_SECRET_KEY}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
@@ -108,6 +123,25 @@ services:
     networks:
       - core-network
       - shared-network
+      - traefik-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.core-api.rule=Host(`localhost`) && (PathPrefix(`/v1/courses`) || PathPrefix(`/v1/modules`) || PathPrefix(`/v1/lessons`) || PathPrefix(`/v1/progress`))"
+      - "traefik.http.routers.core-api.entrypoints=web"
+      - "traefik.http.routers.core-api.service=core"
+      - "traefik.http.routers.core-api.priority=5"
+      
+      # Docs routes - ИЗМЕНИТЬ правило и УБРАТЬ middleware
+      - "traefik.http.routers.core-docs.rule=Host(`localhost`) && PathPrefix(`/core`)"  # Изменено!
+      - "traefik.http.routers.core-docs.entrypoints=web"
+      # - "traefik.http.routers.core-docs.middlewares=core-docs-strip"  # УБРАТЬ!
+      - "traefik.http.routers.core-docs.service=core"
+      - "traefik.http.routers.core-docs.priority=100"
+      
+      # Middleware - МОЖНО УДАЛИТЬ
+      # - "traefik.http.middlewares.core-docs-strip.stripprefix.prefixes=/core"
+      
+      - "traefik.http.services.core.loadbalancer.server.port=8000"
     entrypoint: []
     command: >
       sh -c "
@@ -115,6 +149,22 @@ services:
       alembic upgrade head &&
       uvicorn core.src.app.main:app --host 0.0.0.0 --port 8000 --reload
       "
+
+  # Traefik reverse proxy
+  traefik:
+    image: traefik:v2.10
+    container_name: course-traefik
+    command:
+      - "--configFile=/etc/traefik/traefik.yml"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik.yml:/etc/traefik/traefik.yml
+    networks:
+      - traefik-network
+    restart: unless-stopped
 
 volumes:
   postgres-auth-data:
@@ -126,4 +176,6 @@ networks:
   core-network:
     driver: bridge
   shared-network:
-    driver:  bridge
+    driver: bridge
+  traefik-network:
+    external: true

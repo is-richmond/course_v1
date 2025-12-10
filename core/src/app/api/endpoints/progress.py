@@ -12,8 +12,7 @@ from core.src.app.schemas.course import (
 )
 from core.src.app.repositories.course import UserProgressRepository
 
-router = APIRouter(prefix="/progress", tags=["progress"])
-
+router = APIRouter()
 
 @router.post("/", response_model=UserProgressResponse, status_code=status.HTTP_201_CREATED)
 async def create_progress(

@@ -1,4 +1,4 @@
-"""Main FastAPI application for course platform."""
+"""Main FastAPI application for core service."""
 
 import logging
 from contextlib import asynccontextmanager
@@ -24,32 +24,31 @@ from core.src.app.exceptions import (
 )
 
 # Configure logging
-logging. basicConfig(
+logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 
 # Reduce verbosity for third-party libraries
 logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
-logging. getLogger('sqlalchemy.pool'). setLevel(logging.WARNING)
-logging.getLogger('sqlalchemy. orm').setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.pool').setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.orm').setLevel(logging.WARNING)
 logging.getLogger('sqlalchemy.dialects').setLevel(logging.WARNING)
-logging.getLogger('passlib'). setLevel(logging.ERROR)  # Hide bcrypt warnings
-logging.getLogger('uvicorn.access').setLevel(logging. WARNING)
+logging.getLogger('passlib').setLevel(logging.ERROR)
+logging.getLogger('uvicorn.access').setLevel(logging.WARNING)
 
-# Keep app logs at INFO level
 logger = logging.getLogger(__name__)
 
 
 # Create FastAPI application
 app = FastAPI(
     title=settings.APP_NAME,
-    description="FastAPI Users Authentication Application with JWT",
-    version="1. 0.0",
+    description="Core API",
+    version="1.0.0",
     debug=settings.DEBUG,
-    openapi_url=f"{settings.API_PREFIX}/openapi.json",
-    docs_url=f"{settings.API_PREFIX}/docs",
-    redoc_url=f"{settings.API_PREFIX}/redoc",
+    openapi_url="/core/openapi.json",
+    docs_url="/core/docs",
+    redoc_url="/core/redoc",
 )
 
 # CORS Middleware
@@ -83,7 +82,7 @@ async def root():
     return {
         "message": f"Welcome to {settings.APP_NAME}",
         "version": "1.0.0",
-        "docs": f"{settings.API_PREFIX}/docs",
+        "docs": "/core/docs",
         "status": "running"
     }
 
@@ -93,6 +92,6 @@ async def health_check():
     """Health check endpoint."""
     return {
         "status": "healthy",
-        "app": settings. APP_NAME,
+        "app": settings.APP_NAME,
         "version": "1.0.0"
     }

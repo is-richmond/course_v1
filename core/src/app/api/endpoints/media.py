@@ -12,8 +12,7 @@ from core.src.app.schemas.course import (
 )
 from core.src.app.repositories.course import LessonMediaRepository
 
-router = APIRouter(prefix="/media", tags=["media"])
-
+router = APIRouter()
 
 @router.post("/", response_model=LessonMediaResponse, status_code=status.HTTP_201_CREATED)
 async def create_media(

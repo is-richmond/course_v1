@@ -12,8 +12,7 @@ from core.src.app.schemas.course import (
 )
 from core.src.app.repositories.course import QuestionOptionRepository
 
-router = APIRouter(prefix="/options", tags=["options"])
-
+router = APIRouter()
 
 @router.post("/", response_model=QuestionOptionResponse, status_code=status.HTTP_201_CREATED)
 async def create_option(

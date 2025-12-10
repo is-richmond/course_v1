@@ -42,7 +42,7 @@ from auth.src.app.schemas import (
 
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter()
 
 
 @router.post(
