@@ -34,20 +34,19 @@ async def create_test(
     test_data: TestCreate,
     session: AsyncSession = Depends(get_async_session)
 ):
-    """Create a new test."""
+    """Create a new independent test."""
     repository = TestRepository(session)
     test = await repository.create(**test_data.model_dump())
     return test
 
 
-@router.get("/lesson/{lesson_id}", response_model=List[TestResponse])
-async def get_tests_by_lesson(
-    lesson_id: int,
+@router.get("/", response_model=List[TestResponse])
+async def get_all_tests(
     session: AsyncSession = Depends(get_async_session)
 ):
-    """Get all tests for a specific lesson."""
+    """Get all tests."""
     repository = TestRepository(session)
-    tests = await repository.get_by_lesson(lesson_id)
+    tests = await repository.get_all()
     return tests
 
 

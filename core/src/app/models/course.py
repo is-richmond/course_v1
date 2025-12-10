@@ -120,11 +120,6 @@ class Lesson(Base):
         back_populates="lesson",
         cascade="all, delete-orphan"
     )
-    tests: Mapped[List["Test"]] = relationship(
-        "Test",
-        back_populates="lesson",
-        cascade="all, delete-orphan"
-    )
     user_progress: Mapped[List["UserProgress"]] = relationship(
         "UserProgress",
         back_populates="lesson",
@@ -152,19 +147,33 @@ class LessonMedia(Base):
 
 
 class Test(Base):
-    """Test model."""
+    """Test model - now independent from lessons."""
     
     __tablename__ = "tests"
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    lesson_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("lessons.id", ondelete="CASCADE"), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     passing_score: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
+    updated_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        onupdate=func.now(),
+        nullable=True
+    )
     
     # Relationships
-    lesson: Mapped["Lesson"] = relationship("Lesson", back_populates="tests")
     questions: Mapped[List["TestQuestion"]] = relationship(
         "TestQuestion",
+        back_populates="test",
+        cascade="all, delete-orphan"
+    )
+    attempts: Mapped[List["TestAttempt"]] = relationship(
+        "TestAttempt",
         back_populates="test",
         cascade="all, delete-orphan"
     )
@@ -251,7 +260,7 @@ class TestAttempt(Base):
     )
     
     # Relationships
-    test: Mapped["Test"] = relationship("Test", backref="attempts")
+    test: Mapped["Test"] = relationship("Test", back_populates="attempts")
     answers: Mapped[List["TestAnswer"]] = relationship(
         "TestAnswer",
         back_populates="attempt",

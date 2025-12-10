@@ -13,7 +13,9 @@ from core.src.app.models.course import (
     Test,
     TestQuestion,
     QuestionOption,
-    UserProgress
+    UserProgress,
+    TestAnswer,
+    TestAttempt
 )
 from core.src.app.repositories.base import BaseRepository
 
@@ -93,16 +95,6 @@ class LessonRepository(BaseRepository[Lesson]):
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
-    
-    async def get_with_tests(self, lesson_id: int) -> Optional[Lesson]:
-        """Get lesson with tests loaded."""
-        stmt = (
-            select(Lesson)
-            .options(selectinload(Lesson.tests))
-            .where(Lesson.id == lesson_id)
-        )
-        result = await self.session.execute(stmt)
-        return result.scalar_one_or_none()
 
 
 class LessonMediaRepository(BaseRepository[LessonMedia]):
@@ -128,9 +120,9 @@ class TestRepository(BaseRepository[Test]):
     def __init__(self, session: AsyncSession):
         super().__init__(Test, session)
     
-    async def get_by_lesson(self, lesson_id: int) -> List[Test]:
-        """Get all tests for a lesson."""
-        stmt = select(Test).where(Test.lesson_id == lesson_id)
+    async def get_all(self) -> List[Test]:
+        """Get all tests."""
+        stmt = select(Test).order_by(Test.created_at.desc())
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
     

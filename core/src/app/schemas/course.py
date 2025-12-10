@@ -129,28 +129,31 @@ class LessonMediaResponse(LessonMediaBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-# Test Schemas
+# Test Schemas - now independent
 class TestBase(BaseModel):
     """Base test schema."""
     title: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = None
     passing_score: int = Field(default=0, ge=0)
 
 
 class TestCreate(TestBase):
-    """Schema for creating a test."""
-    lesson_id: int
+    """Schema for creating a test - no lesson_id needed."""
+    pass
 
 
 class TestUpdate(BaseModel):
     """Schema for updating a test."""
     title: Optional[str] = Field(None, min_length=1, max_length=255)
+    description: Optional[str] = None
     passing_score: Optional[int] = Field(None, ge=0)
 
 
 class TestResponse(TestBase):
     """Schema for test response."""
     id: int
-    lesson_id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
     
     model_config = ConfigDict(from_attributes=True)
 
