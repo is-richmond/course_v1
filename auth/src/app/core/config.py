@@ -20,7 +20,16 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     
     # CORS Settings
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
+    ALLOWED_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "http://localhost:3001",  # Добавлен для админ панели
+        "http://localhost:8000",
+        "http://localhost:8001"
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",  # Добавлен для админ панели
+        "http://127.0.0.1:8000"
+    ]
+    
     
     model_config = SettingsConfigDict(
         env_file=".env",

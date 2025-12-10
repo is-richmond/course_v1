@@ -18,7 +18,7 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 
 const formSchema = z.object({
-    username: z.string().includes("@").min(2, {
+    email: z.string().includes("@").min(2, {
         message: "Email must be at least 2 characters.",
     }),
     password: z.string().min(3, {
@@ -33,7 +33,7 @@ const LoginPage = () => {
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            username: "",
+            email: "",
             password: ''
         },
     })
@@ -42,7 +42,7 @@ const LoginPage = () => {
         try {
             const ans = await login(values);
             if (ans === "success") {
-                router.push('/dashboard/home');
+                router.push('/dashboard/users');
             } else if (ans && ans.message) {
                 setErrorMessage(ans.message);
             } else {
@@ -77,7 +77,7 @@ const LoginPage = () => {
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                             <FormField
                                 control={form.control}
-                                name="username"
+                                name="email"
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Email</FormLabel>

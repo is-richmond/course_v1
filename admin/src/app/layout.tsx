@@ -1,59 +1,157 @@
 "use client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/ui/app-sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
 import "./globals.css";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-// Utility function to decode JWT and extract user info
+// Improved JWT decoding function with error handling
 function decodeJWT(token: string) {
   try {
-    const payload = JSON. parse(atob(token.split('.')[1]));
-    return payload;
+    // Check if token has proper JWT format (3 parts separated by dots)
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      console.error('Invalid JWT format:  token must have 3 parts');
+      return null;
+    }
+
+    // Get the payload (middle part)
+    let payload = parts[1];
+    
+    // Add padding if needed (JWT base64 might not be properly padded)
+    switch (payload.length % 4) {
+      case 2: 
+        payload += '==';
+        break;
+      case 3:
+        payload += '=';
+        break;
+    }
+
+    // Try to decode
+    const decoded = atob(payload);
+    return JSON.parse(decoded);
   } catch (e) {
     console.error('Failed to decode JWT:', e);
     return null;
   }
 }
 
-export default function RootLayout({ children }: { children: React. ReactNode }) {
+// Function to validate token format before decoding
+function isValidJWTFormat(token: string): boolean {
+  if (!token || typeof token !== 'string') return false;
+  
+  const parts = token.split('.');
+  if (parts.length !== 3) return false;
+  
+  // Basic check for each part (should be base64-like)
+  return parts.every(part => 
+    /^[A-Za-z0-9_-]+$/.test(part) && part.length > 0
+  );
+}
+
+// Function to get user info from API
+async function getCurrentUser(token: string) {
+  try {
+    const response = await fetch('http://localhost:8000/api/v1/users/me', {
+      headers:  {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch user');
+    }
+    
+    return await response. json();
+  } catch (error) {
+    console.error('Failed to get user info:', error);
+    return null;
+  }
+}
+
+export default function RootLayout({ children }: { children:  React. ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
+      // Skip auth check for non-protected routes
+      if (pathname && (pathname.startsWith("/auth") || pathname.startsWith("/api"))) {
+        setIsChecking(false);
+        return;
+      }
+
       const token = localStorage.getItem("access_token");
       
       if (!token) {
-        if (pathname && pathname.startsWith("/dashboard")) {
+        if (pathname && pathname. startsWith("/dashboard")) {
           router.push("/auth/login");
         }
         setIsChecking(false);
         return;
       }
 
-      const decodedToken = decodeJWT(token);
-      
-      if (!decodedToken || ! decodedToken.user || ! decodedToken.user.role) {
-        console.error('Invalid token structure');
-        localStorage. removeItem("access_token");
+      // Validate token format before attempting to decode
+      if (!isValidJWTFormat(token)) {
+        console.error('Invalid JWT format');
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        localStorage. removeItem("user_info");
         router.push("/auth/login");
         setIsChecking(false);
         return;
       }
 
-      const userRole = decodedToken.user.role. name;
-      const userRoleId = decodedToken.user.role.id;
+      // Decode token to check if it's valid
+      const decodedToken = decodeJWT(token);
+      
+      if (!decodedToken || ! decodedToken.sub) {
+        console.error('Invalid token structure');
+        localStorage.removeItem("access_token");
+        localStorage. removeItem("refresh_token");
+        localStorage.removeItem("user_info");
+        router.push("/auth/login");
+        setIsChecking(false);
+        return;
+      }
 
+      // Check if token is expired
+      const currentTime = Math.floor(Date. now() / 1000);
+      if (decodedToken. exp && decodedToken.exp < currentTime) {
+        console.error('Token expired');
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        localStorage. removeItem("user_info");
+        router.push("/auth/login");
+        setIsChecking(false);
+        return;
+      }
+
+      // Get user info from API
+      const userInfo = await getCurrentUser(token);
+      if (!userInfo) {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        localStorage.removeItem("user_info");
+        router.push("/auth/login");
+        setIsChecking(false);
+        return;
+      }
+
+      // Store user info for later use
+      localStorage.setItem("user_info", JSON.stringify(userInfo));
+
+      // Determine user role
+      const userRole = userInfo.is_superuser ?  "Администратор" : "Пользователь";
       localStorage.setItem("user_role", userRole);
-      localStorage.setItem("user_role_id", userRoleId);
 
+      // Redirect logic for auth pages
       if (pathname && pathname.startsWith("/auth")) {
-        if (userRole === "Администратор") {
-          router. push("/dashboard/admin");
-        } else if (userRole === "Мерчант") {
-          router.push("/dashboard/merchant");
+        if (userInfo.is_superuser) {
+          router.push("/dashboard/admin");
         } else {
           router.push("/dashboard/home");
         }
@@ -61,26 +159,9 @@ export default function RootLayout({ children }: { children: React. ReactNode })
         return;
       }
 
+      // Access control for dashboard routes
       if (pathname && pathname.startsWith("/dashboard")) {
-        if (userRole === "Администратор" && !pathname.startsWith("/dashboard")) {
-          router.push("/dashboard/admin");
-          setIsChecking(false);
-          return;
-        }
-        
-        if (userRole === "Мерчант" && !pathname.startsWith("/dashboard/merchant")) {
-          router.push("/merchant/about");
-          setIsChecking(false);
-          return;
-        }
-
-        if (userRole !== "Администратор" && pathname.startsWith("/dashboard")) {
-          router. push("/dashboard/home");
-          setIsChecking(false);
-          return;
-        }
-
-        if (userRole !== "Мерчант" && pathname.startsWith("/dashboard/merchant")) {
+        if (pathname. startsWith("/dashboard/admin") && !userInfo.is_superuser) {
           router.push("/dashboard/home");
           setIsChecking(false);
           return;
@@ -93,6 +174,7 @@ export default function RootLayout({ children }: { children: React. ReactNode })
     checkAuth();
   }, [pathname, router]);
 
+  // Show loading screen while checking auth
   if (isChecking) {
     return (
       <html lang="en">
@@ -108,30 +190,43 @@ export default function RootLayout({ children }: { children: React. ReactNode })
     );
   }
 
-  let content;
-
-  if (pathname && (pathname.startsWith("/auth") || pathname.startsWith("/api"))) {
-    content = <main className="w-full">{children}</main>;
-  } else {
-    content = (
-      <SidebarProvider>
-        <AppSidebar />
-        <main className="flex-1 overflow-hidden">
-          <div className="flex h-screen flex-col">
-            <SidebarTrigger />
-            <div className="flex-1 overflow-hidden">
-              {children}
-            </div>
-          </div>
-        </main>
-      </SidebarProvider>
-    );
-  }
+  // Get user info safely
+  const getUserInfo = () => {
+    try {
+      const userInfo = localStorage.getItem("user_info");
+      return userInfo ?  JSON.parse(userInfo) : {};
+    } catch {
+      return {};
+    }
+  };
 
   return (
     <html lang="en">
-      <body className="vsc-initialized h-screen overflow-hidden">
-        {content}
+      <body className="vsc-initialized">
+        <SidebarProvider defaultOpen={true}>
+          {pathname && (pathname.startsWith("/auth") || pathname.startsWith("/api")) ? (
+            <main className="w-full h-full">{children}</main>
+          ) : (
+            // Принудительно растягиваем на весь viewport
+            <div className="flex min-h-screen w-screen">
+              <AppSidebar />
+              {/* Контент должен занимать всё оставшееся пространство */}
+              <div className="flex-1 flex flex-col min-w-0 w-full">
+                <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+                  <SidebarTrigger className="-ml-1" />
+                  <div className="ml-auto">
+                    <span className="text-sm text-gray-600">
+                      Welcome, {getUserInfo().email || "User"}
+                    </span>
+                  </div>
+                </header>
+                <main className="flex-1 w-full overflow-auto">
+                  {children}
+                </main>
+              </div>
+            </div>
+          )}
+        </SidebarProvider>
       </body>
     </html>
   );

@@ -4,9 +4,9 @@ import { Login, User, Register } from "@/app/auth/types/index";
 
 
 
-export async function login({ username, password }: Login): Promise<'success' | { message: string, error: unknown }> {
+export async function login({ email, password }: Login): Promise<'success' | { message: string, error: unknown }> {
     try {
-        const res = await axios.post<User>(`/auth/login`, { finger_print: 'bearer', username, password });
+        const res = await axios.post<User>(`/auth/login`, { email, password });
         localStorage.setItem('access_token', res.data.access_token);
         return "success";
 
@@ -16,7 +16,7 @@ export async function login({ username, password }: Login): Promise<'success' | 
 }
 export async function register(values: Register): Promise<'success' | { message: string, error: unknown }> {
     try {
-        const res = await axios.post<User>(`/auth/register`, { username: values.username, iin: values.iin, role: values.role });
+        const res = await axios.post<User>(`/auth/register`, { email: values.email, iin: values.iin, role: values.role });
         localStorage.setItem('access_token', res.data.access_token);
         await axios.post(`${URL}/auth/change-password`, { password: values.password, confirm_password: values.password }, { headers: { Authorization: `Bearer ${res.data.access_token}` } });
         return "success";

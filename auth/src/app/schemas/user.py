@@ -1,7 +1,7 @@
 """User schemas."""
 
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
@@ -48,6 +48,7 @@ class UserRead(UserBase):
     id: UUID
     created_at: datetime
     updated_at: Optional[datetime] = None
+    enrolled_courses: List[str] = []
     
     class Config:
         from_attributes = True

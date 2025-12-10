@@ -1,9 +1,9 @@
 export type Login = {
-    username: string;
+    email: string;
     password: string;
 }
 export type Register = {
-    username: string;
+    email: string;
     password: string;
     iin: string;
     role: string;
