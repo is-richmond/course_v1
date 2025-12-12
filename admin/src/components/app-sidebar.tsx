@@ -31,7 +31,7 @@ const navigationItems = [
   },
   {
     title: "Courses",
-    url: "/dashboard/courses",
+    url: "/dashboard/course",
     icon: BookOpen,
   },
   {

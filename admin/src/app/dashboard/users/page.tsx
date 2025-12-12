@@ -9,8 +9,8 @@ import {
   LoadingState,
   ToastMessage,
   UserTableColumn 
-} from './types';
-import { userApi, enrollmentApi } from './api';
+} from '@/lib/types/types';
+import { userApi, enrollmentApi } from '@/lib/api/api';
 
 // Import UI components (adjust paths based on your UI structure)
 import { Button } from '@/components/ui/button';

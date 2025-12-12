@@ -3,15 +3,15 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import "./globals.css";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-
+import { useEffect, useState } from "react"; // Import the API client
+import { userApi } from "@/lib/api/api";
 // Improved JWT decoding function with error handling
 function decodeJWT(token: string) {
   try {
     // Check if token has proper JWT format (3 parts separated by dots)
     const parts = token.split('.');
     if (parts.length !== 3) {
-      console.error('Invalid JWT format:  token must have 3 parts');
+      console.error('Invalid JWT format: token must have 3 parts');
       return null;
     }
 
@@ -50,28 +50,7 @@ function isValidJWTFormat(token: string): boolean {
   );
 }
 
-// Function to get user info from API
-async function getCurrentUser(token: string) {
-  try {
-    const response = await fetch('http://localhost:8000/api/v1/users/me', {
-      headers:  {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch user');
-    }
-    
-    return await response. json();
-  } catch (error) {
-    console.error('Failed to get user info:', error);
-    return null;
-  }
-}
-
-export default function RootLayout({ children }: { children:  React. ReactNode }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
@@ -87,7 +66,7 @@ export default function RootLayout({ children }: { children:  React. ReactNode }
       const token = localStorage.getItem("access_token");
       
       if (!token) {
-        if (pathname && pathname. startsWith("/dashboard")) {
+        if (pathname && pathname.startsWith("/dashboard")) {
           router.push("/auth/login");
         }
         setIsChecking(false);
@@ -99,7 +78,7 @@ export default function RootLayout({ children }: { children:  React. ReactNode }
         console.error('Invalid JWT format');
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
-        localStorage. removeItem("user_info");
+        localStorage.removeItem("user_info");
         router.push("/auth/login");
         setIsChecking(false);
         return;
@@ -108,10 +87,10 @@ export default function RootLayout({ children }: { children:  React. ReactNode }
       // Decode token to check if it's valid
       const decodedToken = decodeJWT(token);
       
-      if (!decodedToken || ! decodedToken.sub) {
+      if (!decodedToken || !decodedToken.sub) {
         console.error('Invalid token structure');
         localStorage.removeItem("access_token");
-        localStorage. removeItem("refresh_token");
+        localStorage.removeItem("refresh_token");
         localStorage.removeItem("user_info");
         router.push("/auth/login");
         setIsChecking(false);
@@ -119,20 +98,9 @@ export default function RootLayout({ children }: { children:  React. ReactNode }
       }
 
       // Check if token is expired
-      const currentTime = Math.floor(Date. now() / 1000);
-      if (decodedToken. exp && decodedToken.exp < currentTime) {
+      const currentTime = Math.floor(Date.now() / 1000);
+      if (decodedToken.exp && decodedToken.exp < currentTime) {
         console.error('Token expired');
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
-        localStorage. removeItem("user_info");
-        router.push("/auth/login");
-        setIsChecking(false);
-        return;
-      }
-
-      // Get user info from API
-      const userInfo = await getCurrentUser(token);
-      if (!userInfo) {
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
         localStorage.removeItem("user_info");
@@ -141,34 +109,51 @@ export default function RootLayout({ children }: { children:  React. ReactNode }
         return;
       }
 
-      // Store user info for later use
-      localStorage.setItem("user_info", JSON.stringify(userInfo));
-
-      // Determine user role
-      const userRole = userInfo.is_superuser ?  "Администратор" : "Пользователь";
-      localStorage.setItem("user_role", userRole);
-
-      // Redirect logic for auth pages
-      if (pathname && pathname.startsWith("/auth")) {
-        if (userInfo.is_superuser) {
-          router.push("/dashboard/admin");
-        } else {
-          router.push("/dashboard/home");
+      // Get user info from API using the centralized API client
+      try {
+        // Get user info
+        const userInfo = await userApi.getCurrentUser();
+        
+        if (!userInfo) {
+          throw new Error('No user info returned');
         }
-        setIsChecking(false);
-        return;
-      }
 
-      // Access control for dashboard routes
-      if (pathname && pathname.startsWith("/dashboard")) {
-        if (pathname. startsWith("/dashboard/admin") && !userInfo.is_superuser) {
-          router.push("/dashboard/home");
+        // Store user info for later use
+        localStorage.setItem("user_info", JSON.stringify(userInfo));
+
+        // Determine user role
+        const userRole = userInfo.is_superuser ? "Администратор" : "Пользователь";
+        localStorage.setItem("user_role", userRole);
+
+        // Redirect logic for auth pages
+        if (pathname && pathname.startsWith("/auth")) {
+          if (userInfo.is_superuser) {
+            router.push("/dashboard/admin");
+          } else {
+            router.push("/dashboard/home");
+          }
           setIsChecking(false);
           return;
         }
-      }
 
-      setIsChecking(false);
+        // Access control for dashboard routes
+        if (pathname && pathname.startsWith("/dashboard")) {
+          if (pathname.startsWith("/dashboard/admin") && !userInfo.is_superuser) {
+            router.push("/dashboard/home");
+            setIsChecking(false);
+            return;
+          }
+        }
+
+        setIsChecking(false);
+      } catch (error) {
+        console.error('Failed to get user info:', error);
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        localStorage.removeItem("user_info");
+        router.push("/auth/login");
+        setIsChecking(false);
+      }
     };
     
     checkAuth();
@@ -194,7 +179,7 @@ export default function RootLayout({ children }: { children:  React. ReactNode }
   const getUserInfo = () => {
     try {
       const userInfo = localStorage.getItem("user_info");
-      return userInfo ?  JSON.parse(userInfo) : {};
+      return userInfo ? JSON.parse(userInfo) : {};
     } catch {
       return {};
     }
@@ -207,10 +192,8 @@ export default function RootLayout({ children }: { children:  React. ReactNode }
           {pathname && (pathname.startsWith("/auth") || pathname.startsWith("/api")) ? (
             <main className="w-full h-full">{children}</main>
           ) : (
-            // Принудительно растягиваем на весь viewport
             <div className="flex min-h-screen w-screen">
               <AppSidebar />
-              {/* Контент должен занимать всё оставшееся пространство */}
               <div className="flex-1 flex flex-col min-w-0 w-full">
                 <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
                   <SidebarTrigger className="-ml-1" />

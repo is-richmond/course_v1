@@ -134,28 +134,15 @@ async def sqlalchemy_error_handler(
     )
 
 
-async def general_exception_handler(
-    request: Request,
-    exc: Exception
-) -> JSONResponse:
-    """
-    Handle general exceptions.
-    
-    Args:
-        request: HTTP request
-        exc: General exception
-        
-    Returns:
-        JSONResponse: Error response
-    """
+async def general_exception_handler(request: Request, exc: Exception):
+    if request.method == "OPTIONS":
+        return JSONResponse(status_code=200, content={})
+
     logger.error(f"Unhandled exception at {request.url}: {exc}", exc_info=True)
-    
+
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={
-            "detail": "Internal server error",
-            "message": "An unexpected error occurred"
-        },
+        content={"detail": "Internal server error"},
     )
 
 

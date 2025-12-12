@@ -2,7 +2,8 @@
 
 import logging
 from contextlib import asynccontextmanager
-
+from fastapi import Request
+import time
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -54,15 +55,19 @@ app = FastAPI(
 # CORS Middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origins=[
+        "http://localhost:3001",
+        "http://localhost:3000",
+        "http://127.0.0.1:3001",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Custom Middlewares
-app.add_middleware(BaseHTTPMiddleware, dispatch=add_process_time_header)
-app.add_middleware(BaseHTTPMiddleware, dispatch=log_requests)
+
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # Exception Handlers
@@ -95,3 +100,25 @@ async def health_check():
         "app": settings.APP_NAME,
         "version": "1.0.0"
     }
+
+
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    response.headers["X-Process-Time"] = f"{time.time() - start_time:.4f}"
+    return response
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    logger.info(
+        f"{request.method} {request.url.path} "
+        f"- Client: {request.client.host if request.client else 'unknown'}"
+    )
+    response = await call_next(request)
+    logger.info(
+        f"Status: {response.status_code} "
+        f"- {request.method} {request.url.path}"
+    )
+    return response
