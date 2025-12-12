@@ -6,40 +6,44 @@ import {
   UserFilters, 
   PaginationState, 
   UserFormData, 
-  LoadingState,
   ToastMessage,
   UserTableColumn 
 } from '@/lib/types/types';
-import { userApi, enrollmentApi } from '@/lib/api/api';
+import { userApi, authApi } from '@/lib/api/api';
 
-// Import UI components (adjust paths based on your UI structure)
+// Import UI components
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
 
-// Icons (adjust based on your icon library)
+// Icons
 import { 
   UserPlus, 
   Search, 
-  Filter, 
   Edit, 
   Trash2, 
   Shield, 
   Eye,
   ChevronLeft,
   ChevronRight,
-  MoreHorizontal,
   CheckCircle,
   XCircle,
   AlertCircle
 } from 'lucide-react';
+
+// Определяем отдельный тип для загрузки пользователей
+interface UserLoadingState {
+  users: boolean;
+  create: boolean;
+  update: boolean;
+  delete: boolean;
+  grantAdmin: boolean;
+}
 
 const UsersPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -52,7 +56,7 @@ const UsersPage: React.FC = () => {
     limit: 20,
     total: 0,
   });
-  const [loading, setLoading] = useState<LoadingState>({
+  const [loading, setLoading] = useState<UserLoadingState>({
     users: false,
     create: false,
     update: false,
@@ -66,19 +70,36 @@ const UsersPage: React.FC = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
+  // Form states
+  const [createForm, setCreateForm] = useState<UserFormData>({
+    email: '',
+    password: '',
+    is_active: true,
+    is_superuser: false,
+    is_verified: false,
+  });
+
+  const [editForm, setEditForm] = useState<Partial<UserFormData>>({
+    email: '',
+    is_active: true,
+    is_superuser: false,
+    is_verified: false,
+  });
+
   const tableColumns: UserTableColumn[] = [
     { key: 'email', label: 'Email', sortable: true },
-    { key:  'is_active', label: 'Status', sortable: true, width: '120px' },
-    { key:  'is_superuser', label: 'Role', sortable: true, width:  '120px' },
+    { key: 'is_active', label: 'Status', sortable: true, width: '120px' },
+    { key: 'is_superuser', label: 'Role', sortable: true, width: '120px' },
     { key: 'is_verified', label: 'Verified', sortable: true, width: '100px' },
-    { key:  'created_at', label:  'Created', sortable: true, width: '140px' },
-    { key:  'actions', label: 'Actions', width: '180px' },
+    { key: 'enrolled_courses', label: 'Enrolled Courses', sortable: true, width: '100px' },
+    { key: 'created_at', label: 'Created', sortable: true, width: '140px' },
+    { key: 'actions', label: 'Actions', width: '200px' },
   ];
 
   // Toast management
-  const addToast = useCallback((toast:  Omit<ToastMessage, 'id'>) => {
+  const addToast = useCallback((toast: Omit<ToastMessage, 'id'>) => {
     const id = Math.random().toString(36).substr(2, 9);
-    const newToast: ToastMessage = { ... toast, id };
+    const newToast: ToastMessage = { ...toast, id };
     setToasts(prev => [...prev, newToast]);
     
     setTimeout(() => {
@@ -90,14 +111,9 @@ const UsersPage: React.FC = () => {
   const fetchUsers = useCallback(async () => {
     setLoading(prev => ({ ...prev, users: true }));
     try {
-      const data = await userApi.getUsers(pagination. page, pagination.limit);
+      const data = await userApi.getUsers(pagination.page, pagination.limit);
       setUsers(data);
       setPagination(prev => ({ ...prev, total: data.length }));
-      addToast({
-        type: 'success',
-        title: 'Success',
-        message: `Loaded ${data.length} users`,
-      });
     } catch (error) {
       console.error('Error fetching users:', error);
       addToast({
@@ -121,11 +137,11 @@ const UsersPage: React.FC = () => {
     }
 
     if (filters.is_active !== undefined) {
-      filtered = filtered.filter(user => user.is_active === filters. is_active);
+      filtered = filtered.filter(user => user.is_active === filters.is_active);
     }
 
     if (filters.is_superuser !== undefined) {
-      filtered = filtered.filter(user => user.is_superuser === filters. is_superuser);
+      filtered = filtered.filter(user => user.is_superuser === filters.is_superuser);
     }
 
     if (filters.is_verified !== undefined) {
@@ -141,19 +157,27 @@ const UsersPage: React.FC = () => {
   }, [fetchUsers]);
 
   // Create user
-  const handleCreateUser = async (userData: UserFormData) => {
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(prev => ({ ...prev, create: true }));
     try {
-      await userApi.createUser({
-        email: userData.email,
-        password: userData.password! ,
+      await authApi.register({
+        email: createForm.email,
+        password: createForm.password!,
       });
       addToast({
         type: 'success',
         title: 'User Created',
-        message: `User ${userData.email} created successfully`,
+        message: `User ${createForm.email} created successfully`,
       });
       setIsCreateModalOpen(false);
+      setCreateForm({
+        email: '',
+        password: '',
+        is_active: true,
+        is_superuser: false,
+        is_verified: false,
+      });
       fetchUsers();
     } catch (error) {
       console.error('Error creating user:', error);
@@ -168,16 +192,20 @@ const UsersPage: React.FC = () => {
   };
 
   // Update user
-  const handleUpdateUser = async (userId: string, userData:  Partial<UserFormData>) => {
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+
     setLoading(prev => ({ ...prev, update: true }));
     try {
-      await userApi.updateUser(userId, userData);
+      await userApi.updateUserById(selectedUser.id, editForm);
       addToast({
         type: 'success',
         title: 'User Updated',
         message: 'User updated successfully',
       });
       setIsEditModalOpen(false);
+      setSelectedUser(null);
       fetchUsers();
     } catch (error) {
       console.error('Error updating user:', error);
@@ -192,16 +220,19 @@ const UsersPage: React.FC = () => {
   };
 
   // Delete user
-  const handleDeleteUser = async (userId: string) => {
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+
     setLoading(prev => ({ ...prev, delete: true }));
     try {
-      await userApi.deleteUser(userId);
+      await userApi.deleteUserById(selectedUser.id);
       addToast({
         type: 'success',
         title: 'User Deleted',
         message: 'User deleted successfully',
       });
       setIsDeleteModalOpen(false);
+      setSelectedUser(null);
       fetchUsers();
     } catch (error) {
       console.error('Error deleting user:', error);
@@ -219,7 +250,7 @@ const UsersPage: React.FC = () => {
   const handleGrantAdmin = async (userId: string) => {
     setLoading(prev => ({ ...prev, grantAdmin: true }));
     try {
-      await userApi.grantAdmin({ user_id: userId });
+      await authApi.grantAdminRole({ user_id: userId });
       addToast({
         type: 'success',
         title: 'Admin Role Granted',
@@ -238,6 +269,18 @@ const UsersPage: React.FC = () => {
     }
   };
 
+  // Open edit modal
+  const openEditModal = (user: User) => {
+    setSelectedUser(user);
+    setEditForm({
+      email: user.email,
+      is_active: user.is_active,
+      is_superuser: user.is_superuser,
+      is_verified: user.is_verified,
+    });
+    setIsEditModalOpen(true);
+  };
+
   // Format date
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -250,7 +293,7 @@ const UsersPage: React.FC = () => {
   return (
     <div className="w-full min-h-full bg-gray-50">
       <div className="w-full h-full">
-        {/* Header с полной шириной */}
+        {/* Header */}
         <div className="bg-white border-b px-6 py-4">
           <div className="flex justify-between items-center">
             <div>
@@ -267,9 +310,9 @@ const UsersPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Content area с полной шириной */}
+        {/* Content area */}
         <div className="p-6 space-y-6">
-          {/* Stats Cards - используем всю ширину */}
+          {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
             <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
               <CardContent className="p-6">
@@ -334,7 +377,7 @@ const UsersPage: React.FC = () => {
             </Card>
           </div>
 
-          {/* Filters and Search - растягиваем на всю ширину */}
+          {/* Filters and Search */}
           <Card>
             <CardContent className="p-6">
               <div className="flex flex-wrap gap-4 items-center">
@@ -351,7 +394,7 @@ const UsersPage: React.FC = () => {
                 </div>
                 
                 <Select 
-                  value={filters.is_active?. toString() || 'all'}
+                  value={filters.is_active?.toString() || 'all'}
                   onValueChange={(value) => 
                     setFilters(prev => ({ 
                       ...prev, 
@@ -370,7 +413,7 @@ const UsersPage: React.FC = () => {
                 </Select>
 
                 <Select 
-                  value={filters.is_superuser?. toString() || 'all'}
+                  value={filters.is_superuser?.toString() || 'all'}
                   onValueChange={(value) => 
                     setFilters(prev => ({ 
                       ...prev, 
@@ -401,16 +444,16 @@ const UsersPage: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Users Table - полная ширина */}
+          {/* Users Table */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-xl">Users ({filteredUsers.length})</CardTitle>
               <Button
                 variant="outline"
                 onClick={fetchUsers}
-                disabled={loading. users}
+                disabled={loading.users}
               >
-                {loading.users ? 'Loading.. .' : 'Refresh'}
+                {loading.users ? 'Loading...' : 'Refresh'}
               </Button>
             </CardHeader>
             <CardContent className="p-0">
@@ -432,7 +475,7 @@ const UsersPage: React.FC = () => {
                   <TableBody>
                     {loading.users ? (
                       <TableRow>
-                        <TableCell colSpan={tableColumns. length} className="text-center py-12">
+                        <TableCell colSpan={tableColumns.length} className="text-center py-12">
                           <div className="flex flex-col items-center">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mb-2"></div>
                             <p className="text-gray-500">Loading users...</p>
@@ -454,7 +497,7 @@ const UsersPage: React.FC = () => {
                           <TableCell className="font-medium">{user.email}</TableCell>
                           <TableCell>
                             <Badge 
-                              variant={user. is_active ? "default" : "secondary"}
+                              variant={user.is_active ? "default" : "secondary"}
                               className={user.is_active ? "bg-green-100 text-green-800" : ""}
                             >
                               {user.is_active ? 'Active' : 'Inactive'}
@@ -463,7 +506,7 @@ const UsersPage: React.FC = () => {
                           <TableCell>
                             <Badge 
                               variant={user.is_superuser ? "destructive" : "outline"}
-                              className={user. is_superuser ? "bg-red-100 text-red-800" : ""}
+                              className={user.is_superuser ? "bg-red-100 text-red-800" : ""}
                             >
                               {user.is_superuser ? 'Admin' : 'User'}
                             </Badge>
@@ -488,20 +531,31 @@ const UsersPage: React.FC = () => {
                                   setIsViewModalOpen(true);
                                 }}
                                 className="h-8 w-8 p-0"
+                                title="View"
                               >
                                 <Eye className="w-4 h-4" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => {
-                                  setSelectedUser(user);
-                                  setIsEditModalOpen(true);
-                                }}
+                                onClick={() => openEditModal(user)}
                                 className="h-8 w-8 p-0"
+                                title="Edit"
                               >
                                 <Edit className="w-4 h-4" />
                               </Button>
+                              {!user.is_superuser && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleGrantAdmin(user.id)}
+                                  disabled={loading.grantAdmin}
+                                  className="h-8 w-8 p-0 text-purple-600 hover:text-purple-700"
+                                  title="Grant Admin"
+                                >
+                                  <Shield className="w-4 h-4" />
+                                </Button>
+                              )}
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -510,6 +564,7 @@ const UsersPage: React.FC = () => {
                                   setIsDeleteModalOpen(true);
                                 }}
                                 className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                                title="Delete"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
@@ -543,7 +598,7 @@ const UsersPage: React.FC = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-                    disabled={pagination.page * pagination.limit >= filteredUsers. length}
+                    disabled={pagination.page * pagination.limit >= filteredUsers.length}
                   >
                     Next
                     <ChevronRight className="w-4 h-4 ml-1" />
@@ -554,6 +609,191 @@ const UsersPage: React.FC = () => {
           </Card>
         </div>
 
+        {/* Create User Modal */}
+        <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Create New User</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleCreateUser} className="space-y-4">
+              <div>
+                <Label htmlFor="create-email">Email</Label>
+                <Input
+                  id="create-email"
+                  type="email"
+                  value={createForm.email}
+                  onChange={(e) => setCreateForm(prev => ({ ...prev, email: e.target.value }))}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="create-password">Password</Label>
+                <Input
+                  id="create-password"
+                  type="password"
+                  value={createForm.password}
+                  onChange={(e) => setCreateForm(prev => ({ ...prev, password: e.target.value }))}
+                  required
+                />
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCreateModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={loading.create}>
+                  {loading.create ? 'Creating...' : 'Create User'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit User Modal */}
+        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit User</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleUpdateUser} className="space-y-4">
+              <div>
+                <Label htmlFor="edit-email">Email</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="edit-active"
+                  checked={editForm.is_active}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, is_active: e.target.checked }))}
+                  className="rounded"
+                />
+                <Label htmlFor="edit-active">Active</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="edit-verified"
+                  checked={editForm.is_verified}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, is_verified: e.target.checked }))}
+                  className="rounded"
+                />
+                <Label htmlFor="edit-verified">Verified</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="edit-superuser"
+                  checked={editForm.is_superuser}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, is_superuser: e.target.checked }))}
+                  className="rounded"
+                />
+                <Label htmlFor="edit-superuser">Admin</Label>
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={loading.update}>
+                  {loading.update ? 'Updating...' : 'Update User'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* View User Modal */}
+        <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>User Details</DialogTitle>
+            </DialogHeader>
+            {selectedUser && (
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-gray-500">Email</Label>
+                  <p className="font-medium">{selectedUser.email}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Status</Label>
+                  <div className="mt-1">
+                    <Badge variant={selectedUser.is_active ? "default" : "secondary"}>
+                      {selectedUser.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Role</Label>
+                  <div className="mt-1">
+                    <Badge variant={selectedUser.is_superuser ? "destructive" : "outline"}>
+                      {selectedUser.is_superuser ? 'Admin' : 'User'}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Verified</Label>
+                  <p className="font-medium">{selectedUser.is_verified ? 'Yes' : 'No'}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Created At</Label>
+                  <p className="font-medium">{formatDate(selectedUser.created_at)}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Enrolled Courses</Label>
+                  <p className="font-medium">{selectedUser.enrolled_courses.length}</p>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button onClick={() => setIsViewModalOpen(false)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete User Modal */}
+        <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Delete User</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <p>Are you sure you want to delete this user?</p>
+              {selectedUser && (
+                <p className="mt-2 font-semibold">{selectedUser.email}</p>
+              )}
+              <p className="mt-2 text-sm text-red-600">This action cannot be undone.</p>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsDeleteModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteUser}
+                disabled={loading.delete}
+              >
+                {loading.delete ? 'Deleting...' : 'Delete User'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Toast Notifications */}
         <div className="fixed bottom-4 right-4 space-y-2 z-50">
           {toasts.map((toast) => (
@@ -561,8 +801,8 @@ const UsersPage: React.FC = () => {
               key={toast.id}
               className={`p-4 rounded-lg shadow-lg max-w-sm animate-in slide-in-from-right ${
                 toast.type === 'success' ? 'bg-green-500 text-white' : 
-                toast.type === 'error' ? 'bg-red-500 text-white' :  
-                toast.type === 'warning' ? 'bg-yellow-500 text-white' :  
+                toast.type === 'error' ? 'bg-red-500 text-white' : 
+                toast.type === 'warning' ? 'bg-yellow-500 text-white' : 
                 'bg-blue-500 text-white'
               }`}
             >

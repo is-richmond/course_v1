@@ -35,8 +35,8 @@ const navigationItems = [
     icon: BookOpen,
   },
   {
-    title: "Analytics", 
-    url: "/dashboard/analytics",
+    title: "Test", 
+    url: "/dashboard/test",
     icon: BarChart3,
   },
   {

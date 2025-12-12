@@ -92,7 +92,7 @@ export interface ApiError {
   status?: number;
 }
 
-export interface LoadingState {
+export interface UserLoadingState {
   users: boolean;
   create: boolean;
   update: boolean;
@@ -258,7 +258,7 @@ export interface CourseTableColumn {
   width?: string;
 }
 
-export interface LoadingState {
+export interface CourseLoadingState {
   courses: boolean;
   modules: boolean;
   lessons: boolean;
