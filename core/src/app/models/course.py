@@ -6,7 +6,7 @@ from enum import Enum as PyEnum
 
 from sqlalchemy import String, Text, BigInteger, Integer, Boolean, DateTime, Enum, ForeignKey, Numeric, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
+from core.src.app.schemas.media_schema import CourseMediaResponse
 from core.src.app.db.database import Base
 
 if TYPE_CHECKING:
@@ -296,3 +296,4 @@ class TestAnswer(Base):
     # Relationships
     attempt: Mapped["TestAttempt"] = relationship("TestAttempt", back_populates="answers")
     question: Mapped["TestQuestion"] = relationship("TestQuestion", backref="answers")
+

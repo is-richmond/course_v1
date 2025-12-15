@@ -51,3 +51,6 @@ class MediaConfigResponse(BaseModel):
     allowed_image_types: List[str]
     allowed_video_types: List[str]
     connection_status: bool
+
+
+

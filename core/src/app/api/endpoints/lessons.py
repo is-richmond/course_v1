@@ -10,9 +10,11 @@ from core.src.app.schemas.course import (
     LessonUpdate,
     LessonResponse,
     LessonWithMedia,
+    LessonWithAllMedia
 )
 from core.src.app.repositories.course import LessonRepository
-
+from core.src.app.schemas.media_schema import CourseMediaResponse  # ДОБАВЬТЕ если нужно
+from core.src.app.services.media_s3_service import media_s3_service
 router = APIRouter()
 
 @router.post("/", response_model=LessonResponse, status_code=status.HTTP_201_CREATED)
@@ -101,3 +103,28 @@ async def delete_lesson(
             detail=f"Lesson with id {lesson_id} not found"
         )
     return None
+
+
+
+@router.get("/{lesson_id}/with-all-media", response_model=LessonWithAllMedia)
+async def get_lesson_with_all_media(
+    lesson_id: int,
+    session: AsyncSession = Depends(get_async_session)
+):
+    """Get a lesson with both URL media and S3 files loaded."""
+    repository = LessonRepository(session)
+    lesson = await repository.get_with_all_media(lesson_id)
+    if not lesson:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Lesson with id {lesson_id} not found"
+        )
+    
+    # Преобразуем в response и добавляем presigned URLs для S3 файлов
+    response_data = LessonWithAllMedia.model_validate(lesson)
+    
+    # Добавляем download URLs для S3 файлов
+    for media in response_data.lesson_media:
+        media.download_url = media_s3_service.generate_presigned_url(media.s3_key)
+    
+    return response_data

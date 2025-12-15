@@ -95,6 +95,19 @@ class LessonRepository(BaseRepository[Lesson]):
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
+    
+    async def get_with_all_media(self, lesson_id: int) -> Optional[Lesson]:
+        """Get lesson with both URL media and S3 files loaded."""
+        stmt = (
+            select(Lesson)
+            .options(
+                selectinload(Lesson.media),  # LessonMedia (URL-ссылки)
+                selectinload(Lesson.lesson_media)  # CourseMedia (S3-файлы)
+            )
+            .where(Lesson.id == lesson_id)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
 
 
 class LessonMediaRepository(BaseRepository[LessonMedia]):
@@ -258,3 +271,4 @@ class TestAnswerRepository(BaseRepository["TestAnswer"]):
     def __init__(self, session: AsyncSession):
         from core.src.app.models.course import TestAnswer
         super().__init__(TestAnswer, session)
+

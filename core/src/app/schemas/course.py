@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, Field, ConfigDict
-
+from core.src.app.schemas.media_schema import CourseMediaResponse
 from core.src.app.models.course import (
     CourseStatus,
     LessonType,
@@ -327,3 +327,13 @@ class TestAttemptResponse(BaseModel):
     completed_at: Optional[datetime] = None
     
     model_config = ConfigDict(from_attributes=True)
+
+
+# В начале файла добавьте импорт
+
+
+# В конце файла добавьте только это:
+class LessonWithAllMedia(LessonResponse):
+    """Lesson response with URL media and S3 files."""
+    media: List[LessonMediaResponse] = []  # URL-ссылки (LessonMedia)
+    lesson_media: List[CourseMediaResponse] = []  # S3-файлы (CourseMedia)
