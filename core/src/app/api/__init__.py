@@ -10,6 +10,7 @@ from core.src.app.api.endpoints import (
     tests,
     questions,
     options,
+    s3,
     progress,
 )
 
@@ -24,3 +25,4 @@ api_router.include_router(tests.router, prefix="/tests", tags=["Tests"])
 api_router.include_router(questions.router, prefix="/questions", tags=["Questions"])
 api_router.include_router(options.router, prefix="/options", tags=["Options"])
 api_router.include_router(progress.router, prefix="/progress", tags=["Progress"])
+api_router.include_router(s3.router, prefix="/s3", tags=["S3"])     

@@ -1,7 +1,7 @@
 """Course models for the course platform."""
 
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 from enum import Enum as PyEnum
 
 from sqlalchemy import String, Text, BigInteger, Integer, Boolean, DateTime, Enum, ForeignKey, Numeric, func
@@ -9,6 +9,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.src.app.db.database import Base
 
+if TYPE_CHECKING:
+    from core.src.app.models.course_media import CourseMedia
 
 class CourseStatus(str, PyEnum):
     """Course status enum."""
@@ -76,6 +78,12 @@ class Course(Base):
         back_populates="course",
         cascade="all, delete-orphan"
     )
+    course_media: Mapped[List["CourseMedia"]] = relationship(
+        "CourseMedia",
+        back_populates="course",
+        cascade="all, delete-orphan",
+        foreign_keys="CourseMedia.course_id"
+    )
 
 
 class CourseModule(Base):
@@ -112,7 +120,11 @@ class Lesson(Base):
         nullable=False
     )
     order_index: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    
+    lesson_media: Mapped[List["CourseMedia"]] = relationship(
+        "CourseMedia",
+        back_populates="lesson",
+        cascade="all, delete-orphan"
+    )
     # Relationships
     module: Mapped["CourseModule"] = relationship("CourseModule", back_populates="lessons")
     media: Mapped[List["LessonMedia"]] = relationship(
