@@ -1,17 +1,13 @@
 """User repository."""
-
 import logging
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
-
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from auth.src.app.models.user import User
 from auth.src.app.repositories.base import BaseRepository
 
 logger = logging.getLogger(__name__)
-
 
 class UserRepository(BaseRepository[User]):
     """Repository for User model."""
@@ -27,7 +23,7 @@ class UserRepository(BaseRepository[User]):
     
     async def get_by_email(self, email: str) -> Optional[User]:
         """
-        Get user by email. 
+        Get user by email.
         
         Args:
             email: User email
@@ -55,9 +51,24 @@ class UserRepository(BaseRepository[User]):
         )
         return result.scalars().first()
     
+    async def get_by_phone_number(self, phone_number: str) -> Optional[User]:
+        """
+        Get user by phone number.
+        
+        Args:
+            phone_number: Phone number
+            
+        Returns:
+            Optional[User]: User or None if not found
+        """
+        result = await self.session.execute(
+            select(User).where(User.phone_number == phone_number)
+        )
+        return result.scalars().first()
+    
     async def email_exists(self, email: str) -> bool:
         """
-        Check if email exists. 
+        Check if email exists.
         
         Args:
             email: Email to check

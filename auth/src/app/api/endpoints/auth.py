@@ -47,7 +47,7 @@ router = APIRouter()
 
 @router.post(
     "/register",
-    status_code=status. HTTP_201_CREATED,
+    status_code=status.HTTP_201_CREATED,
     response_model=TokenOut,
     description="Register a new user",
     response_model_exclude_none=True,
@@ -60,7 +60,7 @@ async def register(
     Register a new user and return access/refresh tokens.
     
     Args:
-        user_in: User registration data
+        user_in: User registration data (email, password, first_name, last_name, phone_number)
         session: Database session
         
     Returns:
@@ -71,26 +71,42 @@ async def register(
     """
     user_repo = UserRepository(session)
     
-    # Check if user already exists
+    # Check if user already exists by email
     existing_user = await user_repo.get_by_email(email=user_in.email)
     if existing_user:
         raise HTTPException(
-            status_code=status. HTTP_409_CONFLICT,
+            status_code=status.HTTP_409_CONFLICT,
             detail="User with this email already exists"
         )
     
-    # Create new user with default values
+    # Check if phone number already exists
+    existing_phone = await user_repo.get_by_phone_number(phone_number=user_in.phone_number)
+    if existing_phone:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User with this phone number already exists"
+        )
+    
+    # Create new user with all fields
     hashed_password = get_password_hash(user_in.password)
     user_data = {
         "email": user_in.email,
         "hashed_password": hashed_password,
+        "first_name": user_in.first_name,
+        "last_name": user_in.last_name,
+        "phone_number": user_in.phone_number,
         "is_active": True,
         "is_superuser": False,
         "is_verified": False,
     }
     
-    new_user = await user_repo. create(**user_data)
-    logger.info(f"New user registered: {new_user.email} (ID: {new_user.id})")
+    new_user = await user_repo.create(**user_data)
+    logger.info(
+        f"New user registered: {new_user.email} "
+        f"({new_user.first_name} {new_user.last_name}) "
+        f"Phone: {new_user.phone_number} "
+        f"(ID: {new_user.id})"
+    )
     
     # Create tokens
     access_token = create_access_token(subject=str(new_user.id))
