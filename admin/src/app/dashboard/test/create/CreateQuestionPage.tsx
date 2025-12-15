@@ -1,6 +1,8 @@
+// admin/src/app/dashboard/test/[id]/question/create/CreateQuestionPage.tsx
 "use client";
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/text-area';
@@ -24,6 +26,7 @@ interface OptionData {
 }
 
 const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
+  const router = useRouter();
   const [formData, setFormData] = useState<TestQuestionCreate>({
     test_id: testId,
     question_text: '',
@@ -56,15 +59,14 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
       newErrors.question_text = 'Question text is required';
     }
 
-    if ((formData.points ?? 0) < 0) {
+    if (formData.points < 0) {
       newErrors.points = 'Points must be positive';
     }
 
-    if ((formData.order_index ?? 0) < 0) {
+    if (formData.order_index < 0) {
       newErrors.order_index = 'Order index must be positive';
     }
 
-    // Validate options for choice questions
     if (formData.question_type === 'single_choice' || formData.question_type === 'multiple_choice') {
       const validOptions = options.filter(opt => opt.option_text.trim());
       
@@ -101,10 +103,8 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
 
     setLoading(true);
     try {
-      // Create question
       const question = await questionApi.createQuestion(formData);
 
-      // Create options if needed
       if (formData.question_type === 'single_choice' || formData.question_type === 'multiple_choice') {
         const validOptions = options.filter(opt => opt.option_text.trim());
         
@@ -124,9 +124,8 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
         message: 'Question created successfully'
       });
       
-      // Redirect to test details after a short delay
       setTimeout(() => {
-        window.location.href = `/dashboard/test/${testId}`;
+        router.push(`/dashboard/test/${testId}`);
       }, 1000);
     } catch (error) {
       console.error('Error creating question:', error);
@@ -153,7 +152,6 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
   const handleQuestionTypeChange = (type: QuestionType) => {
     handleChange('question_type', type);
     
-    // Reset options when changing to text type
     if (type === 'text') {
       setOptions([]);
     } else if (options.length === 0) {
@@ -180,7 +178,6 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
       opt.tempId === tempId ? { ...opt, [field]: value } : opt
     ));
     
-    // For single choice, uncheck other options
     if (field === 'is_correct' && value && formData.question_type === 'single_choice') {
       setOptions(prev => prev.map(opt => 
         opt.tempId === tempId ? { ...opt, is_correct: true } : { ...opt, is_correct: false }
@@ -206,7 +203,7 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
           <div className="flex items-center space-x-4">
             <Button
               variant="ghost"
-              onClick={() => window.location.href = `/dashboard/test/${testId}`}
+              onClick={() => router.push(`/dashboard/test/${testId}`)}
             >
               <ArrowLeft className="w-4 h-4" />
             </Button>
@@ -367,7 +364,7 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => window.location.href = `/dashboard/test/${testId}`}
+                      onClick={() => router.push(`/dashboard/test/${testId}`)}
                       disabled={loading}
                     >
                       Cancel

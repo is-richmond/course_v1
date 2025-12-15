@@ -1,6 +1,8 @@
+// admin/src/app/dashboard/test/page.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -24,6 +26,7 @@ import { testApi } from '@/lib/api/test-api';
 import { Test } from '@/lib/types/test-types';
 
 const TestsListPage = () => {
+  const router = useRouter();
   const [tests, setTests] = useState<Test[]>([]);
   const [filteredTests, setFilteredTests] = useState<Test[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -132,7 +135,7 @@ const TestsListPage = () => {
               <p className="text-gray-600">Manage tests, questions, and options</p>
             </div>
             <Button 
-              onClick={() => window.location.href = '/dashboard/test/create'}
+              onClick={() => router.push('/dashboard/test/create')}
               className="bg-blue-600 hover:bg-blue-700"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -295,7 +298,7 @@ const TestsListPage = () => {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => window.location.href = `/dashboard/test/${test.id}`}
+                                onClick={() => router.push(`/dashboard/test/${test.id}`)}
                                 className="h-8 px-3"
                               >
                                 <Eye className="w-4 h-4 mr-1" />
@@ -304,7 +307,7 @@ const TestsListPage = () => {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => window.location.href = `/dashboard/test/${test.id}/edit`}
+                                onClick={() => router.push(`/dashboard/test/${test.id}/edit`)}
                                 className="h-8 w-8 p-0"
                               >
                                 <Edit className="w-4 h-4" />
