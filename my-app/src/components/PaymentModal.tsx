@@ -60,7 +60,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   {courseTitle}
                 </h3>
                 <div className="text-4xl font-bold text-blue-600 mb-4">
-                  ₽{price.toLocaleString("ru-RU")}
+                  T{price.toLocaleString("ru-RU")}
                 </div>
                 <p className="text-gray-600 text-sm">
                   После оплаты вы получите полный доступ ко всем материалам

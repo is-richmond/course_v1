@@ -3,7 +3,7 @@ import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/src/components/ui/Button";
 
 export const HeroSection: React.FC = () => (
-  <section className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 pt-20">
+  <section className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100">
     <div className="max-w-6xl mx-auto px-6 py-20 text-center">
       <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
         Медицинские курсы для врачей и студентов

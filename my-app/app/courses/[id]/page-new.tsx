@@ -91,7 +91,7 @@ export default function CoursePageNew({ params: paramsPromise }: PageProps) {
                   {course.title}
                 </h2>
                 <div className="text-4xl font-bold text-blue-600 mb-4">
-                  ₽{course.price.toLocaleString("ru-RU")}
+                  T{course.price.toLocaleString("ru-RU")}
                 </div>
               </div>
 

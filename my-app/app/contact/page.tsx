@@ -7,11 +7,11 @@ import { Mail, Phone, MapPin, Clock, MessageCircle } from "lucide-react";
 
 export default function ContactPage() {
   return (
-    <div className="bg-white">
+    <div className="bg-white min-h-screen flex flex-col">
       <Header />
-      <main className="pt-20">
+      <main className="flex-1">
         {/* Hero */}
-        <div className="bg-linear-to-br from-blue-50 to-indigo-100 py-20">
+        <div className="bg-linear-to-br from-blue-50 to-indigo-100 py-16">
           <div className="max-w-6xl mx-auto px-6 text-center">
             <h1 className="text-5xl font-bold text-gray-900 mb-6">
               Свяжитесь с нами
@@ -141,9 +141,9 @@ export default function ContactPage() {
                       <div>
                         <h3 className="font-bold text-gray-900 mb-1">Адрес</h3>
                         <p className="text-gray-700">
-                          Москва, Россия
+                          Казахстан, Алматы
                           <br />
-                          ул. Медицинская, д. 42
+                          ул.Медицинская
                         </p>
                       </div>
                     </div>

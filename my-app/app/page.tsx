@@ -8,9 +8,9 @@ import { faqItems, reviews } from "@/src/data/courses";
 
 export default function Home() {
   return (
-    <div className="bg-white">
+    <div className="bg-white min-h-screen flex flex-col">
       <Header />
-      <main className="pt-16">
+      <main className="flex-1">
         <HeroSection />
         <CoursesSection />
         <ReviewsSection reviews={reviews} />

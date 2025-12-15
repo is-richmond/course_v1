@@ -108,7 +108,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                   {course.title}
                 </h2>
                 <div className="text-4xl font-bold text-blue-600 mb-4">
-                  ₽{course.price.toLocaleString("ru-RU")}
+                  T{course.price.toLocaleString("ru-RU")}
                 </div>
               </div>
 
@@ -163,7 +163,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
     <div className="bg-white min-h-screen flex flex-col">
       <Header />
 
-      <main className="pt-16 flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6 max-w-7xl mx-auto w-full px-6 py-8">
+      <main className="flex-1 pt-16 flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6 max-w-7xl mx-auto w-full px-6 py-8">
         {/* Left Sidebar - Course Navigation */}
         <div className="lg:col-span-1">
           <div className="bg-white border border-gray-200 rounded-xl sticky top-24">
