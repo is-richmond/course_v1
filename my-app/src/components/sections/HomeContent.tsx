@@ -3,10 +3,9 @@
 import React from "react";
 import Link from "next/link";
 import { Tabs } from "@/src/components/ui/Tabs";
-import { Card, CardContent } from "@/src/components/ui/Card";
 import { CoursesGrid } from "./CoursesGrid";
+import { TestsGrid } from "./TestsGrid";
 import { ContinueLearning } from "./ContinueLearning";
-import { tests } from "@/src/data/tests";
 import { Button } from "@/src/components/ui/Button";
 import { useAuth } from "@/src/contexts/AuthContext";
 
@@ -243,100 +242,7 @@ export default function HomeContent({
               Проверьте свои знания с помощью наших тестов
             </p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {tests.map((test) => (
-              <Card key={test.id} className="hover:shadow-lg transition">
-                <CardContent className="pt-6">
-                  <div className="mb-4">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      {test.title}
-                    </h3>
-                    <p className="text-gray-600 text-sm mb-4">
-                      {test.description}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-4 mb-6 py-4 border-y border-gray-200">
-                    <div className="text-center">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 256 256"
-                        className="mx-auto text-blue-600 mb-1"
-                      >
-                        <path
-                          fill="currentColor"
-                          d="M232,64H176V48a24,24,0,0,0-24-24H104A24,24,0,0,0,80,48V64H24A8,8,0,0,0,16,72V200a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V72A8,8,0,0,0,232,64ZM96,48a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8V64H96ZM224,200H32V80H224Z"
-                        />
-                      </svg>
-                      <p className="text-sm font-semibold text-gray-900">
-                        {test.questions}
-                      </p>
-                      <p className="text-xs text-gray-600">вопросов</p>
-                    </div>
-                    <div className="text-center">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 256 256"
-                        className="mx-auto text-blue-600 mb-1"
-                      >
-                        <path
-                          fill="currentColor"
-                          d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm64-88a8,8,0,0,1-8,8H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48A8,8,0,0,1,192,128Z"
-                        />
-                      </svg>
-                      <p className="text-sm font-semibold text-gray-900">
-                        {test.duration}
-                      </p>
-                      <p className="text-xs text-gray-600">время</p>
-                    </div>
-                    <div className="text-center">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 256 256"
-                        className="mx-auto text-blue-600 mb-1"
-                      >
-                        <path
-                          fill="currentColor"
-                          d="M224,160a8,8,0,0,1-8,8H40a8,8,0,0,1,0-16H216A8,8,0,0,1,224,160ZM40,104H216a8,8,0,0,0,0-16H40a8,8,0,0,0,0,16Z"
-                        />
-                      </svg>
-                      <p className="text-sm font-semibold text-gray-900">
-                        {test.difficulty}
-                      </p>
-                      <p className="text-xs text-gray-600">сложность</p>
-                    </div>
-                  </div>
-
-                  <Link href={`/tests/${test.id}`} className="block">
-                    <Button
-                      variant="primary"
-                      className="w-full flex items-center justify-center gap-2"
-                    >
-                      Начать тест
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 256 256"
-                      >
-                        <path
-                          fill="currentColor"
-                          d="M184.49,136.49l-80,80a12,12,0,0,1-17-17L159,128,87.51,56.49a12,12,0,1,1,17-17l80,80A12,12,0,0,1,184.49,136.49Z"
-                        />
-                      </svg>
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <TestsGrid />
         </div>
       ),
     },

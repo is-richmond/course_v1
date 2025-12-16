@@ -1,4 +1,22 @@
 import axios from "axios";
+import type {
+  CourseResponse,
+  CourseWithModules,
+  CourseModuleResponse,
+  ModuleWithLessons,
+  LessonResponse,
+  LessonWithMedia,
+  LessonWithAllMedia,
+  TestResponse,
+  TestWithQuestions,
+  TestAttemptResponse,
+  TestSubmission,
+  TestResult,
+  UserProgressResponse,
+  UserProgressCreate,
+  MediaListResponse,
+  CourseMediaResponse,
+} from "@/src/types/api";
 
 // API Configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost/v1";
@@ -25,6 +43,39 @@ const enrollmentClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+});
+
+// Core API clients - use same base URL (nginx proxies to core service)
+const coreBaseURL = API_BASE_URL;
+
+const coursesClient = axios.create({
+  baseURL: `${coreBaseURL}/courses`,
+  headers: { "Content-Type": "application/json" },
+});
+
+const modulesClient = axios.create({
+  baseURL: `${coreBaseURL}/modules`,
+  headers: { "Content-Type": "application/json" },
+});
+
+const lessonsClient = axios.create({
+  baseURL: `${coreBaseURL}/lessons`,
+  headers: { "Content-Type": "application/json" },
+});
+
+const testsClient = axios.create({
+  baseURL: `${coreBaseURL}/tests`,
+  headers: { "Content-Type": "application/json" },
+});
+
+const progressClient = axios.create({
+  baseURL: `${coreBaseURL}/progress`,
+  headers: { "Content-Type": "application/json" },
+});
+
+const s3Client = axios.create({
+  baseURL: `${coreBaseURL}/s3`,
+  headers: { "Content-Type": "application/json" },
 });
 
 // Helper function to setup interceptors
@@ -85,8 +136,16 @@ const setupInterceptors = (client: typeof apiClient) => {
 setupInterceptors(apiClient);
 setupInterceptors(userClient);
 setupInterceptors(enrollmentClient);
+setupInterceptors(coursesClient);
+setupInterceptors(modulesClient);
+setupInterceptors(lessonsClient);
+setupInterceptors(testsClient);
+setupInterceptors(progressClient);
+setupInterceptors(s3Client);
 
-// Auth API calls
+// =============================================================================
+// AUTH API
+// =============================================================================
 export const authAPI = {
   register: async (data: {
     email: string;
@@ -122,9 +181,24 @@ export const authAPI = {
     });
     return response.data;
   },
+
+  forgotPassword: async (email: string) => {
+    const response = await apiClient.post("/forgot-password", { email });
+    return response.data;
+  },
+
+  resetPassword: async (token: string, newPassword: string) => {
+    const response = await apiClient.post("/reset-password", {
+      token,
+      new_password: newPassword,
+    });
+    return response.data;
+  },
 };
 
-// User API calls
+// =============================================================================
+// USER API
+// =============================================================================
 export const userAPI = {
   getCurrentUser: async () => {
     const response = await userClient.get("/me");
@@ -141,7 +215,9 @@ export const userAPI = {
   },
 };
 
-// Enrollment API calls
+// =============================================================================
+// ENROLLMENT API
+// =============================================================================
 export const enrollmentAPI = {
   getEnrolledCourses: async () => {
     const response = await enrollmentClient.get("/my-courses");
@@ -156,5 +232,191 @@ export const enrollmentAPI = {
   unenrollCourse: async (courseId: string) => {
     const response = await enrollmentClient.delete(`/courses/${courseId}`);
     return response.data;
+  },
+};
+
+// =============================================================================
+// COURSES API
+// =============================================================================
+export const coursesAPI = {
+  list: async (skip = 0, limit = 100): Promise<CourseResponse[]> => {
+    const response = await coursesClient.get("/", { params: { skip, limit } });
+    return response.data;
+  },
+
+  get: async (courseId: number): Promise<CourseResponse> => {
+    const response = await coursesClient.get(`/${courseId}`);
+    return response.data;
+  },
+
+  getWithModules: async (courseId: number): Promise<CourseWithModules> => {
+    const response = await coursesClient.get(`/${courseId}/with-modules`);
+    return response.data;
+  },
+
+  getByAuthor: async (authorId: number): Promise<CourseResponse[]> => {
+    const response = await coursesClient.get(`/author/${authorId}`);
+    return response.data;
+  },
+};
+
+// =============================================================================
+// MODULES API
+// =============================================================================
+export const modulesAPI = {
+  getByCourse: async (courseId: number): Promise<CourseModuleResponse[]> => {
+    const response = await modulesClient.get(`/course/${courseId}`);
+    return response.data;
+  },
+
+  get: async (moduleId: number): Promise<CourseModuleResponse> => {
+    const response = await modulesClient.get(`/${moduleId}`);
+    return response.data;
+  },
+
+  getWithLessons: async (moduleId: number): Promise<ModuleWithLessons> => {
+    const response = await modulesClient.get(`/${moduleId}/with-lessons`);
+    return response.data;
+  },
+};
+
+// =============================================================================
+// LESSONS API
+// =============================================================================
+export const lessonsAPI = {
+  getByModule: async (moduleId: number): Promise<LessonResponse[]> => {
+    const response = await lessonsClient.get(`/module/${moduleId}`);
+    return response.data;
+  },
+
+  get: async (lessonId: number): Promise<LessonResponse> => {
+    const response = await lessonsClient.get(`/${lessonId}`);
+    return response.data;
+  },
+
+  getWithMedia: async (lessonId: number): Promise<LessonWithMedia> => {
+    const response = await lessonsClient.get(`/${lessonId}/with-media`);
+    return response.data;
+  },
+
+  getWithAllMedia: async (lessonId: number): Promise<LessonWithAllMedia> => {
+    const response = await lessonsClient.get(`/${lessonId}/with-all-media`);
+    return response.data;
+  },
+};
+
+// =============================================================================
+// TESTS API
+// =============================================================================
+export const testsAPI = {
+  list: async (): Promise<TestResponse[]> => {
+    const response = await testsClient.get("/");
+    return response.data;
+  },
+
+  get: async (testId: number): Promise<TestResponse> => {
+    const response = await testsClient.get(`/${testId}`);
+    return response.data;
+  },
+
+  getWithQuestions: async (testId: number): Promise<TestWithQuestions> => {
+    const response = await testsClient.get(`/${testId}/with-questions`);
+    return response.data;
+  },
+
+  start: async (testId: number): Promise<TestAttemptResponse> => {
+    const response = await testsClient.post(`/${testId}/start`);
+    return response.data;
+  },
+
+  submit: async (
+    testId: number,
+    submission: TestSubmission
+  ): Promise<TestResult> => {
+    const response = await testsClient.post(`/${testId}/submit`, submission);
+    return response.data;
+  },
+
+  getAttempts: async (testId: number): Promise<TestAttemptResponse[]> => {
+    const response = await testsClient.get(`/${testId}/attempts`);
+    return response.data;
+  },
+
+  getResult: async (testId: number, attemptId: number): Promise<TestResult> => {
+    const response = await testsClient.get(`/${testId}/result/${attemptId}`);
+    return response.data;
+  },
+};
+
+// =============================================================================
+// PROGRESS API
+// =============================================================================
+export const progressAPI = {
+  create: async (data: UserProgressCreate): Promise<UserProgressResponse> => {
+    const response = await progressClient.post("/", data);
+    return response.data;
+  },
+
+  getByUserAndCourse: async (
+    userId: number,
+    courseId: number
+  ): Promise<UserProgressResponse[]> => {
+    const response = await progressClient.get(
+      `/user/${userId}/course/${courseId}`
+    );
+    return response.data;
+  },
+
+  get: async (progressId: number): Promise<UserProgressResponse> => {
+    const response = await progressClient.get(`/${progressId}`);
+    return response.data;
+  },
+
+  update: async (
+    progressId: number,
+    data: { completed?: boolean; completed_at?: string }
+  ): Promise<UserProgressResponse> => {
+    const response = await progressClient.put(`/${progressId}`, data);
+    return response.data;
+  },
+};
+
+// =============================================================================
+// S3 MEDIA API
+// =============================================================================
+export const mediaAPI = {
+  upload: async (
+    file: File,
+    mediaType: "image" | "video",
+    courseId?: number,
+    lessonId?: number,
+    customName?: string
+  ): Promise<CourseMediaResponse> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("media_type", mediaType);
+    if (courseId) formData.append("course_id", courseId.toString());
+    if (lessonId) formData.append("lesson_id", lessonId.toString());
+    if (customName) formData.append("custom_name", customName);
+
+    const response = await s3Client.post("/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data.media;
+  },
+
+  list: async (params?: {
+    skip?: number;
+    limit?: number;
+    media_type?: "image" | "video";
+    course_id?: number;
+    lesson_id?: number;
+  }): Promise<MediaListResponse> => {
+    const response = await s3Client.get("/media", { params });
+    return response.data;
+  },
+
+  delete: async (mediaId: string): Promise<void> => {
+    await s3Client.delete(`/media/${mediaId}`);
   },
 };

@@ -5,10 +5,26 @@ import { Header } from "@/src/components/layout/Header";
 import { Footer } from "@/src/components/layout/Footer";
 import { Tabs } from "@/src/components/ui/Tabs";
 import { FAQSection } from "@/src/components/sections/FAQSection";
-import { faqItems } from "@/src/data/courses";
-import { HelpCircle, MessageCircle, BookOpen } from "lucide-react";
 import { Card, CardContent } from "@/src/components/ui/Card";
 import { Button } from "@/src/components/ui/Button";
+
+// FAQ items - can be fetched from API later
+const faqItems = [
+  {
+    question: "Как проходит обучение?",
+    answer:
+      "Обучение проходит в онлайн-формате. Вы получаете доступ к видеолекциям, материалам и тестам.",
+  },
+  {
+    question: "Какой срок доступа к курсам?",
+    answer:
+      "После покупки курса вы получаете бессрочный доступ ко всем материалам курса.",
+  },
+  {
+    question: "Выдаётся ли сертификат?",
+    answer: "Да, после успешного прохождения курса вы получаете сертификат.",
+  },
+];
 
 export default function FAQPage() {
   const tabItems = [
@@ -89,18 +105,38 @@ export default function FAQPage() {
         <div className="max-w-4xl mx-auto px-6 py-8">
           {/* Page Header */}
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Часто задаваемые вопросы</h1>
-            <p className="text-gray-600">Найдите ответы на популярные вопросы или свяжитесь с нашей поддержкой</p>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              Часто задаваемые вопросы
+            </h1>
+            <p className="text-gray-600">
+              Найдите ответы на популярные вопросы или свяжитесь с нашей
+              поддержкой
+            </p>
           </div>
 
           {/* Tabs */}
           <Tabs items={tabItems} defaultTab="general" />
 
           {/* Contact Section */}
-          <div className="mt-12 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl p-8 text-center">
-            <MessageCircle size={48} className="mx-auto mb-4 text-blue-600" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Не нашли ответ?</h2>
-            <p className="text-gray-700 mb-6">Наша команда поддержки готова помочь вам в любое время</p>
+          <div className="mt-12 bg-blue-50 rounded-xl p-8 text-center">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="48"
+              height="48"
+              viewBox="0 0 256 256"
+              className="mx-auto mb-4 text-blue-600"
+            >
+              <path
+                fill="currentColor"
+                d="M128,24A104,104,0,0,0,36.18,176.88L24.83,210.93a16,16,0,0,0,20.24,20.24l34.05-11.35A104,104,0,1,0,128,24Zm0,192a87.87,87.87,0,0,1-44.06-11.81,8,8,0,0,0-4-1.08,7.85,7.85,0,0,0-2.53.42L40,216,52.47,178.6a8,8,0,0,0-.66-6.54A88,88,0,1,1,128,216Z"
+              />
+            </svg>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Не нашли ответ?
+            </h2>
+            <p className="text-gray-700 mb-6">
+              Наша команда поддержки готова помочь вам в любое время
+            </p>
             <div className="flex gap-4 justify-center">
               <Button variant="primary">Написать в поддержку</Button>
               <Button variant="outline">Позвонить</Button>

@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 import { userAPI, authAPI } from "@/src/lib/api";
 
 export interface User {
@@ -42,7 +48,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -74,7 +82,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (email: string, password: string) => {
     try {
-      const { access_token, refresh_token } = await authAPI.login(email, password);
+      const { access_token, refresh_token } = await authAPI.login(
+        email,
+        password
+      );
 
       // Store tokens
       localStorage.setItem("access_token", access_token);
@@ -85,7 +96,43 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(userData);
       localStorage.setItem("current_user", JSON.stringify(userData));
     } catch (error: any) {
-      const message = error.response?.data?.detail || "Login failed";
+      // Parse error message from API
+      let message = "Ошибка входа";
+
+      if (error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+        // Translate common error messages
+        if (typeof detail === "string") {
+          if (
+            detail.toLowerCase().includes("invalid credentials") ||
+            detail.toLowerCase().includes("incorrect") ||
+            detail.toLowerCase().includes("wrong password")
+          ) {
+            message = "Неверный email или пароль";
+          } else if (
+            detail.toLowerCase().includes("not found") ||
+            detail.toLowerCase().includes("user does not exist")
+          ) {
+            message = "Пользователь не найден";
+          } else if (
+            detail.toLowerCase().includes("not active") ||
+            detail.toLowerCase().includes("inactive")
+          ) {
+            message = "Аккаунт не активирован";
+          } else if (detail.toLowerCase().includes("not verified")) {
+            message = "Email не подтверждён";
+          } else {
+            message = detail;
+          }
+        } else if (Array.isArray(detail)) {
+          message = detail.map((d) => d.msg || d).join(", ");
+        }
+      } else if (error.message) {
+        message = error.message;
+      } else if (error.code === "ERR_NETWORK") {
+        message = "Ошибка сети. Проверьте подключение к интернету";
+      }
+
       throw new Error(message);
     }
   };
@@ -110,7 +157,45 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(userData);
       localStorage.setItem("current_user", JSON.stringify(userData));
     } catch (error: any) {
-      const message = error.response?.data?.detail || "Registration failed";
+      // Parse error message from API
+      let message = "Ошибка регистрации";
+
+      if (error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+        if (typeof detail === "string") {
+          if (
+            detail.toLowerCase().includes("already exists") ||
+            detail.toLowerCase().includes("already registered") ||
+            detail.toLowerCase().includes("email is already")
+          ) {
+            message = "Пользователь с таким email уже существует";
+          } else if (detail.toLowerCase().includes("password")) {
+            message = "Пароль слишком простой. Используйте минимум 8 символов";
+          } else if (
+            detail.toLowerCase().includes("email") &&
+            detail.toLowerCase().includes("invalid")
+          ) {
+            message = "Некорректный email адрес";
+          } else {
+            message = detail;
+          }
+        } else if (Array.isArray(detail)) {
+          // Handle validation errors (FastAPI format)
+          const errors = detail.map((d) => {
+            const field = d.loc?.[d.loc.length - 1] || "";
+            const msg = d.msg || "";
+            if (field === "email") return "Некорректный email";
+            if (field === "password")
+              return "Пароль должен быть минимум 8 символов";
+            if (field === "confirm_password") return "Пароли не совпадают";
+            return msg;
+          });
+          message = errors.join(". ");
+        }
+      } else if (error.code === "ERR_NETWORK") {
+        message = "Ошибка сети. Проверьте подключение к интернету";
+      }
+
       throw new Error(message);
     }
   };

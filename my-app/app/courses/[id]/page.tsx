@@ -8,7 +8,8 @@ import { ModuleContent } from "@/src/components/course/ModuleContent";
 import { Button } from "@/src/components/ui/Button";
 import { Badge } from "@/src/components/ui/Badge";
 import { Rating } from "@/src/components/ui/Rating";
-import { courses } from "@/src/data/courses";
+import { coursesAPI, modulesAPI } from "@/src/lib/api";
+import type { CourseWithModules, ModuleWithLessons } from "@/src/types/api";
 
 interface PageProps {
   params: Promise<{
@@ -86,29 +87,43 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
     new Set()
   );
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
-      const params = await paramsPromise;
-      setCourseId(params.id);
-      const foundCourse = courses.find((c) => c.id === params.id);
-      setCourse(foundCourse);
+      try {
+        const params = await paramsPromise;
+        setCourseId(params.id);
 
-      const paid = localStorage.getItem(`course_paid_${params.id}`);
-      if (paid === "true") {
-        setIsPaid(true);
-      }
+        // Fetch course from API
+        const fetchedCourse = await coursesAPI.getWithModules(
+          parseInt(params.id)
+        );
+        setCourse(fetchedCourse);
 
-      const lastModule = localStorage.getItem(`course_${params.id}_lastModule`);
-      if (lastModule && foundCourse) {
-        const moduleIdx = parseInt(lastModule);
-        if (moduleIdx >= 0 && moduleIdx < foundCourse.syllabus.length) {
-          const moduleId = foundCourse.syllabus[moduleIdx].id;
-          setSelectedModuleId(moduleId);
-          setExpandedModules(new Set([moduleId]));
+        const paid = localStorage.getItem(`course_paid_${params.id}`);
+        if (paid === "true") {
+          setIsPaid(true);
         }
+
+        const lastModule = localStorage.getItem(
+          `course_${params.id}_lastModule`
+        );
+        if (lastModule && fetchedCourse.modules.length > 0) {
+          const moduleIdx = parseInt(lastModule);
+          if (moduleIdx >= 0 && moduleIdx < fetchedCourse.modules.length) {
+            const moduleId = String(fetchedCourse.modules[moduleIdx].id);
+            setSelectedModuleId(moduleId);
+            setExpandedModules(new Set([moduleId]));
+          }
+        }
+        setError(null);
+      } catch (err) {
+        console.error("Failed to fetch course:", err);
+        setError("Не удалось загрузить курс");
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     })();
   }, [paramsPromise]);
 
@@ -243,7 +258,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
 
                   <div className="flex flex-wrap items-center gap-6 mb-8">
                     <div className="flex items-center gap-2">
-                      <Rating rating={course.rating} size="sm" />
+                      <Rating rating={course.rating} />
                       <span className="text-white font-medium">
                         {course.rating}
                       </span>

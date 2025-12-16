@@ -51,7 +51,7 @@ export const Sidebar: React.FC = () => {
       ),
     },
     {
-      label: "Мои курсы",
+      label: "Все курсы",
       href: "/my-courses",
       icon: (
         <svg
