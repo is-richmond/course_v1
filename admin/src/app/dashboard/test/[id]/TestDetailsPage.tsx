@@ -78,7 +78,7 @@ const TestDetailsPage = ({ testId }: TestDetailsPageProps) => {
           title: 'Test Deleted',
           message: 'Test deleted successfully'
         });
-        router.push('/dashboard/tests');
+        router.push('/dashboard/test');
       } else {
         await questionApi.deleteQuestion(deleteTarget.id);
         addToast({
@@ -152,7 +152,7 @@ const TestDetailsPage = ({ testId }: TestDetailsPageProps) => {
         <div className="text-center">
           <p className="text-gray-500 text-lg">Test not found</p>
           <Button 
-            onClick={() => router.push('/dashboard/tests')}
+            onClick={() => router.push('/dashboard/test')}
             className="mt-4"
           >
             Back to Tests
@@ -171,7 +171,7 @@ const TestDetailsPage = ({ testId }: TestDetailsPageProps) => {
             <div className="flex items-start space-x-4">
               <Button
                 variant="ghost"
-                onClick={() => router.push('/dashboard/tests')}
+                onClick={() => router.push('/dashboard/test')}
                 className="mt-1"
               >
                 <ArrowLeft className="w-4 h-4" />

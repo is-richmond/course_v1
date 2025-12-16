@@ -59,11 +59,11 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
       newErrors.question_text = 'Question text is required';
     }
 
-    if (formData.points < 0) {
+    if (formData.points !== undefined && formData.points < 0) {
       newErrors.points = 'Points must be positive';
     }
 
-    if (formData.order_index < 0) {
+    if (formData.order_index !== undefined && formData.order_index < 0) {
       newErrors.order_index = 'Order index must be positive';
     }
 

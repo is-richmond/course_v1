@@ -146,7 +146,7 @@ const EditTestPage = ({ testId }: EditTestPageProps) => {
         <div className="text-center">
           <p className="text-gray-500 text-lg">Test not found</p>
           <Button 
-            onClick={() => router.push('/dashboard/tests')}
+            onClick={() => router.push('/dashboard/test')}
             className="mt-4"
           >
             Back to Tests

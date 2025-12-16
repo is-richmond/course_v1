@@ -9,7 +9,7 @@ import {
   ToastMessage,
   UserTableColumn 
 } from '@/lib/types/types';
-import { userApi, authApi } from '@/lib/api/api';
+import { userApi, authApi, enrollmentApi, courseApi } from '@/lib/api/api';
 
 // Import UI components
 import { Button } from '@/components/ui/button';
@@ -33,21 +33,38 @@ import {
   ChevronRight,
   CheckCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  BookOpen,
+  Plus,
+  X
 } from 'lucide-react';
 
-// Определяем отдельный тип для загрузки пользователей
+// Types
 interface UserLoadingState {
   users: boolean;
   create: boolean;
   update: boolean;
   delete: boolean;
   grantAdmin: boolean;
+  courses: boolean;
+  enrollment: boolean;
+}
+
+interface Course {
+  id: string;
+  title: string;
+  description?: string;
+  author_id?: string;
+}
+
+interface UserWithCourses extends User {
+  enrolledCoursesList?: Course[];
 }
 
 const UsersPage: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserWithCourses[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<UserWithCourses[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [filters, setFilters] = useState<UserFilters>({
     search: '',
   });
@@ -62,12 +79,16 @@ const UsersPage: React.FC = () => {
     update: false,
     delete: false,
     grantAdmin: false,
+    courses: false,
+    enrollment: false,
   });
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserWithCourses | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // Form states
@@ -87,13 +108,14 @@ const UsersPage: React.FC = () => {
   });
 
   const tableColumns: UserTableColumn[] = [
+    { key: 'first_name', label: 'Full Name', sortable: true, width: '120px' },
     { key: 'email', label: 'Email', sortable: true },
     { key: 'is_active', label: 'Status', sortable: true, width: '120px' },
     { key: 'is_superuser', label: 'Role', sortable: true, width: '120px' },
     { key: 'is_verified', label: 'Verified', sortable: true, width: '100px' },
-    { key: 'enrolled_courses', label: 'Enrolled Courses', sortable: true, width: '100px' },
+    { key: 'enrolled_courses', label: 'Enrolled Courses', sortable: true, width: '150px' },
     { key: 'created_at', label: 'Created', sortable: true, width: '140px' },
-    { key: 'actions', label: 'Actions', width: '200px' },
+    { key: 'actions', label: 'Actions', width: '250px' },
   ];
 
   // Toast management
@@ -107,12 +129,53 @@ const UsersPage: React.FC = () => {
     }, toast.duration || 5000);
   }, []);
 
-  // Fetch users
+  // Fetch courses
+  const fetchCourses = useCallback(async () => {
+    setLoading(prev => ({ ...prev, courses: true }));
+    try {
+      const data = await courseApi.getAllCourses(0, 1000);
+      setCourses(data);
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+      addToast({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to fetch courses',
+      });
+    } finally {
+      setLoading(prev => ({ ...prev, courses: false }));
+    }
+  }, [addToast]);
+
+  // Fetch users with course details
   const fetchUsers = useCallback(async () => {
     setLoading(prev => ({ ...prev, users: true }));
     try {
       const data = await userApi.getUsers(pagination.page, pagination.limit);
-      setUsers(data);
+      
+      // Fetch course details for each user
+      const usersWithCourses = await Promise.all(
+        data.map(async (user) => {
+          if (user.enrolled_courses && user.enrolled_courses.length > 0) {
+            try {
+              const courseDetails = await Promise.all(
+                user.enrolled_courses.map(courseId => 
+                  courseApi.getCourse(parseInt(courseId)).catch(() => null)
+                )
+              );
+              return {
+                ...user,
+                enrolledCoursesList: courseDetails.filter(c => c !== null)
+              };
+            } catch {
+              return { ...user, enrolledCoursesList: [] };
+            }
+          }
+          return { ...user, enrolledCoursesList: [] };
+        })
+      );
+      
+      setUsers(usersWithCourses);
       setPagination(prev => ({ ...prev, total: data.length }));
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -151,10 +214,64 @@ const UsersPage: React.FC = () => {
     setFilteredUsers(filtered);
   }, [users, filters]);
 
-  // Load users on mount and pagination change
+  // Load data on mount
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
+    fetchCourses();
+  }, [fetchUsers, fetchCourses]);
+
+  // Enroll user in course
+  const handleEnrollUser = async (userId: string, courseId: string) => {
+    setLoading(prev => ({ ...prev, enrollment: true }));
+    try {
+      await enrollmentApi.enrollInCourse(courseId);
+      addToast({
+        type: 'success',
+        title: 'Enrollment Success',
+        message: 'User enrolled in course successfully',
+      });
+      fetchUsers();
+    } catch (error) {
+      console.error('Error enrolling user:', error);
+      addToast({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to enroll user in course',
+      });
+    } finally {
+      setLoading(prev => ({ ...prev, enrollment: false }));
+    }
+  };
+
+  // Unenroll user from course
+  const handleUnenrollUser = async (courseId: string) => {
+    setLoading(prev => ({ ...prev, enrollment: true }));
+    try {
+      await enrollmentApi.unenrollFromCourse(courseId);
+      addToast({
+        type: 'success',
+        title: 'Unenrollment Success',
+        message: 'User unenrolled from course successfully',
+      });
+      fetchUsers();
+    } catch (error) {
+      console.error('Error unenrolling user:', error);
+      addToast({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to unenroll user from course',
+      });
+    } finally {
+      setLoading(prev => ({ ...prev, enrollment: false }));
+    }
+  };
+
+  // Open enrollment modal
+  const openEnrollModal = (user: UserWithCourses) => {
+    setSelectedUser(user);
+    setSelectedCourseId('');
+    setIsEnrollModalOpen(true);
+  };
 
   // Create user
   const handleCreateUser = async (e: React.FormEvent) => {
@@ -270,7 +387,7 @@ const UsersPage: React.FC = () => {
   };
 
   // Open edit modal
-  const openEditModal = (user: User) => {
+  const openEditModal = (user: UserWithCourses) => {
     setSelectedUser(user);
     setEditForm({
       email: user.email,
@@ -290,6 +407,12 @@ const UsersPage: React.FC = () => {
     });
   };
 
+  // Get available courses for user (not enrolled)
+  const getAvailableCourses = (user: UserWithCourses) => {
+    const enrolledIds = user.enrolled_courses || [];
+    return courses.filter(course => !enrolledIds.includes(course.id));
+  };
+
   return (
     <div className="w-full min-h-full bg-gray-50">
       <div className="w-full h-full">
@@ -298,7 +421,7 @@ const UsersPage: React.FC = () => {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-              <p className="text-gray-600">Manage users, roles, and permissions</p>
+              <p className="text-gray-600">Manage users, roles, permissions and course enrollments</p>
             </div>
             <Button 
               onClick={() => setIsCreateModalOpen(true)}
@@ -360,17 +483,15 @@ const UsersPage: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white">
+            <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
               <CardContent className="p-6">
                 <div className="flex items-center">
                   <div className="p-3 bg-white/20 rounded-lg">
-                    <AlertCircle className="w-8 h-8" />
+                    <BookOpen className="w-8 h-8" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-yellow-100">Verified</p>
-                    <p className="text-3xl font-bold">
-                      {users.filter(u => u.is_verified).length}
-                    </p>
+                    <p className="text-sm font-medium text-orange-100">Total Courses</p>
+                    <p className="text-3xl font-bold">{courses.length}</p>
                   </div>
                 </div>
               </CardContent>
@@ -494,6 +615,7 @@ const UsersPage: React.FC = () => {
                     ) : (
                       filteredUsers.map((user) => (
                         <TableRow key={user.id} className="hover:bg-gray-50 transition-colors">
+                          <TableCell className="font-medium">{user.first_name} {user.last_name}</TableCell>
                           <TableCell className="font-medium">{user.email}</TableCell>
                           <TableCell>
                             <Badge 
@@ -517,6 +639,22 @@ const UsersPage: React.FC = () => {
                             ) : (
                               <XCircle className="w-5 h-5 text-red-500" />
                             )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                                {user.enrolled_courses?.length || 0}
+                              </Badge>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openEnrollModal(user)}
+                                className="h-6 px-2 text-xs"
+                                title="Manage Enrollments"
+                              >
+                                <BookOpen className="w-3 h-3" />
+                              </Button>
+                            </div>
                           </TableCell>
                           <TableCell className="text-sm text-gray-600">
                             {formatDate(user.created_at)}
@@ -608,6 +746,103 @@ const UsersPage: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Enrollment Management Modal */}
+        <Dialog open={isEnrollModalOpen} onOpenChange={setIsEnrollModalOpen}>
+          <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Manage Course Enrollments</DialogTitle>
+              {selectedUser && (
+                <p className="text-sm text-gray-500">{selectedUser.email}</p>
+              )}
+            </DialogHeader>
+            
+            {selectedUser && (
+              <div className="space-y-6">
+                {/* Enrolled Courses */}
+                <div>
+                  <h3 className="font-semibold mb-3 flex items-center">
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    Enrolled Courses ({selectedUser.enrolledCoursesList?.length || 0})
+                  </h3>
+                  {selectedUser.enrolledCoursesList && selectedUser.enrolledCoursesList.length > 0 ? (
+                    <div className="space-y-2">
+                      {selectedUser.enrolledCoursesList.map((course) => (
+                        <div 
+                          key={course.id} 
+                          className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200"
+                        >
+                          <div>
+                            <p className="font-medium text-gray-900">{course.title}</p>
+                            {course.description && (
+                              <p className="text-sm text-gray-600">{course.description}</p>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleUnenrollUser(course.id)}
+                            disabled={loading.enrollment}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 italic">No enrolled courses</p>
+                  )}
+                </div>
+
+                {/* Enroll in New Course */}
+                <div>
+                  <h3 className="font-semibold mb-3 flex items-center">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Enroll in New Course
+                  </h3>
+                  <div className="space-y-3">
+                    <Select 
+                      value={selectedCourseId}
+                      onValueChange={setSelectedCourseId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a course" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getAvailableCourses(selectedUser).length === 0 ? (
+                          <SelectItem value="none" disabled>No available courses</SelectItem>
+                        ) : (
+                          getAvailableCourses(selectedUser).map((course) => (
+                            <SelectItem key={course.id} value={course.id}>
+                              {course.title}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      onClick={() => {
+                        if (selectedCourseId) {
+                          handleEnrollUser(selectedUser.id, selectedCourseId);
+                          setSelectedCourseId('');
+                        }
+                      }}
+                      disabled={!selectedCourseId || loading.enrollment}
+                      className="w-full"
+                    >
+                      {loading.enrollment ? 'Enrolling...' : 'Enroll in Course'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <DialogFooter>
+              <Button onClick={() => setIsEnrollModalOpen(false)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Create User Modal */}
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
@@ -723,9 +958,17 @@ const UsersPage: React.FC = () => {
             </DialogHeader>
             {selectedUser && (
               <div className="space-y-4">
+                <div> 
+                  <Label className="text-gray-500">Full Name</Label>
+                  <p className="font-medium">{selectedUser.first_name} {selectedUser.last_name}</p>
+                </div>
                 <div>
                   <Label className="text-gray-500">Email</Label>
                   <p className="font-medium">{selectedUser.email}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-500">Number</Label>
+                  <p className="font-medium">{selectedUser.phone_number}</p>
                 </div>
                 <div>
                   <Label className="text-gray-500">Status</Label>
@@ -753,7 +996,16 @@ const UsersPage: React.FC = () => {
                 </div>
                 <div>
                   <Label className="text-gray-500">Enrolled Courses</Label>
-                  <p className="font-medium">{selectedUser.enrolled_courses.length}</p>
+                  <p className="font-medium">{selectedUser.enrolled_courses?.length || 0}</p>
+                  {selectedUser.enrolledCoursesList && selectedUser.enrolledCoursesList.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {selectedUser.enrolledCoursesList.map((course) => (
+                        <Badge key={course.id} variant="outline" className="mr-1">
+                          {course.title}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -817,3 +1069,4 @@ const UsersPage: React.FC = () => {
 };
 
 export default UsersPage;
+                            

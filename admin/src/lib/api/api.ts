@@ -2,7 +2,8 @@ import axios from '@/config/axiosConfig';
 import { 
   User, 
   UserCreate, 
-  UserUpdate, 
+  UserUpdate,
+  UserProfileUpdate,
   TokenResponse, 
   LoginRequest, 
   RefreshTokenRequest,
@@ -97,6 +98,12 @@ export const userApi = {
   // Update current user
   updateCurrentUser: async (userData: UserUpdate): Promise<User> => {
     const response = await axios.patch('/user/me', userData);
+    return response.data;
+  },
+
+  // Update current user profile (with detailed info)
+  updateMyProfile: async (userId: string, userData: UserProfileUpdate): Promise<User> => {
+    const response = await axios.patch(`/user/${userId}`, userData);
     return response.data;
   },
 

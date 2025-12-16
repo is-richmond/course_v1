@@ -1,6 +1,9 @@
 export interface User {
   id: string;
   email: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  phone_number?: string | null;
   is_active: boolean;
   is_superuser: boolean;
   is_verified: boolean;
@@ -10,20 +13,32 @@ export interface User {
 }
 
 export interface UserCreate {
-  email:  string;
+  email: string;
   password: string;
 }
 
 export interface UserUpdate {
-  email?:  string;
+  email?: string;
+  password?: string;
+  first_name?: string;
+  last_name?: string;
+  phone_number?: string;
   is_active?: boolean;
   is_superuser?: boolean;
   is_verified?: boolean;
 }
 
+export interface UserProfileUpdate {
+  email?: string;
+  password?: string;
+  first_name?: string;
+  last_name?: string;
+  phone_number?: string;
+}
+
 export interface TokenResponse {
   access_token: string;
-  refresh_token:  string;
+  refresh_token: string;
   token_type: string;
 }
 
@@ -61,7 +76,7 @@ export interface MyCoursesResponse {
 // UI State types
 export interface UserFilters {
   search: string;
-  is_active?:  boolean;
+  is_active?: boolean;
   is_superuser?: boolean;
   is_verified?: boolean;
 }
@@ -105,13 +120,10 @@ export interface ToastMessage {
   type: 'success' | 'error' | 'warning' | 'info';
   title: string;
   message: string;
-  duration?:  number;
+  duration?: number;
 }
 
-
-// types.ts - Course Management Types
-
-// Enums
+// Course Management Types
 export enum CourseStatus {
   DRAFT = 'draft',
   PUBLISHED = 'published',
@@ -130,7 +142,6 @@ export enum MediaType {
   DOCUMENT = 'document'
 }
 
-// Course Types
 export interface Course {
   id: number;
   title: string;
@@ -162,7 +173,6 @@ export interface CourseWithModules extends Course {
   modules: CourseModule[];
 }
 
-// Module Types
 export interface CourseModule {
   id: number;
   title: string;
@@ -185,7 +195,6 @@ export interface ModuleWithLessons extends CourseModule {
   lessons: Lesson[];
 }
 
-// Lesson Types
 export interface Lesson {
   id: number;
   title: string;
@@ -214,7 +223,6 @@ export interface LessonWithMedia extends Lesson {
   media: LessonMedia[];
 }
 
-// Media Types
 export interface LessonMedia {
   id: number;
   media_url: string;
@@ -236,19 +244,12 @@ export interface LessonMediaUpdate {
   order_index?: number;
 }
 
-// UI State Types
 export interface CourseFilters {
   search: string;
   status?: CourseStatus;
   author_id?: number;
   minPrice?: number;
   maxPrice?: number;
-}
-
-export interface PaginationState {
-  page: number;
-  limit: number;
-  total: number;
 }
 
 export interface CourseTableColumn {
@@ -268,15 +269,6 @@ export interface CourseLoadingState {
   delete: boolean;
 }
 
-export interface ToastMessage {
-  id: string;
-  type: 'success' | 'error' | 'warning' | 'info';
-  title: string;
-  message: string;
-  duration?: number;
-}
-
-// Form Data Types
 export interface CourseFormData {
   title: string;
   description: string;
@@ -311,7 +303,6 @@ export interface MediaFormData {
   order_index: number;
 }
 
-// Progress Types
 export interface UserProgress {
   id: number;
   user_id: number;
@@ -333,19 +324,11 @@ export interface UserProgressUpdate {
   completed_at?: string;
 }
 
-// API Response Types
-export interface ApiError {
-  message: string;
-  status?: number;
-  detail?: string;
-}
-
 export interface ApiResponse<T> {
   data: T;
   message?: string;
 }
 
-// Statistics Types
 export interface CourseStats {
   totalCourses: number;
   publishedCourses: number;
