@@ -1,200 +1,259 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Header } from "@/src/components/layout/Header";
 import { Footer } from "@/src/components/layout/Footer";
-import { Tabs } from "@/src/components/ui/Tabs";
-import { Card, CardContent } from "@/src/components/ui/Card";
 import { Button } from "@/src/components/ui/Button";
-import { User, Mail, Phone, MapPin, Calendar, Award, Edit2, Download } from "lucide-react";
+import { Input } from "@/src/components/ui/Input";
+import { Label } from "@/src/components/ui/Label";
+import { Card, CardContent } from "@/src/components/ui/Card";
+import { useAuth } from "@/src/contexts/AuthContext";
+import { User, Mail, Phone, MapPin, Calendar, Award, Edit2, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
 export default function ProfilePage() {
+  const { user, isLoading, updateProfile } = useAuth();
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [formData, setFormData] = useState({
+    first_name: user?.first_name || "",
+    last_name: user?.last_name || "",
+    phone_number: user?.phone_number || "",
+  });
 
-  const tabItems = [
-    {
-      id: "profile",
-      label: "Профиль",
-      content: (
-        <div className="p-6 space-y-6">
-          {/* Profile Header */}
-          <div className="flex items-start gap-6 pb-6 border-b border-gray-200">
-            <div className="w-24 h-24 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white text-4xl font-bold">
-              ИП
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-gray-900">Иван Петров</h2>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setIsEditing(!isEditing)}
-                  className="flex items-center gap-2"
-                >
-                  <Edit2 size={16} />
-                  {isEditing ? "Сохранить" : "Редактировать"}
-                </Button>
-              </div>
-              <p className="text-gray-600 mb-4">Студент платформы MediCourse</p>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center gap-2 text-gray-700">
-                  <Mail size={16} className="text-gray-400" />
-                  <span>ivan.petrov@example.com</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-700">
-                  <Phone size={16} className="text-gray-400" />
-                  <span>+7 (999) 999-99-99</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-700">
-                  <MapPin size={16} className="text-gray-400" />
-                  <span>Казахстан, Алматы</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-700">
-                  <Calendar size={16} className="text-gray-400" />
-                  <span>Член с декабря 2024</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Profile Stats */}
-          <div className="grid grid-cols-3 gap-4">
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <div className="text-3xl font-bold text-blue-600 mb-1">4</div>
-                <p className="text-gray-600 text-sm">Активных курсов</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <div className="text-3xl font-bold text-green-600 mb-1">2</div>
-                <p className="text-gray-600 text-sm">Завершённых</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <div className="text-3xl font-bold text-purple-600 mb-1">2</div>
-                <p className="text-gray-600 text-sm">Сертификатов</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Bio */}
-          <Card>
-            <CardContent className="pt-6">
-              <h3 className="font-semibold text-gray-900 mb-3">О себе</h3>
-              {isEditing ? (
-                <textarea
-                  defaultValue="Врач-кардиолог с 10-летним опытом. Занимаюсь повышением квалификации и изучением новых методик в кардиологии."
-                  className="w-full border border-gray-300 rounded-lg p-3 text-gray-700 resize-none"
-                  rows={4}
-                />
-              ) : (
-                <p className="text-gray-700">
-                  Врач-кардиолог с 10-летним опытом. Занимаюсь повышением квалификации и
-                  изучением новых методик в кардиологии.
-                </p>
-              )}
-            </CardContent>
-          </Card>
+  if (isLoading) {
+    return (
+      <>
+        <Header />
+        <div className="min-h-[calc(100vh-300px)] flex items-center justify-center">
+          <div className="text-gray-600">Загрузка...</div>
         </div>
-      ),
-    },
-    {
-      id: "certificates",
-      label: "Сертификаты",
-      content: (
-        <div className="p-6 space-y-4">
-          {/* Certificate 1 */}
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-yellow-300 to-orange-400 rounded-lg flex items-center justify-center">
-                    <Award size={32} className="text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 mb-1">Кардиология для практикующих врачей</h3>
-                    <p className="text-sm text-gray-600 mb-2">Выдан 15 ноября 2024</p>
-                    <p className="text-xs text-gray-500">Учебный часов: 40</p>
-                  </div>
-                </div>
-                <Button size="sm" variant="outline" className="flex items-center gap-2">
-                  <Download size={16} />
-                  Скачать
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        <Footer />
+      </>
+    );
+  }
 
-          {/* Certificate 2 */}
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-yellow-300 to-orange-400 rounded-lg flex items-center justify-center">
-                    <Award size={32} className="text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 mb-1">Основы скорой медицинской помощи</h3>
-                    <p className="text-sm text-gray-600 mb-2">Выдан 10 октября 2024</p>
-                    <p className="text-xs text-gray-500">Учебный часов: 32</p>
-                  </div>
-                </div>
-                <Button size="sm" variant="outline" className="flex items-center gap-2">
-                  <Download size={16} />
-                  Скачать
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      ),
-    },
-    {
-      id: "history",
-      label: "История обучения",
-      content: (
-        <div className="p-6 space-y-4">
-          <div className="space-y-3">
-            {[
-              { action: "Завершил курс", course: "Кардиология для практикующих врачей", date: "15 ноября 2024" },
-              { action: "Начал курс", course: "Современная диагностика", date: "1 ноября 2024" },
-              { action: "Завершил модуль", course: "Основы скорой медицинской помощи", date: "25 октября 2024" },
-              { action: "Зарегистрировался на платформе", course: "", date: "20 октября 2024" },
-            ].map((item, idx) => (
-              <Card key={idx}>
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Award size={20} className="text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{item.action}</p>
-                      {item.course && <p className="text-sm text-gray-600">{item.course}</p>}
-                    </div>
-                    <p className="text-sm text-gray-500">{item.date}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+  if (!user) {
+    return (
+      <>
+        <Header />
+        <div className="min-h-[calc(100vh-300px)] flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-gray-600 mb-4">Требуется авторизация</p>
+            <Button onClick={() => router.push("/auth/login")}>
+              Перейти к входу
+            </Button>
           </div>
         </div>
-      ),
-    },
-  ];
+        <Footer />
+      </>
+    );
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    setMessage(null);
+    try {
+      await updateProfile({
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        phone_number: formData.phone_number,
+      });
+      setMessage({ type: "success", text: "Профиль успешно обновлен" });
+      setIsEditing(false);
+      setTimeout(() => setMessage(null), 3000);
+    } catch (error: any) {
+      setMessage({ type: "error", text: error.message });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const getInitials = (firstName?: string, lastName?: string) => {
+    if (!firstName && !lastName) return "U";
+    return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
+  };
 
   return (
-    <div className="bg-white min-h-screen flex flex-col">
+    <>
       <Header />
+      <div className="min-h-[calc(100vh-300px)] bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <Card className="mb-6">
+            <CardContent>
+              <div className="p-6 space-y-6">
+                {/* Profile Header */}
+                <div className="flex items-start gap-6 pb-6 border-b border-gray-200">
+                  <div className="w-24 h-24 bg-linear-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white text-4xl font-bold">
+                    {getInitials(user.first_name, user.last_name)}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-2xl font-bold text-gray-900">
+                        {user.first_name} {user.last_name}
+                      </h2>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          if (isEditing) {
+                            handleSave();
+                          } else {
+                            setIsEditing(true);
+                          }
+                        }}
+                        disabled={isSaving}
+                        className="flex items-center gap-2"
+                      >
+                        {isSaving ? (
+                          <>
+                            <Loader2 size={16} className="animate-spin" />
+                            Сохранение...
+                          </>
+                        ) : (
+                          <>
+                            <Edit2 size={16} />
+                            {isEditing ? "Сохранить" : "Редактировать"}
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-gray-600 mb-4">
+                      {user.is_superuser ? "Администратор" : "Студент"} платформы MediCourse
+                    </p>
 
-      <main className="flex-1">
-        <div className="max-w-4xl mx-auto px-6 py-8">
-          <Tabs items={tabItems} defaultTab="profile" />
+                    {message && (
+                      <div className={`flex items-center gap-2 p-3 rounded-lg mb-4 ${
+                        message.type === "success"
+                          ? "bg-green-50 text-green-700"
+                          : "bg-red-50 text-red-700"
+                      }`}>
+                        {message.type === "success" ? (
+                          <CheckCircle2 size={16} />
+                        ) : (
+                          <AlertCircle size={16} />
+                        )}
+                        {message.text}
+                      </div>
+                    )}
+
+                    {isEditing ? (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="first_name" className="text-sm">
+                              Имя
+                            </Label>
+                            <Input
+                              id="first_name"
+                              name="first_name"
+                              value={formData.first_name}
+                              onChange={handleChange}
+                              disabled={isSaving}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="last_name" className="text-sm">
+                              Фамилия
+                            </Label>
+                            <Input
+                              id="last_name"
+                              name="last_name"
+                              value={formData.last_name}
+                              onChange={handleChange}
+                              disabled={isSaving}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <Label htmlFor="phone_number" className="text-sm">
+                            Номер телефона
+                          </Label>
+                          <Input
+                            id="phone_number"
+                            name="phone_number"
+                            value={formData.phone_number}
+                            onChange={handleChange}
+                            disabled={isSaving}
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => setIsEditing(false)}
+                            disabled={isSaving}
+                            variant="outline"
+                          >
+                            Отменить
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="flex items-center gap-2 text-gray-700">
+                          <Mail size={16} className="text-gray-400" />
+                          <span>{user.email}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-700">
+                          <Phone size={16} className="text-gray-400" />
+                          <span>{user.phone_number || "Не указан"}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-700">
+                          <Calendar size={16} className="text-gray-400" />
+                          <span>
+                            Зарегистрирован:
+                            {new Date(user.created_at).toLocaleDateString("ru-RU")}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-700">
+                          <Award size={16} className="text-gray-400" />
+                          <span>
+                            {user.enrolled_courses?.length || 0} курсов записано
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Action Links */}
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-1">
+            <Link href="/auth/change-password" className="w-full">
+              <Card className="cursor-pointer hover:shadow-lg transition-shadow h-full">
+                <CardContent className="p-6">
+                  <h3 className="font-semibold text-gray-900 mb-2">Смена пароля</h3>
+                  <p className="text-sm text-gray-600">Обновите пароль для большей безопасности</p>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/my-courses" className="w-full">
+              <Card className="cursor-pointer hover:shadow-lg transition-shadow h-full">
+                <CardContent className="p-6">
+                  <h3 className="font-semibold text-gray-900 mb-2">Мои курсы</h3>
+                  <p className="text-sm text-gray-600">
+                    {user.enrolled_courses?.length || 0} активных курсов
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
         </div>
-      </main>
-
+      </div>
       <Footer />
-    </div>
+    </>
   );
 }
