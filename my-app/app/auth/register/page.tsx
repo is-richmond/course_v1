@@ -7,7 +7,13 @@ import { useAuth } from "@/src/contexts/AuthContext";
 import { Button } from "@/src/components/ui/Button";
 import { Input } from "@/src/components/ui/Input";
 import { Label } from "@/src/components/ui/Label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/Card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/Card";
 import { AlertCircle, Loader2 } from "lucide-react";
 
 export default function RegisterPage() {
@@ -62,24 +68,31 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white py-8">
+    // Responsive container with padding for mobile
+    <div className="min-h-screen flex items-center justify-center bg-white px-4 sm:px-6 py-6 sm:py-8">
+      {/* Card with responsive width */}
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-2">
-          <CardTitle className="text-2xl">Регистрация</CardTitle>
-          <CardDescription>Создайте новый аккаунт для начала обучения</CardDescription>
+        <CardHeader className="space-y-1 sm:space-y-2 px-4 sm:px-6 pt-4 sm:pt-6">
+          <CardTitle className="text-xl sm:text-2xl">Регистрация</CardTitle>
+          <CardDescription className="text-sm sm:text-base">
+            Создайте новый аккаунт для начала обучения
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
             {error && (
-              <div className="flex gap-3 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              <div className="flex gap-2 sm:gap-3 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs sm:text-sm">
                 <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
                 <div>{error}</div>
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="first_name">Имя</Label>
+            {/* Responsive grid: stacked on mobile, side-by-side on sm+ */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div className="space-y-1.5 sm:space-y-2">
+                <Label htmlFor="first_name" className="text-sm">
+                  Имя
+                </Label>
                 <Input
                   id="first_name"
                   name="first_name"
@@ -88,10 +101,13 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   disabled={isLoading}
                   required
+                  className="min-h-[44px] sm:min-h-[40px] text-base sm:text-sm"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="last_name">Фамилия</Label>
+              <div className="space-y-1.5 sm:space-y-2">
+                <Label htmlFor="last_name" className="text-sm">
+                  Фамилия
+                </Label>
                 <Input
                   id="last_name"
                   name="last_name"
@@ -100,12 +116,15 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   disabled={isLoading}
                   required
+                  className="min-h-[44px] sm:min-h-[40px] text-base sm:text-sm"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label htmlFor="email" className="text-sm">
+                Email
+              </Label>
               <Input
                 id="email"
                 name="email"
@@ -115,11 +134,14 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 disabled={isLoading}
                 required
+                className="min-h-[44px] sm:min-h-[40px] text-base sm:text-sm"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="phone_number">Номер телефона</Label>
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label htmlFor="phone_number" className="text-sm">
+                Номер телефона
+              </Label>
               <Input
                 id="phone_number"
                 name="phone_number"
@@ -128,11 +150,14 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 disabled={isLoading}
                 required
+                className="min-h-[44px] sm:min-h-[40px] text-base sm:text-sm"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Пароль</Label>
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label htmlFor="password" className="text-sm">
+                Пароль
+              </Label>
               <Input
                 id="password"
                 name="password"
@@ -142,12 +167,15 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 disabled={isLoading}
                 required
+                className="min-h-[44px] sm:min-h-[40px] text-base sm:text-sm"
               />
               <p className="text-xs text-gray-500">Минимум 8 символов</p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirm_password">Подтвердите пароль</Label>
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label htmlFor="confirm_password" className="text-sm">
+                Подтвердите пароль
+              </Label>
               <Input
                 id="confirm_password"
                 name="confirm_password"
@@ -157,12 +185,13 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 disabled={isLoading}
                 required
+                className="min-h-[44px] sm:min-h-[40px] text-base sm:text-sm"
               />
             </div>
 
             <Button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700"
+              className="w-full bg-blue-600 hover:bg-blue-700 min-h-[48px] sm:min-h-[44px] text-sm sm:text-base"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -175,9 +204,12 @@ export default function RegisterPage() {
               )}
             </Button>
 
-            <div className="text-center text-sm">
+            <div className="text-center text-sm sm:text-base py-1">
               <span className="text-gray-600">Уже есть аккаунт? </span>
-              <Link href="/auth/login" className="text-blue-600 hover:text-blue-700 font-medium">
+              <Link
+                href="/auth/login"
+                className="text-blue-600 hover:text-blue-700 font-medium"
+              >
                 Вход
               </Link>
             </div>

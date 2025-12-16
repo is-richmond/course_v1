@@ -4,75 +4,155 @@ import { Mail, Phone, MapPin, Facebook, Linkedin, Twitter } from "lucide-react";
 
 export const Footer: React.FC = () => (
   <footer className="bg-gray-900 text-white">
-    <div className="max-w-6xl mx-auto px-6 py-16">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+    {/* Responsive container with adaptive padding */}
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-12 md:py-16">
+      {/* Responsive grid: 1 col mobile, 2 cols tablet, 4 cols desktop */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10 lg:gap-12 mb-8 sm:mb-10 md:mb-12">
         {/* Brand */}
-        <div>
-          <h3 className="text-2xl font-bold mb-4">MediCourse</h3>
-          <p className="text-gray-400">
-            Профессиональное развитие медицинских работников через качественное образование.
+        <div className="text-center sm:text-left">
+          <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">
+            MediCourse
+          </h3>
+          <p className="text-sm sm:text-base text-gray-400">
+            Профессиональное развитие медицинских работников через качественное
+            образование.
           </p>
         </div>
 
         {/* Links */}
-        <div>
-          <h4 className="font-bold mb-4">Навигация</h4>
-          <ul className="space-y-2 text-gray-400">
-            <li><Link href="/" className="hover:text-white transition">Главная</Link></li>
-            <li><Link href="#courses" className="hover:text-white transition">Курсы</Link></li>
-            <li><Link href="/about" className="hover:text-white transition">О нас</Link></li>
-            <li><Link href="/contact" className="hover:text-white transition">Контакты</Link></li>
+        <div className="text-center sm:text-left">
+          <h4 className="font-bold mb-3 sm:mb-4">Навигация</h4>
+          <ul className="space-y-2 text-gray-400 text-sm sm:text-base">
+            <li>
+              <Link
+                href="/"
+                className="hover:text-white transition inline-block py-1"
+              >
+                Главная
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="#courses"
+                className="hover:text-white transition inline-block py-1"
+              >
+                Курсы
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/about"
+                className="hover:text-white transition inline-block py-1"
+              >
+                О нас
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/contact"
+                className="hover:text-white transition inline-block py-1"
+              >
+                Контакты
+              </Link>
+            </li>
           </ul>
         </div>
 
         {/* Courses */}
-        <div>
-          <h4 className="font-bold mb-4">Популярные курсы</h4>
-          <ul className="space-y-2 text-gray-400">
-            <li><Link href="/courses/1" className="hover:text-white transition">Кардиология</Link></li>
-            <li><Link href="/courses/2" className="hover:text-white transition">Хирургия</Link></li>
-            <li><Link href="/courses/3" className="hover:text-white transition">Педиатрия</Link></li>
-            <li><Link href="/courses/4" className="hover:text-white transition">Сестринский уход</Link></li>
+        <div className="text-center sm:text-left">
+          <h4 className="font-bold mb-3 sm:mb-4">Популярные курсы</h4>
+          <ul className="space-y-2 text-gray-400 text-sm sm:text-base">
+            <li>
+              <Link
+                href="/courses/1"
+                className="hover:text-white transition inline-block py-1"
+              >
+                Кардиология
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/courses/2"
+                className="hover:text-white transition inline-block py-1"
+              >
+                Хирургия
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/courses/3"
+                className="hover:text-white transition inline-block py-1"
+              >
+                Педиатрия
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/courses/4"
+                className="hover:text-white transition inline-block py-1"
+              >
+                Сестринский уход
+              </Link>
+            </li>
           </ul>
         </div>
 
         {/* Contact */}
-        <div>
-          <h4 className="font-bold mb-4">Контакты</h4>
-          <ul className="space-y-3 text-gray-400">
-            <li className="flex items-center gap-2">
-              <Phone size={18} />
-              <a href="tel:+7-999-999-99-99" className="hover:text-white transition">
+        <div className="text-center sm:text-left">
+          <h4 className="font-bold mb-3 sm:mb-4">Контакты</h4>
+          <ul className="space-y-3 text-gray-400 text-sm sm:text-base">
+            <li className="flex items-center gap-2 justify-center sm:justify-start">
+              <Phone size={18} className="shrink-0" />
+              <a
+                href="tel:+7-999-999-99-99"
+                className="hover:text-white transition"
+              >
                 +7 (999) 999-99-99
               </a>
             </li>
-            <li className="flex items-center gap-2">
-              <Mail size={18} />
-              <a href="mailto:hello@medicourse.ru" className="hover:text-white transition">
+            <li className="flex items-center gap-2 justify-center sm:justify-start">
+              <Mail size={18} className="shrink-0" />
+              <a
+                href="mailto:hello@medicourse.ru"
+                className="hover:text-white transition"
+              >
                 hello@medicourse.ru
               </a>
             </li>
-            <li className="flex items-center gap-2">
-              <MapPin size={18} />
+            <li className="flex items-center gap-2 justify-center sm:justify-start">
+              <MapPin size={18} className="shrink-0" />
               <span>Казахстан, Алматы</span>
             </li>
           </ul>
         </div>
       </div>
 
-      {/* Divider */}
-      <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-        <p className="text-gray-400">
+      {/* Divider - responsive layout */}
+      <div className="border-t border-gray-800 pt-6 sm:pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <p className="text-gray-400 text-xs sm:text-sm text-center sm:text-left">
           © 2025 MediCourse. Все права защищены.
         </p>
+        {/* Social icons with touch-friendly sizes */}
         <div className="flex gap-4">
-          <a href="#" className="text-gray-400 hover:text-white transition">
+          <a
+            href="#"
+            className="text-gray-400 hover:text-white transition p-2 -m-2"
+            aria-label="Facebook"
+          >
             <Facebook size={20} />
           </a>
-          <a href="#" className="text-gray-400 hover:text-white transition">
+          <a
+            href="#"
+            className="text-gray-400 hover:text-white transition p-2 -m-2"
+            aria-label="LinkedIn"
+          >
             <Linkedin size={20} />
           </a>
-          <a href="#" className="text-gray-400 hover:text-white transition">
+          <a
+            href="#"
+            className="text-gray-400 hover:text-white transition p-2 -m-2"
+            aria-label="Twitter"
+          >
             <Twitter size={20} />
           </a>
         </div>

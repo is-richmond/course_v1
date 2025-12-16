@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ChatSupport } from "@/src/components/ChatSupport";
-import { Sidebar } from "@/src/components/layout/Sidebar";
+import { ResponsiveLayout } from "@/src/components/layout/ResponsiveLayout";
 import { AuthProvider } from "@/src/contexts/AuthContext";
 import "./globals.css";
 
@@ -17,7 +17,15 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "MediCourse - Медицинские курсы для врачей",
-  description: "Онлайн курсы повышения квалификации с сертификацией от практикующих врачей",
+  description:
+    "Онлайн курсы повышения квалификации с сертификацией от практикующих врачей",
+  openGraph: {
+    title: "MediCourse - Медицинские курсы для врачей",
+    description:
+      "Онлайн курсы повышения квалификации с сертификацией от практикующих врачей",
+    type: "website",
+    locale: "ru_RU",
+  },
 };
 
 export default function RootLayout({
@@ -32,12 +40,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <AuthProvider>
-          <div className="flex">
-            <Sidebar />
-            <main className="flex-1 ml-64">
-              {children}
-            </main>
-          </div>
+          <ResponsiveLayout>{children}</ResponsiveLayout>
           <ChatSupport />
         </AuthProvider>
       </body>

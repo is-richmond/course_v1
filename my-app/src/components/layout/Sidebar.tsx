@@ -12,7 +12,12 @@ interface NavItem {
   children?: NavItem[];
 }
 
-export const Sidebar: React.FC = () => {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout, isLoading } = useAuth();
@@ -22,6 +27,13 @@ export const Sidebar: React.FC = () => {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    if (onClose) {
+      onClose();
+    }
+  }, [pathname]);
 
   const toggleExpand = (label: string) => {
     setExpandedItems((prev) =>
@@ -209,142 +221,173 @@ export const Sidebar: React.FC = () => {
     router.push("/auth/login");
   };
 
-  return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-blue-900 via-blue-800 to-blue-900 text-white shadow-2xl z-40 overflow-y-auto">
-      {/* Logo */}
-      <div className="sticky top-0 bg-blue-950/60 backdrop-blur px-6 py-6 border-b border-blue-700">
-        <Link href="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-lg">
-            <span className="text-blue-900 font-bold text-lg">M</span>
-          </div>
-          <div>
-            <div className="font-bold text-lg">MediCourse</div>
-            <div className="text-xs text-blue-300">Обучение</div>
-          </div>
-        </Link>
-      </div>
+  // Determine if this is being rendered as mobile drawer
+  const isMobileMode = typeof isOpen !== "undefined";
 
-      {/* Navigation */}
-      <nav className="px-3 py-6 space-y-1">
-        {navItems.map((item) => (
-          <div key={item.label}>
-            {item.href ? (
-              <Link
-                href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                  isActive(item.href)
-                    ? "bg-blue-600 text-white shadow-lg"
-                    : "text-blue-100 hover:bg-blue-700/60"
-                }`}
-              >
-                {item.icon}
-                <span className="font-semibold">{item.label}</span>
-              </Link>
-            ) : (
-              <>
-                <button
-                  onClick={() => toggleExpand(item.label)}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-blue-100 hover:bg-blue-700/60 hover:text-white"
+  return (
+    <>
+      {/* Overlay for mobile */}
+      {isMobileMode && isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={`
+          fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-blue-900 via-blue-800 to-blue-900 
+          text-white shadow-2xl z-50 overflow-y-auto
+          transition-transform duration-300 ease-in-out
+          ${
+            isMobileMode
+              ? isOpen
+                ? "translate-x-0"
+                : "-translate-x-full"
+              : "hidden lg:block"
+          }
+        `}
+      >
+        {/* Close button for mobile */}
+        {isMobileMode && (
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 text-white/70 hover:text-white lg:hidden"
+            aria-label="Закрыть меню"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 256 256"
+            >
+              <path
+                fill="currentColor"
+                d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"
+              />
+            </svg>
+          </button>
+        )}
+
+        {/* Logo */}
+        <div className="sticky top-0 bg-blue-950/60 backdrop-blur px-6 py-6 border-b border-blue-700">
+          <Link href="/" className="flex items-center gap-3" onClick={onClose}>
+            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-lg">
+              <span className="text-blue-900 font-bold text-lg">M</span>
+            </div>
+            <div>
+              <div className="font-bold text-lg">MediCourse</div>
+              <div className="text-xs text-blue-300">Обучение</div>
+            </div>
+          </Link>
+        </div>
+
+        {/* Navigation */}
+        <nav className="px-3 py-6 space-y-1">
+          {navItems.map((item) => (
+            <div key={item.label}>
+              {item.href ? (
+                <Link
+                  href={item.href}
+                  onClick={onClose}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                    isActive(item.href)
+                      ? "bg-blue-600 text-white shadow-lg"
+                      : "text-blue-100 hover:bg-blue-700/60"
+                  }`}
                 >
                   {item.icon}
-                  <span className="font-semibold flex-1 text-left">
-                    {item.label}
-                  </span>
-                  {item.children && (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 256 256"
-                      className={`transition-transform duration-300 ${
-                        expandedItems.includes(item.label) ? "rotate-180" : ""
-                      }`}
-                    >
-                      <path
-                        fill="currentColor"
-                        d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"
-                      />
-                    </svg>
-                  )}
-                </button>
-
-                {/* Submenu */}
-                {item.children && expandedItems.includes(item.label) && (
-                  <div className="ml-4 mt-1 space-y-1 border-l-2 border-blue-500">
-                    {item.children.map((child) => (
-                      <Link
-                        key={child.label}
-                        href={child.href || "#"}
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 text-sm font-medium ${
-                          isActive(child.href)
-                            ? "bg-blue-600 text-white shadow-md translate-x-1"
-                            : "text-blue-200 hover:text-white hover:bg-blue-700/50"
+                  <span className="font-semibold">{item.label}</span>
+                </Link>
+              ) : (
+                <>
+                  <button
+                    onClick={() => toggleExpand(item.label)}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-blue-100 hover:bg-blue-700/60 hover:text-white"
+                  >
+                    {item.icon}
+                    <span className="font-semibold flex-1 text-left">
+                      {item.label}
+                    </span>
+                    {item.children && (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 256 256"
+                        className={`transition-transform duration-300 ${
+                          expandedItems.includes(item.label) ? "rotate-180" : ""
                         }`}
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="14"
-                          height="14"
-                          viewBox="0 0 256 256"
-                        >
-                          <path
-                            fill="currentColor"
-                            d="M184.49,136.49l-80,80a12,12,0,0,1-17-17L159,128,87.51,56.49a12,12,0,1,1,17-17l80,80A12,12,0,0,1,184.49,136.49Z"
-                          />
-                        </svg>
-                        <span>{child.label}</span>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        ))}
-      </nav>
+                        <path
+                          fill="currentColor"
+                          d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"
+                        />
+                      </svg>
+                    )}
+                  </button>
 
-      {/* Bottom Section */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-blue-950 to-blue-900 border-t border-blue-700 px-3 py-4 space-y-1">
-        {mounted && user ? (
-          <>
-            <Link href="/profile">
-              <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-blue-100 hover:bg-blue-700 hover:text-white">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 256 256"
-                >
-                  <path
-                    fill="currentColor"
-                    d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Zm88-29.84q.06-2.16,0-4.32l14.92-18.64a8,8,0,0,0,1.48-7.06,107.21,107.21,0,0,0-10.88-26.25,8,8,0,0,0-6-3.93l-23.72-2.64q-1.48-1.56-3-3L186,40.54a8,8,0,0,0-3.94-6,107.71,107.71,0,0,0-26.25-10.87,8,8,0,0,0-7.06,1.49L130.16,40Q128,40,125.84,40L107.2,25.11a8,8,0,0,0-7.06-1.48A107.6,107.6,0,0,0,73.89,34.51a8,8,0,0,0-3.93,6L67.32,64.27q-1.56,1.49-3,3L40.54,70a8,8,0,0,0-6,3.94,107.71,107.71,0,0,0-10.87,26.25,8,8,0,0,0,1.49,7.06L40,125.84Q40,128,40,130.16L25.11,148.8a8,8,0,0,0-1.48,7.06,107.21,107.21,0,0,0,10.88,26.25,8,8,0,0,0,6,3.93l23.72,2.64q1.49,1.56,3,3L70,215.46a8,8,0,0,0,3.94,6,107.71,107.71,0,0,0,26.25,10.87,8,8,0,0,0,7.06-1.49L125.84,216q2.16.06,4.32,0l18.64,14.92a8,8,0,0,0,7.06,1.48,107.21,107.21,0,0,0,26.25-10.88,8,8,0,0,0,3.93-6l2.64-23.72q1.56-1.48,3-3L215.46,186a8,8,0,0,0,6-3.94,107.71,107.71,0,0,0,10.87-26.25,8,8,0,0,0-1.49-7.06Z"
-                  />
-                </svg>
-                <span className="font-semibold">Настройки</span>
-              </button>
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-blue-100 hover:bg-red-700 hover:text-white"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 256 256"
+                  {/* Submenu */}
+                  {item.children && expandedItems.includes(item.label) && (
+                    <div className="ml-4 mt-1 space-y-1 border-l-2 border-blue-500">
+                      {item.children.map((child) => (
+                        <Link
+                          key={child.label}
+                          href={child.href || "#"}
+                          onClick={onClose}
+                          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 text-sm font-medium ${
+                            isActive(child.href)
+                              ? "bg-blue-600 text-white shadow-md translate-x-1"
+                              : "text-blue-200 hover:text-white hover:bg-blue-700/50"
+                          }`}
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 256 256"
+                          >
+                            <path
+                              fill="currentColor"
+                              d="M184.49,136.49l-80,80a12,12,0,0,1-17-17L159,128,87.51,56.49a12,12,0,1,1,17-17l80,80A12,12,0,0,1,184.49,136.49Z"
+                            />
+                          </svg>
+                          <span>{child.label}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          ))}
+        </nav>
+
+        {/* Bottom Section */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-blue-950 to-blue-900 border-t border-blue-700 px-3 py-4 space-y-1">
+          {mounted && user ? (
+            <>
+              <Link href="/profile" onClick={onClose}>
+                <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-blue-100 hover:bg-blue-700 hover:text-white">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 256 256"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Zm88-29.84q.06-2.16,0-4.32l14.92-18.64a8,8,0,0,0,1.48-7.06,107.21,107.21,0,0,0-10.88-26.25,8,8,0,0,0-6-3.93l-23.72-2.64q-1.48-1.56-3-3L186,40.54a8,8,0,0,0-3.94-6,107.71,107.71,0,0,0-26.25-10.87,8,8,0,0,0-7.06,1.49L130.16,40Q128,40,125.84,40L107.2,25.11a8,8,0,0,0-7.06-1.48A107.6,107.6,0,0,0,73.89,34.51a8,8,0,0,0-3.93,6L67.32,64.27q-1.56,1.49-3,3L40.54,70a8,8,0,0,0-6,3.94,107.71,107.71,0,0,0-10.87,26.25,8,8,0,0,0,1.49,7.06L40,125.84Q40,128,40,130.16L25.11,148.8a8,8,0,0,0-1.48,7.06,107.21,107.21,0,0,0,10.88,26.25,8,8,0,0,0,6,3.93l23.72,2.64q1.49,1.56,3,3L70,215.46a8,8,0,0,0,3.94,6,107.71,107.71,0,0,0,26.25,10.87,8,8,0,0,0,7.06-1.49L125.84,216q2.16.06,4.32,0l18.64,14.92a8,8,0,0,0,7.06,1.48,107.21,107.21,0,0,0,26.25-10.88,8,8,0,0,0,3.93-6l2.64-23.72q1.56-1.48,3-3L215.46,186a8,8,0,0,0,6-3.94,107.71,107.71,0,0,0,10.87-26.25,8,8,0,0,0-1.49-7.06Z"
+                    />
+                  </svg>
+                  <span className="font-semibold">Настройки</span>
+                </button>
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-blue-100 hover:bg-red-700 hover:text-white"
               >
-                <path
-                  fill="currentColor"
-                  d="M120,216a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V40a8,8,0,0,1,8-8h64a8,8,0,0,1,0,16H56V208h56A8,8,0,0,1,120,216Zm109.66-93.66-40-40a8,8,0,0,0-11.32,11.32L204.69,120H112a8,8,0,0,0,0,16h92.69l-26.35,26.34a8,8,0,0,0,11.32,11.32l40-40A8,8,0,0,0,229.66,122.34Z"
-                />
-              </svg>
-              <span className="font-semibold">Выход</span>
-            </button>
-          </>
-        ) : mounted ? (
-          <>
-            <Link href="/auth/login" className="w-full">
-              <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-white bg-blue-600 hover:bg-blue-700">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="20"
@@ -353,31 +396,50 @@ export const Sidebar: React.FC = () => {
                 >
                   <path
                     fill="currentColor"
-                    d="M141.66,133.66l-40,40a8,8,0,0,1-11.32-11.32L116.69,136H24a8,8,0,0,1,0-16h92.69L90.34,93.66a8,8,0,0,1,11.32-11.32l40,40A8,8,0,0,1,141.66,133.66ZM192,32H136a8,8,0,0,0,0,16h56V208H136a8,8,0,0,0,0,16h56a16,16,0,0,0,16-16V48A16,16,0,0,0,192,32Z"
+                    d="M120,216a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V40a8,8,0,0,1,8-8h64a8,8,0,0,1,0,16H56V208h56A8,8,0,0,1,120,216Zm109.66-93.66-40-40a8,8,0,0,0-11.32,11.32L204.69,120H112a8,8,0,0,0,0,16h92.69l-26.35,26.34a8,8,0,0,0,11.32,11.32l40-40A8,8,0,0,0,229.66,122.34Z"
                   />
                 </svg>
-                <span className="font-semibold">Войти</span>
+                <span className="font-semibold">Выход</span>
               </button>
-            </Link>
-            <Link href="/auth/register" className="w-full">
-              <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-blue-100 hover:bg-blue-700 hover:text-white">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 256 256"
-                >
-                  <path
-                    fill="currentColor"
-                    d="M256,136a8,8,0,0,1-8,8H232v16a8,8,0,0,1-16,0V144H200a8,8,0,0,1,0-16h16V112a8,8,0,0,1,16,0v16h16A8,8,0,0,1,256,136Zm-57.87,58.85a8,8,0,0,1-12.26,10.3C165.75,181.19,138.09,168,108,168s-57.75,13.19-77.87,37.15a8,8,0,0,1-12.25-10.3c14.94-17.78,33.52-30.41,54.17-37.17a68,68,0,1,1,71.9,0C164.6,164.44,183.18,177.07,198.13,194.85ZM108,152a52,52,0,1,0-52-52A52.06,52.06,0,0,0,108,152Z"
-                  />
-                </svg>
-                <span className="font-semibold">Регистрация</span>
-              </button>
-            </Link>
-          </>
-        ) : null}
-      </div>
-    </aside>
+            </>
+          ) : mounted ? (
+            <>
+              <Link href="/auth/login" className="w-full" onClick={onClose}>
+                <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-white bg-blue-600 hover:bg-blue-700">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 256 256"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M141.66,133.66l-40,40a8,8,0,0,1-11.32-11.32L116.69,136H24a8,8,0,0,1,0-16h92.69L90.34,93.66a8,8,0,0,1,11.32-11.32l40,40A8,8,0,0,1,141.66,133.66ZM192,32H136a8,8,0,0,0,0,16h56V208H136a8,8,0,0,0,0,16h56a16,16,0,0,0,16-16V48A16,16,0,0,0,192,32Z"
+                    />
+                  </svg>
+                  <span className="font-semibold">Войти</span>
+                </button>
+              </Link>
+              <Link href="/auth/register" className="w-full" onClick={onClose}>
+                <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-blue-100 hover:bg-blue-700 hover:text-white">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 256 256"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M256,136a8,8,0,0,1-8,8H232v16a8,8,0,0,1-16,0V144H200a8,8,0,0,1,0-16h16V112a8,8,0,0,1,16,0v16h16A8,8,0,0,1,256,136Zm-57.87,58.85a8,8,0,0,1-12.26,10.3C165.75,181.19,138.09,168,108,168s-57.75,13.19-77.87,37.15a8,8,0,0,1-12.25-10.3c14.94-17.78,33.52-30.41,54.17-37.17a68,68,0,1,1,71.9,0C164.6,164.44,183.18,177.07,198.13,194.85ZM108,152a52,52,0,1,0-52-52A52.06,52.06,0,0,0,108,152Z"
+                    />
+                  </svg>
+                  <span className="font-semibold">Регистрация</span>
+                </button>
+              </Link>
+            </>
+          ) : null}
+        </div>
+      </aside>
+    </>
   );
 };

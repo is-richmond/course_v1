@@ -28,29 +28,30 @@ export default function HomeContent({
       <div>
         {heroComponent}
 
-        {/* Features Section */}
-        <section className="py-20 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+        {/* Features Section - Responsive */}
+        <section className="py-12 sm:py-16 md:py-20 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="text-center mb-10 sm:mb-12 md:mb-16">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
                 Почему выбирают нас
               </h2>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto px-2">
                 Современная платформа для медицинского образования с лучшими
                 преподавателями
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-8">
+            {/* Responsive grid: 1 col mobile, 2 cols tablet, 3 cols desktop */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
               {[
                 {
                   icon: (
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      width="32"
-                      height="32"
+                      width="28"
+                      height="28"
                       viewBox="0 0 256 256"
-                      className="text-blue-600"
+                      className="text-blue-600 sm:w-8 sm:h-8"
                     >
                       <path
                         fill="currentColor"
@@ -66,10 +67,10 @@ export default function HomeContent({
                   icon: (
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      width="32"
-                      height="32"
+                      width="28"
+                      height="28"
                       viewBox="0 0 256 256"
-                      className="text-blue-600"
+                      className="text-blue-600 sm:w-8 sm:h-8"
                     >
                       <path
                         fill="currentColor"
@@ -85,10 +86,10 @@ export default function HomeContent({
                   icon: (
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      width="32"
-                      height="32"
+                      width="28"
+                      height="28"
                       viewBox="0 0 256 256"
-                      className="text-blue-600"
+                      className="text-blue-600 sm:w-8 sm:h-8"
                     >
                       <path
                         fill="currentColor"
@@ -103,34 +104,37 @@ export default function HomeContent({
               ].map((feature, idx) => (
                 <div
                   key={idx}
-                  className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-lg transition-all text-center"
+                  className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm hover:shadow-lg transition-all text-center"
                 >
-                  <div className="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-6">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
                     {feature.icon}
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3">
                     {feature.title}
                   </h3>
-                  <p className="text-gray-600">{feature.description}</p>
+                  <p className="text-sm sm:text-base text-gray-600">
+                    {feature.description}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* How It Works */}
-        <section className="py-20">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+        {/* How It Works - Responsive */}
+        <section className="py-12 sm:py-16 md:py-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="text-center mb-10 sm:mb-12 md:mb-16">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
                 Как это работает
               </h2>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
                 Простой путь к новым знаниям
               </p>
             </div>
 
-            <div className="grid md:grid-cols-4 gap-8">
+            {/* Responsive grid: 2 cols mobile, 4 cols desktop */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
               {[
                 {
                   step: "1",
@@ -154,44 +158,46 @@ export default function HomeContent({
                 },
               ].map((item, idx) => (
                 <div key={idx} className="text-center">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold shadow-lg">
+                  <div className="w-12 h-12 sm:w-14 md:w-16 sm:h-14 md:h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 text-white text-xl sm:text-2xl font-bold shadow-lg">
                     {item.step}
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">
+                  <h3 className="text-sm sm:text-base md:text-lg font-bold text-gray-900 mb-1 sm:mb-2">
                     {item.title}
                   </h3>
-                  <p className="text-gray-600 text-sm">{item.description}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">
+                    {item.description}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="py-20 bg-gradient-to-br from-blue-600 to-indigo-700">
-          <div className="max-w-4xl mx-auto px-6 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+        {/* CTA Section - Responsive */}
+        <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-br from-blue-600 to-indigo-700">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4 sm:mb-6">
               Готовы начать обучение?
             </h2>
-            <p className="text-xl text-blue-100 mb-8">
+            <p className="text-base sm:text-lg md:text-xl text-blue-100 mb-6 sm:mb-8 px-2">
               Присоединяйтесь к тысячам медицинских специалистов, повышающих
               свою квалификацию
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/auth/register">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0">
+              <Link href="/auth/register" className="w-full sm:w-auto">
                 <Button
                   variant="primary"
                   size="lg"
-                  className="bg-white text-blue-600 hover:bg-gray-100"
+                  className="w-full sm:w-auto bg-white text-blue-600 hover:bg-gray-100 min-h-[48px]"
                 >
                   Зарегистрироваться бесплатно
                 </Button>
               </Link>
-              <Link href="/auth/login">
+              <Link href="/auth/login" className="w-full sm:w-auto">
                 <Button
                   variant="secondary"
                   size="lg"
-                  className="border-white text-white hover:bg-white/10"
+                  className="w-full sm:w-auto border-white text-white hover:bg-white/10 min-h-[48px]"
                 >
                   Войти
                 </Button>
@@ -212,16 +218,18 @@ export default function HomeContent({
       id: "courses",
       label: "Мои курсы",
       content: (
-        <div className="p-8">
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Мои курсы</h2>
-            <p className="text-gray-600">
+        <div className="p-4 sm:p-6 md:p-8">
+          <div className="mb-6 sm:mb-8">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+              Мои курсы
+            </h2>
+            <p className="text-sm sm:text-base text-gray-600">
               Ваши активные курсы и прогресс обучения
             </p>
           </div>
           <ContinueLearning />
-          <div className="mt-12">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">
+          <div className="mt-8 sm:mt-10 md:mt-12">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">
               Все доступные курсы
             </h3>
             <CoursesGrid />
@@ -233,12 +241,12 @@ export default function HomeContent({
       id: "tests",
       label: "Тесты",
       content: (
-        <div className="p-8">
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+        <div className="p-4 sm:p-6 md:p-8">
+          <div className="mb-6 sm:mb-8">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
               Доступные тесты
             </h2>
-            <p className="text-gray-600">
+            <p className="text-sm sm:text-base text-gray-600">
               Проверьте свои знания с помощью наших тестов
             </p>
           </div>
@@ -249,7 +257,7 @@ export default function HomeContent({
   ];
 
   return (
-    <div className="max-w-7xl mx-auto w-full px-6 py-8">
+    <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-4 sm:py-6 md:py-8">
       <Tabs items={tabItems} defaultTab="courses" />
     </div>
   );

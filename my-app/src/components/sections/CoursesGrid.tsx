@@ -46,23 +46,24 @@ export const CoursesGrid: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="py-8">
-        <div className="mb-8">
-          <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2" />
-          <div className="h-5 w-72 bg-gray-200 rounded animate-pulse" />
+      <div className="py-4 sm:py-8">
+        <div className="mb-6 sm:mb-8">
+          <div className="h-7 sm:h-8 w-40 sm:w-48 bg-gray-200 rounded animate-pulse mb-2" />
+          <div className="h-4 sm:h-5 w-56 sm:w-72 bg-gray-200 rounded animate-pulse" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Responsive skeleton grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="bg-white rounded-xl border border-gray-200 p-6 animate-pulse"
+              className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 animate-pulse"
             >
-              <div className="h-6 w-3/4 bg-gray-200 rounded mb-4" />
-              <div className="h-4 w-1/2 bg-gray-200 rounded mb-4" />
-              <div className="h-20 bg-gray-200 rounded mb-4" />
+              <div className="h-5 sm:h-6 w-3/4 bg-gray-200 rounded mb-3 sm:mb-4" />
+              <div className="h-3 sm:h-4 w-1/2 bg-gray-200 rounded mb-3 sm:mb-4" />
+              <div className="h-16 sm:h-20 bg-gray-200 rounded mb-3 sm:mb-4" />
               <div className="flex justify-between">
-                <div className="h-8 w-24 bg-gray-200 rounded" />
-                <div className="h-10 w-28 bg-gray-200 rounded" />
+                <div className="h-7 sm:h-8 w-20 sm:w-24 bg-gray-200 rounded" />
+                <div className="h-9 sm:h-10 w-24 sm:w-28 bg-gray-200 rounded" />
               </div>
             </div>
           ))}
@@ -73,14 +74,14 @@ export const CoursesGrid: React.FC = () => {
 
   if (error) {
     return (
-      <div className="py-8 text-center">
-        <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+      <div className="py-6 sm:py-8 text-center px-4">
+        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="40"
-            height="40"
+            width="32"
+            height="32"
             viewBox="0 0 256 256"
-            className="text-red-500"
+            className="text-red-500 sm:w-10 sm:h-10"
           >
             <path
               fill="currentColor"
@@ -88,11 +89,15 @@ export const CoursesGrid: React.FC = () => {
             />
           </svg>
         </div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
           Ошибка загрузки
         </h3>
-        <p className="text-gray-600 mb-4">{error}</p>
-        <Button variant="primary" onClick={() => window.location.reload()}>
+        <p className="text-sm sm:text-base text-gray-600 mb-4">{error}</p>
+        <Button
+          variant="primary"
+          onClick={() => window.location.reload()}
+          className="min-h-[44px]"
+        >
           Попробовать снова
         </Button>
       </div>
@@ -101,14 +106,14 @@ export const CoursesGrid: React.FC = () => {
 
   if (courses.length === 0) {
     return (
-      <div className="py-8 text-center">
-        <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+      <div className="py-6 sm:py-8 text-center px-4">
+        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="40"
-            height="40"
+            width="32"
+            height="32"
             viewBox="0 0 256 256"
-            className="text-gray-400"
+            className="text-gray-400 sm:w-10 sm:h-10"
           >
             <path
               fill="currentColor"
@@ -116,29 +121,36 @@ export const CoursesGrid: React.FC = () => {
             />
           </svg>
         </div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
           Курсы не найдены
         </h3>
-        <p className="text-gray-600">Пока нет доступных курсов</p>
+        <p className="text-sm sm:text-base text-gray-600">
+          Пока нет доступных курсов
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="py-8">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Все курсы</h2>
-        <p className="text-gray-600">Выберите курс для начала обучения</p>
+    <div className="py-4 sm:py-8">
+      <div className="mb-6 sm:mb-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+          Все курсы
+        </h2>
+        <p className="text-sm sm:text-base text-gray-600">
+          Выберите курс для начала обучения
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Responsive grid: 1 col mobile, 2 cols sm+ */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         {courses.map((course) => (
           <Link key={course.id} href={`/courses/${course.id}`}>
             <Card className="h-full hover:shadow-lg transition cursor-pointer group">
-              <CardContent className="pt-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+              <CardContent className="p-4 sm:pt-6">
+                <div className="flex items-start justify-between mb-3 sm:mb-4">
+                  <div className="flex-1 pr-2">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
                       {course.title}
                     </h3>
                   </div>
@@ -156,20 +168,24 @@ export const CoursesGrid: React.FC = () => {
                   </svg>
                 </div>
 
-                <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2 sm:line-clamp-3">
                   {course.description || "Описание курса будет добавлено позже"}
                 </p>
 
-                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                <div className="flex items-center justify-between pt-3 sm:pt-4 border-t border-gray-200">
                   <div>
-                    <p className="text-xs text-gray-600">Цена</p>
-                    <p className="text-2xl font-bold text-blue-600">
+                    <p className="text-[10px] sm:text-xs text-gray-600">Цена</p>
+                    <p className="text-xl sm:text-2xl font-bold text-blue-600">
                       {course.price > 0
                         ? `₽${course.price.toLocaleString("ru-RU")}`
                         : "Бесплатно"}
                     </p>
                   </div>
-                  <Button variant="primary" size="sm">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="min-h-[40px] sm:min-h-[36px] text-xs sm:text-sm"
+                  >
                     Подробнее
                   </Button>
                 </div>
