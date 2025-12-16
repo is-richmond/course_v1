@@ -22,6 +22,7 @@ export interface TestQuestion {
 export interface QuestionOption {
   id: number;
   question_id: number;
+  description: string | null;
   option_text: string;
   is_correct: boolean;
 }
@@ -94,6 +95,7 @@ export interface TestUpdate {
 export interface TestQuestionCreate {
   test_id: number;
   question_text: string;
+  description?: string | null;
   question_type?: QuestionType;
   points?: number;
   order_index?: number;
@@ -108,6 +110,7 @@ export interface TestQuestionUpdate {
 
 export interface QuestionOptionCreate {
   question_id: number;
+  description?: string | null;
   option_text: string;
   is_correct?: boolean;
 }

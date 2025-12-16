@@ -71,11 +71,6 @@ const navigationItems = [
     url:  "/dashboard/admin",
     icon: ShieldCheck,
   },
-  {
-    title:  "Settings",
-    url: "/dashboard/settings", 
-    icon:  Settings,
-  },
 ]
 
 const SidebarContext = React.createContext<SidebarContextProps | null>(null)

@@ -224,9 +224,10 @@ class QuestionOption(Base):
     question_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("test_questions.id", ondelete="CASCADE"), nullable=False)
     option_text: Mapped[str] = mapped_column(Text, nullable=False)
     is_correct: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     # Relationships
     question: Mapped["TestQuestion"] = relationship("TestQuestion", back_populates="options")
+    
 
 
 class UserProgress(Base):

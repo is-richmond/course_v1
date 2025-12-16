@@ -44,11 +44,6 @@ const navigationItems = [
     url: "/dashboard/admin",
     icon: ShieldCheck,
   },
-  {
-    title: "Settings",
-    url: "/dashboard/settings", 
-    icon: Settings,
-  },
 ]
 
 export function AppSidebar() {

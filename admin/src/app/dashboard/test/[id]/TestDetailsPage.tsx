@@ -346,6 +346,9 @@ const TestDetailsPage = ({ testId }: TestDetailsPageProps) => {
                                     )}
                                     <span className={option.is_correct ? 'font-medium text-green-900' : ''}>
                                       {option.option_text}
+                                      <div className="text-sm font-bold text-gray-500">description:
+                                        <span className="ml-1 italic">{option.description || 'No description'}</span>
+                                      </div>
                                     </span>
                                   </div>
                                 ))}

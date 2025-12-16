@@ -192,6 +192,7 @@ class TestQuestionResponse(TestQuestionBase):
 class QuestionOptionBase(BaseModel):
     """Base question option schema."""
     option_text: str = Field(..., min_length=1)
+    description: Optional[str] = None
     is_correct: bool = False
 
 
@@ -203,6 +204,7 @@ class QuestionOptionCreate(QuestionOptionBase):
 class QuestionOptionUpdate(BaseModel):
     """Schema for updating a question option."""
     option_text: Optional[str] = Field(None, min_length=1)
+    description: Optional[str] = None  
     is_correct: Optional[bool] = None
 
 

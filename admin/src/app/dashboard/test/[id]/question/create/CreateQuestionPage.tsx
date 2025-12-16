@@ -22,6 +22,7 @@ interface CreateQuestionPageProps {
 interface OptionData {
   tempId: string;
   option_text: string;
+  description?: string;
   is_correct: boolean;
 }
 
@@ -30,13 +31,14 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
   const [formData, setFormData] = useState<TestQuestionCreate>({
     test_id: testId,
     question_text: '',
+    description: '',
     question_type: 'single_choice',
     points: 1,
     order_index: 0
   });
   const [options, setOptions] = useState<OptionData[]>([
-    { tempId: '1', option_text: '', is_correct: false },
-    { tempId: '2', option_text: '', is_correct: false }
+    { tempId: '1', option_text: '', description: '', is_correct: false },
+    { tempId: '2', option_text: '', description: '', is_correct: false }
   ]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -111,6 +113,7 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
         for (const option of validOptions) {
           const optionData: QuestionOptionCreate = {
             question_id: question.id,
+            description: option.description,
             option_text: option.option_text,
             is_correct: option.is_correct
           };
@@ -156,8 +159,8 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
       setOptions([]);
     } else if (options.length === 0) {
       setOptions([
-        { tempId: '1', option_text: '', is_correct: false },
-        { tempId: '2', option_text: '', is_correct: false }
+        { tempId: '1', option_text: '', description: '', is_correct: false },
+        { tempId: '2', option_text: '', description: '', is_correct: false }
       ]);
     }
   };
@@ -338,6 +341,11 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
                             value={option.option_text}
                             onChange={(e) => updateOption(option.tempId, 'option_text', e.target.value)}
                             placeholder={`Option ${index + 1}`}
+                          />
+                          <Input
+                            value={option.description}
+                            onChange={(e) => updateOption(option.tempId, 'description', e.target.value)}
+                            placeholder={`Description for Option ${index + 1}`}
                           />
                         </div>
                         {options.length > 2 && (

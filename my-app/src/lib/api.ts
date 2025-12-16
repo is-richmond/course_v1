@@ -1,4 +1,4 @@
-import axios from '../config/axiosConfig';
+import axios from "axios";
 import type {
   CourseResponse,
   CourseWithModules,
