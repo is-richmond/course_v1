@@ -1,11 +1,12 @@
-"use client";
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/text-area';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/text-area';
 import { 
   ArrowLeft,
   Plus,
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react';
 
 import { courseApi, moduleApi, lessonApi, mediaApi } from '@/lib/api/api';
+import ContentEditor from '@/components/ContentEditor'; // Import the new editor
 import { 
   CourseFormData, 
   ModuleFormData, 
@@ -25,7 +27,7 @@ import {
   CourseStatus,
   LessonType,
   MediaType 
-} from '../types';
+} from '@/lib/types/types';
 
 const CourseCreatePage = () => {
   const [createCourseId, setCreateCourseId] = useState<string>('');
@@ -111,14 +113,14 @@ const CourseCreatePage = () => {
         for (const lesson of module.lessons) {
           const createdLesson = await lessonApi.createLesson({
             title: lesson.title,
-            content: lesson.content,
+            content: lesson.content, // Content with [IMAGE:id] placeholders
             lesson_type: lesson.lesson_type,
             order_index: lesson.order_index,
             module_id: moduleId
           });
           const lessonId = createdLesson.id;
 
-          // Process media
+          // Process URL-based media (if any)
           for (const media of lesson.media) {
             await mediaApi.createMedia({
               media_url: media.media_url,
@@ -364,13 +366,13 @@ const CourseCreatePage = () => {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <p className="text-sm text-blue-700">
-                  Enter the ID for the new course. Suggested ID based on existing courses: <span className="font-semibold">{createCourseId}</span>
+                  Enter the ID for the new course. Suggested ID: <span className="font-semibold">{createCourseId}</span>
                 </p>
                 <Input
                   type="number"
                   value={createCourseId}
                   onChange={(e) => setCreateCourseId(e.target.value)}
-                  placeholder="Enter course ID (e.g., 1, 2, 3...)"
+                  placeholder="Enter course ID"
                   className="bg-white"
                 />
               </div>
@@ -444,7 +446,6 @@ const CourseCreatePage = () => {
                     type="number"
                     value={formData.author_id || ''}
                     onChange={(e) => setFormData(prev => ({ ...prev, author_id: parseInt(e.target.value) || null }))}
-                    placeholder="Leave empty for no author"
                   />
                 </div>
               </div>
@@ -488,7 +489,7 @@ const CourseCreatePage = () => {
                             <ChevronRight className="w-5 h-5" />
                           )}
                           <span className="font-semibold">
-                            Module {moduleIndex + 1}: {module.title || 'Untitled Module'}
+                            Module {moduleIndex + 1}: {module.title || 'Untitled'}
                           </span>
                         </button>
                         <Button
@@ -496,7 +497,7 @@ const CourseCreatePage = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => removeModule(moduleIndex)}
-                          className="text-red-600 hover:text-red-700"
+                          className="text-red-600"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -551,7 +552,7 @@ const CourseCreatePage = () => {
                                           <ChevronRight className="w-4 h-4" />
                                         )}
                                         <span className="text-sm font-medium">
-                                          Lesson {lessonIndex + 1}: {lesson.title || 'Untitled Lesson'}
+                                          Lesson {lessonIndex + 1}: {lesson.title || 'Untitled'}
                                         </span>
                                       </button>
                                       <Button
@@ -559,7 +560,7 @@ const CourseCreatePage = () => {
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => removeLesson(moduleIndex, lessonIndex)}
-                                        className="text-red-600 hover:text-red-700"
+                                        className="text-red-600"
                                       >
                                         <Trash2 className="w-3 h-3" />
                                       </Button>
@@ -576,7 +577,6 @@ const CourseCreatePage = () => {
                                               onChange={(e) => updateLesson(moduleIndex, lessonIndex, 'title', e.target.value)}
                                               placeholder="Lesson title"
                                               required
-                                              className="text-sm"
                                             />
                                           </div>
 
@@ -598,21 +598,21 @@ const CourseCreatePage = () => {
                                           </div>
                                         </div>
 
-                                        <div className="space-y-2">
-                                          <Label className="text-sm">Content</Label>
-                                          <Textarea
-                                            value={lesson.content}
-                                            onChange={(e) => updateLesson(moduleIndex, lessonIndex, 'content', e.target.value)}
-                                            placeholder="Lesson content"
-                                            rows={3}
-                                            className="text-sm"
-                                          />
-                                        </div>
+                                        {/* Rich Content Editor with Image Upload */}
+                                        <ContentEditor
+                                          value={lesson.content}
+                                          onChange={(value) => updateLesson(moduleIndex, lessonIndex, 'content', value)}
+                                          courseId={undefined} // Don't pass courseId during creation
+                                          lessonId={undefined}
+                                          placeholder="Enter lesson content... Use 'Insert Image' to add images"
+                                          label="Lesson Content"
+                                          rows={10}
+                                        />
 
-                                        {/* Media */}
+                                        {/* URL-based Media (Optional - for backward compatibility) */}
                                         <div className="space-y-2">
                                           <div className="flex justify-between items-center">
-                                            <Label className="text-sm">Media (Optional)</Label>
+                                            <Label className="text-sm">Additional Media URLs (Optional)</Label>
                                             <Button
                                               type="button"
                                               onClick={() => addMedia(moduleIndex, lessonIndex)}
@@ -620,7 +620,7 @@ const CourseCreatePage = () => {
                                               size="sm"
                                             >
                                               <Plus className="w-3 h-3 mr-1" />
-                                              Add Media
+                                              Add URL
                                             </Button>
                                           </div>
 

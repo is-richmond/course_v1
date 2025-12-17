@@ -1,11 +1,13 @@
-"use client";
-import React, { useState, useEffect, use } from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/text-area';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/text-area';
 import { 
   ArrowLeft,
   Plus,
@@ -14,9 +16,11 @@ import {
   ChevronRight,
   Save,
   FileText,
+  Loader2,
 } from 'lucide-react';
 
 import { courseApi, moduleApi, lessonApi, mediaApi } from '@/lib/api/api';
+import ContentEditor from '@/components/ContentEditor';
 import { 
   CourseFormData, 
   ModuleFormData, 
@@ -25,12 +29,14 @@ import {
   CourseStatus,
   LessonType,
   MediaType 
-} from '@/app/dashboard/course/types';
+} from '@/lib/types/types';
 
-export default function Page({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
-  const courseId = parseInt(resolvedParams.id);
-  
+const CourseEditPage = () => {
+  const params = useParams();
+  const courseId = parseInt(params?.id as string);
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<CourseFormData>({
     title: '',
     description: '',
@@ -39,9 +45,6 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
     price: 0,
     modules: []
   });
-  
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [toasts, setToasts] = useState<any[]>([]);
 
   useEffect(() => {
@@ -53,36 +56,28 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const fetchCourse = async () => {
     setLoading(true);
     try {
-      const course = await courseApi.getCourseWithModules(courseId);
+      // Fetch course with modules
+      const courseData = await courseApi.getCourseWithModules(courseId);
       
-      const modulesWithDetails = await Promise.all(
-        course.modules.map(async (module: any) => {
-          const moduleDetails = await moduleApi.getModuleWithLessons(module.id);
+      // Fetch lessons for each module
+      const modulesWithLessons = await Promise.all(
+        courseData.modules.map(async (module: any) => {
+          const lessonsData = await lessonApi.getLessonsByModule(module.id);
           
+          // Fetch media for each lesson
           const lessonsWithMedia = await Promise.all(
-            moduleDetails.lessons.map(async (lesson: any) => {
-              const lessonDetails = await lessonApi.getLessonWithMedia(lesson.id);
+            lessonsData.map(async (lesson: any) => {
+              const mediaData = await mediaApi.getMediaByLesson(lesson.id);
               return {
-                id: lesson.id,
-                title: lesson.title,
-                content: lesson.content || '',
-                lesson_type: lesson.lesson_type as LessonType,
-                order_index: lesson.order_index,
-                media: lessonDetails.media.map((m: any) => ({
-                  id: m.id,
-                  media_url: m.media_url,
-                  media_type: m.media_type as MediaType,
-                  order_index: m.order_index
-                })),
+                ...lesson,
+                media: mediaData,
                 isExpanded: false
               };
             })
           );
 
           return {
-            id: module.id,
-            title: module.title,
-            order_index: module.order_index,
+            ...module,
             lessons: lessonsWithMedia,
             isExpanded: false
           };
@@ -90,19 +85,19 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       );
 
       setFormData({
-        title: course.title,
-        description: course.description || '',
-        author_id: course.author_id,
-        status: course.status as CourseStatus,
-        price: course.price,
-        modules: modulesWithDetails
+        title: courseData.title,
+        description: courseData.description || '',
+        author_id: courseData.author_id,
+        status: courseData.status,
+        price: courseData.price || 0,
+        modules: modulesWithLessons
       });
     } catch (error) {
       console.error('Error fetching course:', error);
       addToast({
         type: 'error',
         title: 'Error',
-        message: 'Failed to fetch course details'
+        message: 'Failed to load course'
       });
     } finally {
       setLoading(false);
@@ -124,6 +119,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
     setSaving(true);
 
     try {
+      // Update course
       await courseApi.updateCourse(courseId, {
         title: formData.title,
         description: formData.description,
@@ -132,27 +128,40 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         price: formData.price
       });
 
+      // Update modules and lessons
       for (const module of formData.modules) {
         let moduleId = module.id;
 
-        if (!moduleId) {
+        if (moduleId) {
+          // Update existing module
+          await moduleApi.updateModule(moduleId, {
+            title: module.title,
+            order_index: module.order_index
+          });
+        } else {
+          // Create new module
           const createdModule = await moduleApi.createModule({
             title: module.title,
             order_index: module.order_index,
             course_id: courseId
           });
           moduleId = createdModule.id;
-        } else {
-          await moduleApi.updateModule(moduleId, {
-            title: module.title,
-            order_index: module.order_index
-          });
         }
 
+        // Update lessons
         for (const lesson of module.lessons) {
           let lessonId = lesson.id;
 
-          if (!lessonId) {
+          if (lessonId) {
+            // Update existing lesson
+            await lessonApi.updateLesson(lessonId, {
+              title: lesson.title,
+              content: lesson.content,
+              lesson_type: lesson.lesson_type,
+              order_index: lesson.order_index
+            });
+          } else {
+            // Create new lesson
             const createdLesson = await lessonApi.createLesson({
               title: lesson.title,
               content: lesson.content,
@@ -161,28 +170,22 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
               module_id: moduleId
             });
             lessonId = createdLesson.id;
-          } else {
-            await lessonApi.updateLesson(lessonId, {
-              title: lesson.title,
-              content: lesson.content,
-              lesson_type: lesson.lesson_type,
-              order_index: lesson.order_index
-            });
           }
 
+          // Update URL-based media
           for (const media of lesson.media) {
-            if (!media.id) {
+            if (media.id) {
+              await mediaApi.updateMedia(media.id, {
+                media_url: media.media_url,
+                media_type: media.media_type,
+                order_index: media.order_index
+              });
+            } else {
               await mediaApi.createMedia({
                 media_url: media.media_url,
                 media_type: media.media_type,
                 order_index: media.order_index,
                 lesson_id: lessonId
-              });
-            } else {
-              await mediaApi.updateMedia(media.id, {
-                media_url: media.media_url,
-                media_type: media.media_type,
-                order_index: media.order_index
               });
             }
           }
@@ -196,14 +199,14 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       });
 
       setTimeout(() => {
-        window.location.href = `/dashboard/course/${courseId}`;
-      }, 1500);
+        fetchCourse();
+      }, 1000);
     } catch (error) {
-      console.error('Error saving course:', error);
+      console.error('Error updating course:', error);
       addToast({
         type: 'error',
         title: 'Error',
-        message: 'Failed to save course'
+        message: 'Failed to update course'
       });
     } finally {
       setSaving(false);
@@ -225,7 +228,27 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
     }));
   };
 
-  const removeModule = (moduleIndex: number) => {
+  const removeModule = async (moduleIndex: number) => {
+    const module = formData.modules[moduleIndex];
+    
+    if (module.id) {
+      try {
+        await moduleApi.deleteModule(module.id);
+        addToast({
+          type: 'success',
+          title: 'Success',
+          message: 'Module deleted'
+        });
+      } catch (error) {
+        addToast({
+          type: 'error',
+          title: 'Error',
+          message: 'Failed to delete module'
+        });
+        return;
+      }
+    }
+
     setFormData(prev => ({
       ...prev,
       modules: prev.modules.filter((_, i) => i !== moduleIndex)
@@ -272,7 +295,27 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
     }));
   };
 
-  const removeLesson = (moduleIndex: number, lessonIndex: number) => {
+  const removeLesson = async (moduleIndex: number, lessonIndex: number) => {
+    const lesson = formData.modules[moduleIndex].lessons[lessonIndex];
+    
+    if (lesson.id) {
+      try {
+        await lessonApi.deleteLesson(lesson.id);
+        addToast({
+          type: 'success',
+          title: 'Success',
+          message: 'Lesson deleted'
+        });
+      } catch (error) {
+        addToast({
+          type: 'error',
+          title: 'Error',
+          message: 'Failed to delete lesson'
+        });
+        return;
+      }
+    }
+
     setFormData(prev => ({
       ...prev,
       modules: prev.modules.map((m, i) => 
@@ -312,71 +355,11 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
     }));
   };
 
-  const addMedia = (moduleIndex: number, lessonIndex: number) => {
-    setFormData(prev => ({
-      ...prev,
-      modules: prev.modules.map((m, i) => 
-        i === moduleIndex ? {
-          ...m,
-          lessons: m.lessons.map((l, li) => 
-            li === lessonIndex ? {
-              ...l,
-              media: [
-                ...l.media,
-                {
-                  media_url: '',
-                  media_type: MediaType.IMAGE,
-                  order_index: l.media.length
-                }
-              ]
-            } : l
-          )
-        } : m
-      )
-    }));
-  };
-
-  const removeMedia = (moduleIndex: number, lessonIndex: number, mediaIndex: number) => {
-    setFormData(prev => ({
-      ...prev,
-      modules: prev.modules.map((m, i) => 
-        i === moduleIndex ? {
-          ...m,
-          lessons: m.lessons.map((l, li) => 
-            li === lessonIndex ? {
-              ...l,
-              media: l.media.filter((_, mi) => mi !== mediaIndex)
-            } : l
-          )
-        } : m
-      )
-    }));
-  };
-
-  const updateMedia = (moduleIndex: number, lessonIndex: number, mediaIndex: number, field: keyof MediaFormData, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      modules: prev.modules.map((m, i) => 
-        i === moduleIndex ? {
-          ...m,
-          lessons: m.lessons.map((l, li) => 
-            li === lessonIndex ? {
-              ...l,
-              media: l.media.map((media, mi) => 
-                mi === mediaIndex ? { ...media, [field]: value } : media
-              )
-            } : l
-          )
-        } : m
-      )
-    }));
-  };
-
   if (loading) {
     return (
-      <div className="w-full min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+      <div className="w-full min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-blue-600" />
           <p className="text-gray-600">Loading course...</p>
         </div>
       </div>
@@ -399,7 +382,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
               </Button>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Edit Course</h1>
-                <p className="text-gray-600">Update course details (ID: {courseId})</p>
+                <p className="text-gray-600">Course ID: {courseId}</p>
               </div>
             </div>
             <div className="flex gap-2">
@@ -493,7 +476,6 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                     type="number"
                     value={formData.author_id || ''}
                     onChange={(e) => setFormData(prev => ({ ...prev, author_id: parseInt(e.target.value) || null }))}
-                    placeholder="Leave empty for no author"
                   />
                 </div>
               </div>
@@ -518,13 +500,12 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
               {formData.modules.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                   <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p>No modules yet. Click "Add Module" to create one.</p>
+                  <p>No modules yet.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {formData.modules.map((module, moduleIndex) => (
                     <Card key={moduleIndex} className="border-2">
-                      {/* Module Header */}
                       <div className="flex items-center justify-between p-4 bg-gray-50">
                         <button
                           type="button"
@@ -537,7 +518,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                             <ChevronRight className="w-5 h-5" />
                           )}
                           <span className="font-semibold">
-                            Module {moduleIndex + 1}: {module.title || 'Untitled Module'}
+                            Module {moduleIndex + 1}: {module.title || 'Untitled'}
                           </span>
                         </button>
                         <Button
@@ -545,13 +526,12 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                           variant="ghost"
                           size="sm"
                           onClick={() => removeModule(moduleIndex)}
-                          className="text-red-600 hover:text-red-700"
+                          className="text-red-600"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
 
-                      {/* Module Content */}
                       {module.isExpanded && (
                         <CardContent className="pt-4 space-y-4">
                           <div className="space-y-2">
@@ -559,12 +539,10 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                             <Input
                               value={module.title}
                               onChange={(e) => updateModule(moduleIndex, 'title', e.target.value)}
-                              placeholder="Module title"
                               required
                             />
                           </div>
 
-                          {/* Lessons */}
                           <div className="space-y-2">
                             <div className="flex justify-between items-center">
                               <Label>Lessons</Label>
@@ -581,13 +559,12 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
                             {module.lessons.length === 0 ? (
                               <p className="text-sm text-gray-500 text-center py-4">
-                                No lessons in this module
+                                No lessons
                               </p>
                             ) : (
                               <div className="space-y-2">
                                 {module.lessons.map((lesson, lessonIndex) => (
                                   <Card key={lessonIndex} className="border">
-                                    {/* Lesson Header */}
                                     <div className="flex items-center justify-between p-3 bg-gray-100">
                                       <button
                                         type="button"
@@ -600,7 +577,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                                           <ChevronRight className="w-4 h-4" />
                                         )}
                                         <span className="text-sm font-medium">
-                                          Lesson {lessonIndex + 1}: {lesson.title || 'Untitled Lesson'}
+                                          Lesson {lessonIndex + 1}: {lesson.title || 'Untitled'}
                                         </span>
                                       </button>
                                       <Button
@@ -608,24 +585,21 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => removeLesson(moduleIndex, lessonIndex)}
-                                        className="text-red-600 hover:text-red-700"
+                                        className="text-red-600"
                                       >
                                         <Trash2 className="w-3 h-3" />
                                       </Button>
                                     </div>
 
-                                    {/* Lesson Content */}
                                     {lesson.isExpanded && (
                                       <CardContent className="pt-3 space-y-3">
                                         <div className="grid grid-cols-2 gap-3">
                                           <div className="space-y-2">
-                                            <Label className="text-sm">Lesson Title *</Label>
+                                            <Label className="text-sm">Title *</Label>
                                             <Input
                                               value={lesson.title}
                                               onChange={(e) => updateLesson(moduleIndex, lessonIndex, 'title', e.target.value)}
-                                              placeholder="Lesson title"
                                               required
-                                              className="text-sm"
                                             />
                                           </div>
 
@@ -635,7 +609,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                                               value={lesson.lesson_type}
                                               onValueChange={(value) => updateLesson(moduleIndex, lessonIndex, 'lesson_type', value)}
                                             >
-                                              <SelectTrigger className="text-sm">
+                                              <SelectTrigger>
                                                 <SelectValue />
                                               </SelectTrigger>
                                               <SelectContent>
@@ -647,71 +621,16 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                                           </div>
                                         </div>
 
-                                        <div className="space-y-2">
-                                          <Label className="text-sm">Content</Label>
-                                          <Textarea
-                                            value={lesson.content}
-                                            onChange={(e) => updateLesson(moduleIndex, lessonIndex, 'content', e.target.value)}
-                                            placeholder="Lesson content"
-                                            rows={3}
-                                            className="text-sm"
-                                          />
-                                        </div>
-
-                                        {/* Media */}
-                                        <div className="space-y-2">
-                                          <div className="flex justify-between items-center">
-                                            <Label className="text-sm">Media (Optional)</Label>
-                                            <Button
-                                              type="button"
-                                              onClick={() => addMedia(moduleIndex, lessonIndex)}
-                                              variant="outline"
-                                              size="sm"
-                                            >
-                                              <Plus className="w-3 h-3 mr-1" />
-                                              Add Media
-                                            </Button>
-                                          </div>
-
-                                          {lesson.media.length > 0 && (
-                                            <div className="space-y-2">
-                                              {lesson.media.map((media, mediaIndex) => (
-                                                <div key={mediaIndex} className="flex gap-2 items-start p-2 bg-gray-50 rounded">
-                                                  <Select
-                                                    value={media.media_type}
-                                                    onValueChange={(value) => updateMedia(moduleIndex, lessonIndex, mediaIndex, 'media_type', value)}
-                                                  >
-                                                    <SelectTrigger className="w-32 text-xs">
-                                                      <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                      <SelectItem value="image">Image</SelectItem>
-                                                      <SelectItem value="video">Video</SelectItem>
-                                                      <SelectItem value="document">Document</SelectItem>
-                                                    </SelectContent>
-                                                  </Select>
-                                                  
-                                                  <Input
-                                                    value={media.media_url}
-                                                    onChange={(e) => updateMedia(moduleIndex, lessonIndex, mediaIndex, 'media_url', e.target.value)}
-                                                    placeholder="Media URL"
-                                                    className="flex-1 text-sm"
-                                                  />
-                                                  
-                                                  <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => removeMedia(moduleIndex, lessonIndex, mediaIndex)}
-                                                    className="text-red-600"
-                                                  >
-                                                    <Trash2 className="w-3 h-3" />
-                                                  </Button>
-                                                </div>
-                                              ))}
-                                            </div>
-                                          )}
-                                        </div>
+                                        {/* Content Editor - NOW WITH VALID courseId and lessonId */}
+                                        <ContentEditor
+                                          value={lesson.content}
+                                          onChange={(value) => updateLesson(moduleIndex, lessonIndex, 'content', value)}
+                                          courseId={courseId}
+                                          lessonId={lesson.id}
+                                          placeholder="Enter lesson content..."
+                                          label="Lesson Content"
+                                          rows={10}
+                                        />
                                       </CardContent>
                                     )}
                                   </Card>
@@ -746,4 +665,6 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       </div>
     </div>
   );
-}
+};
+
+export default CourseEditPage;

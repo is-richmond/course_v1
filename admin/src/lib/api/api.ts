@@ -535,3 +535,62 @@ export const apiClient = {
     return response.data;
   },
 };
+
+// ============================================================================
+// S3 / MEDIA API
+// ============================================================================
+
+export const s3Api = {
+  // Upload media file (image or video)
+  uploadMedia: async (
+    file: File,
+    mediaType: 'image' | 'video',
+    courseId?: number,
+    lessonId?: number,
+    customName?: string
+  ) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('media_type', mediaType);
+    
+    if (courseId) formData.append('course_id', courseId.toString());
+    if (lessonId) formData.append('lesson_id', lessonId.toString());
+    if (customName) formData.append('custom_name', customName);
+
+    const response = await axios.post('/s3/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  // Get all media files
+  getAllMedia: async (
+    skip: number = 0,
+    limit: number = 100,
+    mediaType?: 'image' | 'video',
+    courseId?: number,
+    lessonId?: number
+  ) => {
+    const params: any = { skip, limit };
+    if (mediaType) params.media_type = mediaType;
+    if (courseId) params.course_id = courseId;
+    if (lessonId) params.lesson_id = lessonId;
+
+    const response = await axios.get('/s3/media', { params });
+    return response.data;
+  },
+
+  // Delete media file
+  deleteMedia: async (mediaId: string) => {
+    const response = await axios.delete(`/s3/media/${mediaId}`);
+    return response.data;
+  },
+
+  // Get media configuration
+  getMediaConfig: async () => {
+    const response = await axios.get('/s3/config');
+    return response.data;
+  },
+};
