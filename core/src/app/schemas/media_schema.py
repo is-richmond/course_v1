@@ -14,6 +14,7 @@ class CourseMediaBase(BaseModel):
     s3_key: str
     course_id: Optional[int] = None
     lesson_id: Optional[int] = None
+    question_option_id: Optional[int] = None
     width: Optional[int] = None
     height: Optional[int] = None
     duration: Optional[int] = None

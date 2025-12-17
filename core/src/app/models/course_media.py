@@ -1,4 +1,5 @@
-# app/models/course_media.py
+# core/src/app/models/course_media.py - обновленная модель
+
 from sqlalchemy import Column, String, Integer, DateTime, BigInteger, ForeignKey
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -22,18 +23,24 @@ class CourseMedia(Base):
     course_id = Column(Integer, ForeignKey('courses.id'), nullable=True)
     lesson_id = Column(Integer, ForeignKey('lessons.id'), nullable=True)
     
+    # НОВОЕ: Привязка к описанию ответа
+    question_option_id = Column(Integer, ForeignKey('question_options.id'), nullable=True)
+    
     # Метаданные
-    width = Column(Integer, nullable=True)  # для изображений
-    height = Column(Integer, nullable=True)  # для изображений
-    duration = Column(Integer, nullable=True)  # для видео (в секундах)
+    width = Column(Integer, nullable=True)
+    height = Column(Integer, nullable=True)
+    duration = Column(Integer, nullable=True)
     
     uploaded_by = Column(String, nullable=True)
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
     
     # Relationships
-    course = relationship("Course", back_populates="course_media")  # было media
-    lesson = relationship("Lesson", back_populates="lesson_media")  # было media
+    course = relationship("Course", back_populates="course_media")
+    lesson = relationship("Lesson", back_populates="lesson_media")
+    
+    # НОВОЕ: Связь с ответом на вопрос
+    question_option = relationship("QuestionOption", back_populates="description_media")
     
     def to_dict(self):
         return {
@@ -47,6 +54,7 @@ class CourseMedia(Base):
             's3_key': self.s3_key,
             'course_id': self.course_id,
             'lesson_id': self.lesson_id,
+            'question_option_id': self.question_option_id,
             'width': self.width,
             'height': self.height,
             'duration': self.duration,

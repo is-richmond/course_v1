@@ -227,6 +227,13 @@ class QuestionOption(Base):
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     # Relationships
     question: Mapped["TestQuestion"] = relationship("TestQuestion", back_populates="options")
+
+    description_media: Mapped[List["CourseMedia"]] = relationship(
+        "CourseMedia",
+        back_populates="question_option",
+        cascade="all, delete-orphan",
+        foreign_keys="CourseMedia.question_option_id"
+    )
     
 
 

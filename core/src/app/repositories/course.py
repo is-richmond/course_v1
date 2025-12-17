@@ -201,6 +201,26 @@ class QuestionOptionRepository(BaseRepository[QuestionOption]):
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+    
+    async def get_with_media(self, option_id: int) -> Optional[QuestionOption]:
+        """Get option with description media loaded."""
+        stmt = (
+            select(QuestionOption)
+            .options(selectinload(QuestionOption.description_media))
+            .where(QuestionOption.id == option_id)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+    
+    async def get_by_question_with_media(self, question_id: int) -> List[QuestionOption]:
+        """Get all options for a question with media loaded."""
+        stmt = (
+            select(QuestionOption)
+            .options(selectinload(QuestionOption.description_media))
+            .where(QuestionOption.question_id == question_id)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
 
 
 class UserProgressRepository(BaseRepository[UserProgress]):

@@ -215,6 +215,12 @@ class QuestionOptionResponse(QuestionOptionBase):
     
     model_config = ConfigDict(from_attributes=True)
 
+class QuestionOptionWithMedia(QuestionOptionResponse):
+    """Question option response with media files."""
+    description_media: List[CourseMediaResponse] = []
+    
+    model_config = ConfigDict(from_attributes=True)
+
 
 # User Progress Schemas
 class UserProgressBase(BaseModel):
