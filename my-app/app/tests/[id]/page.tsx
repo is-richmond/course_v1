@@ -7,10 +7,18 @@ import { Footer } from "@/src/components/layout/Footer";
 import { Card, CardContent } from "@/src/components/ui/Card";
 import { Button } from "@/src/components/ui/Button";
 import { testsAPI } from "@/src/lib/api";
+import {
+  calculatePercentage,
+  isTestPassed,
+  saveTestStatusToStorage,
+  loadTestStatusFromStorage,
+  formatPercentage,
+  getStatusColorClass,
+} from "@/src/lib/testUtils";
 import type {
   TestWithQuestions,
-  QuestionWithOptions,
   TestSubmission,
+  TestResult,
 } from "@/src/types/api";
 
 export default function TestPage() {
@@ -24,8 +32,13 @@ export default function TestPage() {
     new Map()
   );
   const [isFinished, setIsFinished] = useState(false);
-  const [score, setScore] = useState(0);
-  const [totalPoints, setTotalPoints] = useState(0);
+  const [result, setResult] = useState<{
+    score: number;
+    totalPoints: number;
+    percentage: number;
+    passed: boolean;
+    passingScore: number;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -96,41 +109,101 @@ export default function TestPage() {
       };
 
       // Submit to API
-      const result = await testsAPI.submit(parseInt(testId), submission);
-      setScore(result.score);
-      setTotalPoints(result.total_points);
-
-      // Save to localStorage
-      localStorage.setItem(
-        `test_${testId}_passed`,
-        result.passed ? "true" : "false"
+      const apiResult: TestResult = await testsAPI.submit(
+        parseInt(testId),
+        submission
       );
-      localStorage.setItem(`test_${testId}_score`, result.score.toString());
+
+      // CRITICAL: Calculate percentage ourselves (don't trust backend `passed`)
+      const percentage = calculatePercentage(
+        apiResult.score,
+        apiResult.total_points
+      );
+      const passed = isTestPassed(percentage, apiResult.passing_score);
+
+      setResult({
+        score: apiResult.score,
+        totalPoints: apiResult.total_points,
+        percentage,
+        passed,
+        passingScore: apiResult.passing_score,
+      });
+
+      // Save to localStorage with proper structure
+      // Load existing status to check if user has ever passed
+      const existingStatus = loadTestStatusFromStorage(parseInt(testId));
+      const hasEverPassed = passed || (existingStatus?.hasEverPassed ?? false);
+      const bestPercentage = Math.max(
+        percentage,
+        existingStatus?.bestPercentage ?? 0
+      );
+
+      saveTestStatusToStorage(parseInt(testId), {
+        hasEverPassed,
+        currentAttemptPassed: passed,
+        currentPercentage: percentage,
+        passingPercentage: apiResult.passing_score,
+        currentScore: apiResult.score,
+        totalPoints: apiResult.total_points,
+        bestPercentage,
+        attemptCount: (existingStatus?.attemptCount ?? 0) + 1,
+      });
 
       setIsFinished(true);
     } catch (err) {
       console.error("Failed to submit test:", err);
       // Fallback: calculate locally
+      if (!test) return;
+
       let correctCount = 0;
+      let totalPoints = 0;
+
       test.questions.forEach((question) => {
         const selected = userAnswers.get(question.id) || [];
         const correctOptions = question.options
           .filter((o) => o.is_correct)
           .map((o) => o.id);
 
+        totalPoints += question.points;
+
         if (
           selected.length === correctOptions.length &&
           selected.every((s) => correctOptions.includes(s))
         ) {
-          correctCount++;
+          correctCount += question.points;
         }
       });
 
-      const testScore = Math.round(
-        (correctCount / test.questions.length) * 100
+      const percentage = calculatePercentage(correctCount, totalPoints);
+      const passed = isTestPassed(percentage, test.passing_score);
+
+      setResult({
+        score: correctCount,
+        totalPoints,
+        percentage,
+        passed,
+        passingScore: test.passing_score,
+      });
+
+      // Save to localStorage
+      const existingStatus = loadTestStatusFromStorage(parseInt(testId));
+      const hasEverPassed = passed || (existingStatus?.hasEverPassed ?? false);
+      const bestPercentage = Math.max(
+        percentage,
+        existingStatus?.bestPercentage ?? 0
       );
-      setScore(testScore);
-      setTotalPoints(100);
+
+      saveTestStatusToStorage(parseInt(testId), {
+        hasEverPassed,
+        currentAttemptPassed: passed,
+        currentPercentage: percentage,
+        passingPercentage: test.passing_score,
+        currentScore: correctCount,
+        totalPoints,
+        bestPercentage,
+        attemptCount: (existingStatus?.attemptCount ?? 0) + 1,
+      });
+
       setIsFinished(true);
     }
   };
@@ -139,10 +212,12 @@ export default function TestPage() {
     return (
       <div className="bg-white min-h-screen flex flex-col">
         <Header />
-        <main className="flex-1 flex items-center justify-center">
+        <main className="flex-1 flex items-center justify-center px-4">
           <div className="text-center">
-            <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-gray-600">Загрузка теста...</p>
+            <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-gray-600 text-sm sm:text-base">
+              Загрузка теста...
+            </p>
           </div>
         </main>
         <Footer />
@@ -154,15 +229,15 @@ export default function TestPage() {
     return (
       <div className="bg-white min-h-screen flex flex-col">
         <Header />
-        <main className="flex-1 flex items-center justify-center">
+        <main className="flex-1 flex items-center justify-center px-4">
           <div className="text-center">
-            <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="40"
-                height="40"
+                width="32"
+                height="32"
                 viewBox="0 0 256 256"
-                className="text-red-500"
+                className="text-red-500 sm:w-10 sm:h-10"
               >
                 <path
                   fill="currentColor"
@@ -170,10 +245,10 @@ export default function TestPage() {
                 />
               </svg>
             </div>
-            <p className="text-2xl font-bold text-gray-900 mb-4">
+            <p className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
               {error || "Тест не найден"}
             </p>
-            <Button onClick={() => router.push("/")}>
+            <Button onClick={() => router.push("/")} className="min-h-[44px]">
               Вернуться на главную
             </Button>
           </div>
@@ -183,64 +258,139 @@ export default function TestPage() {
     );
   }
 
-  if (isFinished) {
-    const percentage =
-      totalPoints > 0 ? Math.round((score / totalPoints) * 100) : score;
+  // =========================================================================
+  // RESULT SCREEN - Show pass/fail clearly
+  // =========================================================================
+  if (isFinished && result) {
+    const statusColors = getStatusColorClass(result.passed);
+
     return (
       <div className="bg-white min-h-screen flex flex-col">
         <Header />
-        <main className="flex-1 pt-20">
-          <div className="max-w-2xl mx-auto w-full px-6 py-12">
+        <main className="flex-1 pt-12 sm:pt-16 md:pt-20">
+          <div className="max-w-2xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-12">
             <Card>
-              <CardContent className="pt-12 pb-12 text-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="64"
-                  height="64"
-                  viewBox="0 0 256 256"
-                  className="mx-auto text-green-600 mb-6"
-                >
-                  <path
-                    fill="currentColor"
-                    d="M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"
-                  />
-                </svg>
-                <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                  Тест завершён!
-                </h1>
-                <p className="text-gray-600 mb-8">{test.title}</p>
+              <CardContent className="p-6 sm:pt-12 sm:pb-12 text-center">
+                {/* Pass/Fail Icon */}
+                {result.passed ? (
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="40"
+                      height="40"
+                      viewBox="0 0 256 256"
+                      className="text-green-600 sm:w-12 sm:h-12"
+                    >
+                      <path
+                        fill="currentColor"
+                        d="M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"
+                      />
+                    </svg>
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="40"
+                      height="40"
+                      viewBox="0 0 256 256"
+                      className="text-red-600 sm:w-12 sm:h-12"
+                    >
+                      <path
+                        fill="currentColor"
+                        d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"
+                      />
+                    </svg>
+                  </div>
+                )}
 
-                <div className="mb-8">
-                  <p className="text-sm text-gray-600 mb-2">Ваш результат</p>
-                  <p className="text-6xl font-bold text-green-600">
-                    {percentage}%
+                {/* Status Title */}
+                <h1
+                  className={`text-2xl sm:text-3xl md:text-4xl font-bold mb-2 ${
+                    result.passed ? "text-green-600" : "text-red-600"
+                  }`}
+                >
+                  {result.passed ? "Тест пройден!" : "Тест не пройден"}
+                </h1>
+                <p className="text-gray-600 text-sm sm:text-base mb-6 sm:mb-8">
+                  {test.title}
+                </p>
+
+                {/* Score display */}
+                <div className="mb-6 sm:mb-8">
+                  <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">
+                    Ваш результат
+                  </p>
+                  <p
+                    className={`text-4xl sm:text-5xl md:text-6xl font-bold ${
+                      result.passed ? "text-green-600" : "text-red-600"
+                    }`}
+                  >
+                    {formatPercentage(result.percentage)}
                   </p>
                 </div>
 
-                <div className="w-full bg-gray-200 rounded-full h-4 mb-8">
+                {/* Progress bar */}
+                <div className="relative w-full bg-gray-200 rounded-full h-3 sm:h-4 mb-4 sm:mb-6">
                   <div
-                    className="bg-green-600 h-4 rounded-full transition-all"
-                    style={{ width: `${percentage}%` }}
-                  ></div>
+                    className={`h-3 sm:h-4 rounded-full transition-all ${
+                      result.passed ? "bg-green-600" : "bg-red-500"
+                    }`}
+                    style={{ width: `${Math.min(result.percentage, 100)}%` }}
+                  />
+                  {/* Passing threshold marker */}
+                  <div
+                    className="absolute top-0 h-full w-0.5 bg-gray-500"
+                    style={{ left: `${result.passingScore}%` }}
+                  />
                 </div>
 
-                <p className="text-gray-600 mb-8">
-                  Набрано баллов:{" "}
-                  <span className="font-bold text-green-600">{score}</span> из{" "}
-                  <span className="font-bold">{totalPoints}</span>
-                </p>
+                {/* Info row */}
+                <div className="flex justify-center gap-4 sm:gap-8 mb-6 sm:mb-8 text-xs sm:text-sm">
+                  <div>
+                    <p className="text-gray-600">Набрано баллов</p>
+                    <p className="font-bold text-gray-900">
+                      {result.score} / {result.totalPoints}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Проходной балл</p>
+                    <p className="font-bold text-gray-900">
+                      {result.passingScore}%
+                    </p>
+                  </div>
+                </div>
 
-                <div className="flex gap-4 justify-center">
-                  <Button onClick={() => router.push("/")}>На главную</Button>
+                {/* Status message */}
+                {!result.passed && (
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 sm:p-4 mb-6 sm:mb-8">
+                    <p className="text-orange-700 text-sm sm:text-base">
+                      Для прохождения теста необходимо набрать минимум{" "}
+                      {result.passingScore}%. Попробуйте ещё раз!
+                    </p>
+                  </div>
+                )}
+
+                {/* Action buttons */}
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
                   <Button
-                    variant="secondary"
+                    onClick={() => router.push("/tests")}
+                    variant={result.passed ? "primary" : "secondary"}
+                    className="min-h-[44px]"
+                  >
+                    К списку тестов
+                  </Button>
+                  <Button
+                    variant={result.passed ? "secondary" : "primary"}
                     onClick={() => {
                       setCurrentQuestion(0);
                       setUserAnswers(new Map());
                       setIsFinished(false);
+                      setResult(null);
                     }}
+                    className="min-h-[44px]"
                   >
-                    Переделать тест
+                    Пройти тест заново
                   </Button>
                 </div>
               </CardContent>
@@ -252,6 +402,9 @@ export default function TestPage() {
     );
   }
 
+  // =========================================================================
+  // QUESTION SCREEN
+  // =========================================================================
   const question = test.questions[currentQuestion];
   const answeredQuestions = userAnswers.size;
   const progress = Math.round(
@@ -263,58 +416,60 @@ export default function TestPage() {
     <div className="bg-white min-h-screen flex flex-col">
       <Header />
 
-      <main className="flex-1 pt-20">
-        <div className="max-w-3xl mx-auto w-full px-6 py-12">
+      <main className="flex-1 pt-12 sm:pt-16 md:pt-20">
+        <div className="max-w-3xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-12">
           {/* Progress */}
-          <div className="mb-8">
+          <div className="mb-6 sm:mb-8">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-medium text-gray-900">
+              <p className="text-xs sm:text-sm font-medium text-gray-900">
                 Вопрос {currentQuestion + 1} из {test.questions.length}
               </p>
-              <p className="text-sm font-medium text-gray-600">
-                Ответлено: {answeredQuestions}
+              <p className="text-xs sm:text-sm font-medium text-gray-600">
+                Отвечено: {answeredQuestions}
               </p>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-3">
+            <div className="w-full bg-gray-200 rounded-full h-2 sm:h-3">
               <div
-                className="bg-blue-600 h-3 rounded-full transition-all"
+                className="bg-blue-600 h-2 sm:h-3 rounded-full transition-all"
                 style={{ width: `${progress}%` }}
-              ></div>
+              />
             </div>
           </div>
 
           {/* Question Card */}
-          <Card className="mb-8">
-            <CardContent className="pt-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-8">
+          <Card className="mb-6 sm:mb-8">
+            <CardContent className="p-4 sm:pt-8">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-6 sm:mb-8">
                 {question.question_text}
               </h2>
 
-              {/* Answers */}
-              <div className="space-y-3">
+              {/* Answers - touch-friendly */}
+              <div className="space-y-2 sm:space-y-3">
                 {question.options.map((option) => (
                   <button
                     key={option.id}
                     onClick={() => handleAnswerSelect(option.id)}
-                    className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                    className={`w-full text-left p-3 sm:p-4 rounded-lg border-2 transition-all min-h-[48px] ${
                       selectedOptions.includes(option.id)
                         ? "border-blue-600 bg-blue-50"
-                        : "border-gray-200 hover:border-gray-300"
+                        : "border-gray-200 hover:border-gray-300 active:border-gray-400"
                     }`}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
                       <div
-                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                        className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
                           selectedOptions.includes(option.id)
                             ? "border-blue-600 bg-blue-600"
                             : "border-gray-300"
                         }`}
                       >
                         {selectedOptions.includes(option.id) && (
-                          <span className="text-white text-sm">✓</span>
+                          <span className="text-white text-xs sm:text-sm">
+                            ✓
+                          </span>
                         )}
                       </div>
-                      <span className="text-gray-900 font-medium">
+                      <span className="text-sm sm:text-base text-gray-900 font-medium">
                         {option.option_text}
                       </span>
                     </div>
@@ -324,13 +479,13 @@ export default function TestPage() {
             </CardContent>
           </Card>
 
-          {/* Navigation */}
-          <div className="flex gap-4 justify-between">
+          {/* Navigation - touch-friendly */}
+          <div className="flex gap-3 sm:gap-4 justify-between">
             <Button
               variant="secondary"
               onClick={handlePrevious}
               disabled={currentQuestion === 0}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 min-h-[44px] sm:min-h-[40px]"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -343,17 +498,18 @@ export default function TestPage() {
                   d="M168.49,199.51a12,12,0,0,1-17,17l-80-80a12,12,0,0,1,0-17l80-80a12,12,0,0,1,17,17L97,128Z"
                 />
               </svg>
-              Предыдущий
+              <span className="hidden sm:inline">Предыдущий</span>
+              <span className="sm:hidden">Назад</span>
             </Button>
 
             <Button
               variant="primary"
               onClick={handleNext}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 min-h-[44px] sm:min-h-[40px]"
             >
               {currentQuestion === test.questions.length - 1
                 ? "Завершить"
-                : "Следующий"}
+                : "Далее"}
               {currentQuestion !== test.questions.length - 1 && (
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
