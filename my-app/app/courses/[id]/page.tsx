@@ -88,6 +88,44 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
   );
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Store modules with their lessons loaded
+  const [modulesWithLessons, setModulesWithLessons] = useState<
+    Map<number, any>
+  >(new Map());
+  const [isLoadingLessons, setIsLoadingLessons] = useState(false);
+
+  // Fetch all modules with their lessons
+  const fetchModulesWithLessons = async (moduleIds: number[]) => {
+    setIsLoadingLessons(true);
+    try {
+      const modulesData = await Promise.all(
+        moduleIds.map(async (moduleId) => {
+          try {
+            const moduleWithLessons = await modulesAPI.getWithLessons(moduleId);
+            return { id: moduleId, data: moduleWithLessons };
+          } catch (err) {
+            console.error(
+              `Failed to fetch lessons for module ${moduleId}:`,
+              err
+            );
+            return { id: moduleId, data: null };
+          }
+        })
+      );
+
+      const newMap = new Map<number, any>();
+      modulesData.forEach(({ id, data }) => {
+        if (data) {
+          newMap.set(id, data);
+        }
+      });
+      setModulesWithLessons(newMap);
+    } catch (err) {
+      console.error("Failed to fetch modules with lessons:", err);
+    } finally {
+      setIsLoadingLessons(false);
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -104,6 +142,11 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
         const paid = localStorage.getItem(`course_paid_${params.id}`);
         if (paid === "true") {
           setIsPaid(true);
+          // Fetch lessons for all modules if already paid
+          if (fetchedCourse.modules && fetchedCourse.modules.length > 0) {
+            const moduleIds = fetchedCourse.modules.map((m: any) => m.id);
+            fetchModulesWithLessons(moduleIds);
+          }
         }
 
         const lastModule = localStorage.getItem(
@@ -166,6 +209,12 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
     localStorage.setItem(`course_paid_${courseId}`, "true");
     setIsPaid(true);
     setIsPaymentOpen(false);
+
+    // Fetch lessons for all modules after payment
+    if (modules.length > 0) {
+      const moduleIds = modules.map((m: any) => m.id);
+      fetchModulesWithLessons(moduleIds);
+    }
   };
 
   const toggleModule = (moduleId: string) => {
@@ -180,11 +229,31 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
     });
   };
 
+  // Use modules from API (not syllabus which doesn't exist)
+  const modules = course.modules || [];
+
+  // Helper to get lessons for a module from loaded data
+  const getModuleLessons = (moduleId: number) => {
+    const moduleData = modulesWithLessons.get(moduleId);
+    return moduleData?.lessons || [];
+  };
+
+  // Default values for optional fields from API
+  const coursePrice = course.price ?? 0;
+  const courseRating = course.rating ?? 4.5;
+  const courseLevel = course.level ?? "beginner";
+  const courseDuration = course.duration ?? "4 недели";
+  const whatYouWillLearn = course.whatYouWillLearn ?? [
+    "Основные концепции курса",
+    "Практические навыки",
+    "Сертификация по окончании",
+  ];
+
   const handleSelectModule = (moduleId: string) => {
     setSelectedModuleId(moduleId);
     if (courseId) {
-      const moduleIdx = course.syllabus.findIndex(
-        (m: any) => m.id === moduleId
+      const moduleIdx = modules.findIndex(
+        (m: any) => String(m.id) === moduleId
       );
       localStorage.setItem(
         `course_${courseId}_lastModule`,
@@ -193,8 +262,8 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
     }
   };
 
-  const selectedModule = course.syllabus.find(
-    (m: any) => m.id === selectedModuleId
+  const selectedModule = modules.find(
+    (m: any) => String(m.id) === selectedModuleId
   );
   const moduleContent = selectedModuleId
     ? moduleContents[selectedModuleId]
@@ -231,13 +300,10 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                       <div className="absolute bottom-4 left-4 flex items-center gap-2">
-                        <Badge
-                          variant="primary"
-                          className="bg-blue-500/90 backdrop-blur-sm"
-                        >
-                          {course.level === "beginner"
+                        <Badge variant="primary">
+                          {courseLevel === "beginner"
                             ? "Начинающий"
-                            : course.level === "intermediate"
+                            : courseLevel === "intermediate"
                             ? "Средний"
                             : "Продвинутый"}
                         </Badge>
@@ -258,9 +324,9 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
 
                   <div className="flex flex-wrap items-center gap-6 mb-8">
                     <div className="flex items-center gap-2">
-                      <Rating rating={course.rating} />
+                      <Rating rating={courseRating} />
                       <span className="text-white font-medium">
-                        {course.rating}
+                        {courseRating}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-blue-200">
@@ -275,7 +341,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                           d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm64-88a8,8,0,0,1-8,8H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48A8,8,0,0,1,192,128Z"
                         />
                       </svg>
-                      <span>{course.duration}</span>
+                      <span>{courseDuration}</span>
                     </div>
                   </div>
 
@@ -283,13 +349,13 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                   <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
                     <div className="flex items-baseline gap-2 mb-4">
                       <span className="text-4xl font-bold text-white">
-                        ₸{course.price.toLocaleString("ru-RU")}
+                        ₸{coursePrice.toLocaleString("ru-RU")}
                       </span>
                     </div>
 
                     <ul className="space-y-3 mb-6">
                       {[
-                        `${course.syllabus.length} модулей`,
+                        `${modules.length} модулей`,
                         "Пожизненный доступ",
                         "Сертификат по окончании",
                       ].map((item, idx) => (
@@ -337,7 +403,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                   Чему вы научитесь
                 </h2>
                 <div className="grid gap-4">
-                  {course.whatYouWillLearn.map((item: string, idx: number) => (
+                  {whatYouWillLearn.map((item: string, idx: number) => (
                     <div
                       key={idx}
                       className="flex items-start gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm"
@@ -371,7 +437,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                   Программа курса
                 </h2>
                 <div className="grid gap-4">
-                  {course.syllabus.map((module: any, idx: number) => (
+                  {modules.map((module: any, idx: number) => (
                     <div
                       key={module.id}
                       className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm"
@@ -385,7 +451,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                             {module.title}
                           </h3>
                           <p className="text-sm text-gray-500">
-                            {module.lessons.length} уроков
+                            {(module.lessons || []).length} уроков
                           </p>
                         </div>
                       </div>
@@ -399,7 +465,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
           <PaymentModal
             isOpen={isPaymentOpen}
             courseTitle={course.title}
-            price={course.price}
+            price={coursePrice}
             onPay={handlePaymentComplete}
             onClose={() => setIsPaymentOpen(false)}
           />
@@ -422,9 +488,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
             <h2 className="font-bold text-lg text-white mb-2">
               {course.title}
             </h2>
-            <p className="text-blue-100 text-sm">
-              {course.syllabus.length} модулей
-            </p>
+            <p className="text-blue-100 text-sm">{modules.length} модулей</p>
           </div>
 
           {/* Tabs */}
@@ -454,7 +518,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
           {/* Content Tab - Modules List */}
           {activeTab === "content" && (
             <div className="flex-1 p-4 space-y-2 overflow-y-auto">
-              {course.syllabus.map((module: any, idx: number) => (
+              {modules.map((module: any, idx: number) => (
                 <div
                   key={module.id}
                   className="animate-fadeInUp"
@@ -462,11 +526,11 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                 >
                   <button
                     onClick={() => {
-                      handleSelectModule(module.id);
-                      toggleModule(module.id);
+                      handleSelectModule(String(module.id));
+                      toggleModule(String(module.id));
                     }}
                     className={`w-full text-left p-4 rounded-xl transition-all duration-300 ${
-                      selectedModuleId === module.id
+                      selectedModuleId === String(module.id)
                         ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg"
                         : "bg-gray-50 text-gray-900 hover:bg-gray-100"
                     }`}
@@ -474,7 +538,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                     <div className="flex items-start gap-3">
                       <span
                         className={`text-xs font-bold w-6 h-6 rounded-md flex items-center justify-center ${
-                          selectedModuleId === module.id
+                          selectedModuleId === String(module.id)
                             ? "bg-white/20 text-white"
                             : "bg-blue-100 text-blue-700"
                         }`}
@@ -487,24 +551,25 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                         </h4>
                         <p
                           className={`text-xs mt-1 ${
-                            selectedModuleId === module.id
+                            selectedModuleId === String(module.id)
                               ? "text-blue-100"
                               : "text-gray-500"
                           }`}
                         >
-                          {module.lessons.length} уроков • {module.duration}
+                          {getModuleLessons(module.id).length} уроков •{" "}
+                          {module.duration || ""}
                         </p>
                       </div>
                     </div>
                   </button>
 
                   {/* Expanded lessons list */}
-                  {expandedModules.has(module.id) && (
+                  {expandedModules.has(String(module.id)) && (
                     <div className="ml-4 mt-2 space-y-1 border-l-2 border-blue-200 pl-4">
-                      {module.lessons.map(
-                        (lesson: string, lessonIdx: number) => (
+                      {getModuleLessons(module.id).map(
+                        (lesson: any, lessonIdx: number) => (
                           <div
-                            key={lessonIdx}
+                            key={lesson.id || lessonIdx}
                             className="text-xs text-gray-600 py-2 px-3 hover:bg-blue-50 rounded-lg cursor-pointer transition-all flex items-center gap-2"
                           >
                             <svg
@@ -519,7 +584,31 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                                 d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm48.49,102.83-48,32A8,8,0,0,1,116,152V88a8,8,0,0,1,12.49-6.62l48,32a8,8,0,0,1,0,13.24Z"
                               />
                             </svg>
-                            <span className="line-clamp-1">{lesson}</span>
+                            <span className="line-clamp-1 flex-1">
+                              {lesson.title || lesson}
+                            </span>
+                            {/* Lesson type badge */}
+                            {lesson.lesson_type && (
+                              <span
+                                className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                                  lesson.lesson_type === "theory"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : lesson.lesson_type === "practice"
+                                    ? "bg-green-100 text-green-700"
+                                    : lesson.lesson_type === "test"
+                                    ? "bg-orange-100 text-orange-700"
+                                    : "bg-gray-100 text-gray-700"
+                                }`}
+                              >
+                                {lesson.lesson_type === "theory"
+                                  ? "Теория"
+                                  : lesson.lesson_type === "practice"
+                                  ? "Практика"
+                                  : lesson.lesson_type === "test"
+                                  ? "Тест"
+                                  : lesson.lesson_type}
+                              </span>
+                            )}
                           </div>
                         )
                       )}
@@ -549,7 +638,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                   </svg>
                   Zoom-занятия
                 </h3>
-                {course.syllabus.map((module: any, idx: number) => (
+                {modules.map((module: any, idx: number) => (
                   <a
                     key={module.id}
                     href={moduleContents[module.id]?.zoomLink || "#"}
@@ -583,7 +672,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                   </svg>
                   Тесты
                 </h3>
-                {course.syllabus.map((module: any, idx: number) => (
+                {modules.map((module: any, idx: number) => (
                   <a
                     key={module.id}
                     href={
@@ -634,8 +723,8 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                 <div className="bg-white border border-gray-200 rounded-2xl p-8 mb-6 shadow-sm">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold shadow-md">
-                      {course.syllabus.findIndex(
-                        (m: any) => m.id === selectedModuleId
+                      {modules.findIndex(
+                        (m: any) => String(m.id) === selectedModuleId
                       ) + 1}
                     </div>
                     <Badge variant="primary">Модуль</Badge>
@@ -672,7 +761,10 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                           d="M232,64H176V48a24,24,0,0,0-24-24H104A24,24,0,0,0,80,48V64H24A8,8,0,0,0,16,72V200a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V72A8,8,0,0,0,232,64ZM96,48a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8V64H96ZM224,200H32V80H224Z"
                         />
                       </svg>
-                      {selectedModule.lessons.length} уроков
+                      {selectedModuleId
+                        ? getModuleLessons(parseInt(selectedModuleId)).length
+                        : 0}{" "}
+                      уроков
                     </span>
                   </div>
                 </div>
@@ -691,36 +783,86 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                 ) : (
                   <div className="bg-white border border-gray-200 rounded-2xl p-8 mb-6 shadow-sm">
                     <p className="text-lg text-gray-700 leading-relaxed">
-                      В этом модуле вы изучите {selectedModule.lessons.length}{" "}
+                      В этом модуле вы изучите{" "}
+                      {selectedModuleId
+                        ? getModuleLessons(parseInt(selectedModuleId)).length
+                        : 0}{" "}
                       важных тем.
                     </p>
                   </div>
                 )}
 
-                {/* Lessons List */}
+                {/* Lessons List with Content */}
                 <div className="bg-white border border-gray-200 rounded-2xl p-8 mb-6 shadow-sm">
                   <h2 className="text-xl font-bold text-gray-900 mb-6">
                     Уроки модуля
                   </h2>
-                  <ul className="space-y-3">
-                    {selectedModule.lessons.map(
-                      (lesson: string, idx: number) => (
-                        <li
-                          key={idx}
-                          className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-blue-50 transition-all cursor-pointer group"
-                        >
-                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                  <div className="space-y-4">
+                    {(selectedModuleId
+                      ? getModuleLessons(parseInt(selectedModuleId))
+                      : []
+                    ).map((lesson: any, idx: number) => (
+                      <div
+                        key={lesson.id || idx}
+                        className="border border-gray-200 rounded-xl overflow-hidden"
+                      >
+                        {/* Lesson Header */}
+                        <div className="flex items-center gap-4 p-4 bg-gray-50">
+                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold shrink-0">
                             {idx + 1}
                           </div>
                           <div className="flex-1">
-                            <h3 className="font-medium text-gray-900">
-                              {lesson}
+                            <h3 className="font-semibold text-gray-900">
+                              {lesson.title || lesson}
                             </h3>
+                            {lesson.lesson_type && (
+                              <span className="text-xs text-gray-500 capitalize">
+                                {lesson.lesson_type === "theory"
+                                  ? "Теория"
+                                  : lesson.lesson_type === "practice"
+                                  ? "Практика"
+                                  : lesson.lesson_type === "test"
+                                  ? "Тест"
+                                  : lesson.lesson_type}
+                              </span>
+                            )}
                           </div>
-                        </li>
-                      )
+                        </div>
+
+                        {/* Lesson Content */}
+                        {lesson.content && (
+                          <div className="p-4 border-t border-gray-200 bg-white">
+                            <div
+                              className="prose prose-sm max-w-none text-gray-700"
+                              dangerouslySetInnerHTML={{
+                                __html: lesson.content.replace(/\n/g, "<br/>"),
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+
+                    {/* Empty state */}
+                    {selectedModuleId &&
+                      getModuleLessons(parseInt(selectedModuleId)).length ===
+                        0 &&
+                      !isLoadingLessons && (
+                        <div className="text-center py-8 text-gray-500">
+                          <p>Уроки для этого модуля пока не добавлены</p>
+                        </div>
+                      )}
+
+                    {/* Loading state */}
+                    {isLoadingLessons && (
+                      <div className="text-center py-8">
+                        <div className="w-8 h-8 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-2" />
+                        <p className="text-gray-500 text-sm">
+                          Загрузка уроков...
+                        </p>
+                      </div>
                     )}
-                  </ul>
+                  </div>
                 </div>
 
                 {/* Module Actions */}
