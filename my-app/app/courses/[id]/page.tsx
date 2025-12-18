@@ -4,12 +4,17 @@ import React, { useState, useEffect } from "react";
 import { Header } from "@/src/components/layout/Header";
 import { Footer } from "@/src/components/layout/Footer";
 import { PaymentModal } from "@/src/components/PaymentModal";
-import { ModuleContent } from "@/src/components/course/ModuleContent";
+import { LessonContentRenderer } from "@/src/components/course/LessonContentRenderer";
+import { CourseProgressBar } from "@/src/components/course/CourseProgressBar";
 import { Button } from "@/src/components/ui/Button";
 import { Badge } from "@/src/components/ui/Badge";
 import { Rating } from "@/src/components/ui/Rating";
-import { coursesAPI, modulesAPI } from "@/src/lib/api";
-import type { CourseWithModules, ModuleWithLessons } from "@/src/types/api";
+import { coursesAPI, modulesAPI, lessonsAPI } from "@/src/lib/api";
+import type {
+  CourseWithModules,
+  ModuleWithLessons,
+  LessonWithAllMedia,
+} from "@/src/types/api";
 
 interface PageProps {
   params: Promise<{
@@ -17,72 +22,12 @@ interface PageProps {
   }>;
 }
 
-// Demo content for modules with image references
-const moduleContents: {
-  [key: string]: {
-    content: string;
-    images: { [key: string]: { url: string; alt: string } };
-    zoomLink?: string;
-    testId?: string;
-  };
-} = {
-  "1": {
-    content: `Сердце — это полый мышечный орган, расположенный в грудной клетке между легкими. (figure1) показывает общую анатомию сердца человека.
-
-Сердце состоит из четырех камер: двух предсердий и двух желудочков. Правая сторона сердца получает венозную кровь и направляет ее в легкие для обогащения кислородом. (image1) демонстрирует схему кровообращения.
-
-Стенка сердца состоит из трех слоев: эндокарда (внутренний слой), миокарда (мышечный слой) и эпикарда (наружный слой). Миокард — самый толстый слой, обеспечивающий сократительную функцию сердца.
-
-На (figure2) представлена электрическая проводящая система сердца, которая координирует сердечные сокращения.`,
-    images: {
-      figure1: {
-        url: "https://images.unsplash.com/photo-1559757175-5700dde675bc?w=800",
-        alt: "Анатомия сердца человека",
-      },
-      image1: {
-        url: "https://images.unsplash.com/photo-1628348070889-cb656235b4eb?w=800",
-        alt: "Схема кровообращения",
-      },
-      figure2: {
-        url: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800",
-        alt: "Проводящая система сердца",
-      },
-    },
-    zoomLink: "https://zoom.us/j/1234567890",
-    testId: "1",
-  },
-  "2": {
-    content: `Электрокардиография (ЭКГ) — это метод графической регистрации электрической активности сердца. (figure1) показывает нормальную ЭКГ-кривую.
-
-Стандартная ЭКГ включает 12 отведений: 6 отведений от конечностей и 6 грудных отведений. Каждое отведение "смотрит" на сердце под определённым углом.
-
-Основные элементы ЭКГ: зубец P (деполяризация предсердий), комплекс QRS (деполяризация желудочков), зубец T (реполяризация желудочков). (image1) демонстрирует расположение электродов.
-
-При анализе ЭКГ важно оценить ритм, частоту, проводимость, а также морфологию зубцов и интервалов.`,
-    images: {
-      figure1: {
-        url: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=800",
-        alt: "Нормальная ЭКГ-кривая",
-      },
-      image1: {
-        url: "https://images.unsplash.com/photo-1516549655169-df83a0774514?w=800",
-        alt: "Расположение электродов ЭКГ",
-      },
-    },
-    zoomLink: "https://zoom.us/j/0987654321",
-    testId: "2",
-  },
-};
-
 export default function CoursePage({ params: paramsPromise }: PageProps) {
   const [course, setCourse] = useState<any>(null);
   const [courseId, setCourseId] = useState<string | null>(null);
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
-  const [activeTab, setActiveTab] = useState<"content" | "materials">(
-    "content"
-  );
   const [expandedModules, setExpandedModules] = useState<Set<string>>(
     new Set()
   );
@@ -93,6 +38,57 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
     Map<number, any>
   >(new Map());
   const [isLoadingLessons, setIsLoadingLessons] = useState(false);
+  // Store lessons with all media for content rendering
+  const [lessonsWithMedia, setLessonsWithMedia] = useState<
+    Map<number, LessonWithAllMedia>
+  >(new Map());
+  const [selectedLessonId, setSelectedLessonId] = useState<number | null>(null);
+  const [isLoadingLessonMedia, setIsLoadingLessonMedia] = useState(false);
+  // Track completed lessons for progress
+  const [completedLessons, setCompletedLessons] = useState<Set<number>>(
+    new Set()
+  );
+  // Mobile sidebar toggle
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Fetch lesson with all media (for content rendering)
+  const fetchLessonWithMedia = async (lessonId: number) => {
+    // Check cache first
+    if (lessonsWithMedia.has(lessonId)) {
+      setSelectedLessonId(lessonId);
+      return;
+    }
+
+    setIsLoadingLessonMedia(true);
+    try {
+      const lessonWithMedia = await lessonsAPI.getWithAllMedia(lessonId);
+      setLessonsWithMedia((prev) =>
+        new Map(prev).set(lessonId, lessonWithMedia)
+      );
+      setSelectedLessonId(lessonId);
+    } catch (err) {
+      console.error(
+        `Failed to fetch lesson media for lesson ${lessonId}:`,
+        err
+      );
+    } finally {
+      setIsLoadingLessonMedia(false);
+    }
+
+    // Mark lesson as completed and save to localStorage
+    if (courseId) {
+      setCompletedLessons((prev) => {
+        const newSet = new Set(prev);
+        newSet.add(lessonId);
+        // Save to localStorage
+        localStorage.setItem(
+          `course_${courseId}_completed`,
+          JSON.stringify([...newSet])
+        );
+        return newSet;
+      });
+    }
+  };
 
   // Fetch all modules with their lessons
   const fetchModulesWithLessons = async (moduleIds: number[]) => {
@@ -147,6 +143,19 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
             const moduleIds = fetchedCourse.modules.map((m: any) => m.id);
             fetchModulesWithLessons(moduleIds);
           }
+
+          // Load completed lessons from localStorage
+          const savedCompleted = localStorage.getItem(
+            `course_${params.id}_completed`
+          );
+          if (savedCompleted) {
+            try {
+              const completedArray = JSON.parse(savedCompleted);
+              setCompletedLessons(new Set(completedArray));
+            } catch (e) {
+              console.error("Failed to parse completed lessons:", e);
+            }
+          }
         }
 
         const lastModule = localStorage.getItem(
@@ -170,28 +179,32 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
     })();
   }, [paramsPromise]);
 
+  // Loading state
   if (isLoading) {
     return (
       <div className="bg-white min-h-screen flex items-center justify-center">
         <div className="text-center animate-fadeIn">
-          <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Загрузка курса...</p>
+          <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 text-sm sm:text-base">
+            Загрузка курса...
+          </p>
         </div>
       </div>
     );
   }
 
+  // Error state
   if (!course || !courseId) {
     return (
-      <div className="bg-white min-h-screen flex items-center justify-center">
+      <div className="bg-white min-h-screen flex items-center justify-center px-4">
         <div className="text-center animate-fadeIn">
-          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="40"
-              height="40"
+              width="32"
+              height="32"
               viewBox="0 0 256 256"
-              className="text-red-500"
+              className="text-red-500 sm:w-10 sm:h-10"
             >
               <path
                 fill="currentColor"
@@ -199,7 +212,9 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
               />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Курс не найден</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+            Курс не найден
+          </h1>
         </div>
       </div>
     );
@@ -229,13 +244,15 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
     });
   };
 
-  // Use modules from API (not syllabus which doesn't exist)
+  // Use modules from API
   const modules = course.modules || [];
 
-  // Helper to get lessons for a module from loaded data
+  // Helper to get lessons for a module from loaded data - SORTED BY ID
   const getModuleLessons = (moduleId: number) => {
     const moduleData = modulesWithLessons.get(moduleId);
-    return moduleData?.lessons || [];
+    const lessons = moduleData?.lessons || [];
+    // Sort lessons by id ascending to ensure correct order
+    return [...lessons].sort((a: any, b: any) => a.id - b.id);
   };
 
   // Default values for optional fields from API
@@ -251,6 +268,9 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
 
   const handleSelectModule = (moduleId: string) => {
     setSelectedModuleId(moduleId);
+    // Close sidebar on mobile after selection
+    setIsSidebarOpen(false);
+
     if (courseId) {
       const moduleIdx = modules.findIndex(
         (m: any) => String(m.id) === moduleId
@@ -260,22 +280,25 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
         moduleIdx.toString()
       );
     }
+
+    // Auto-select first lesson when module is opened
+    const lessons = getModuleLessons(parseInt(moduleId));
+    if (lessons.length > 0 && !selectedLessonId) {
+      fetchLessonWithMedia(lessons[0].id);
+    }
   };
 
   const selectedModule = modules.find(
     (m: any) => String(m.id) === selectedModuleId
   );
-  const moduleContent = selectedModuleId
-    ? moduleContents[selectedModuleId]
-    : null;
 
   // ========== UNPAID STATE ==========
   if (!isPaid) {
     return (
       <div className="bg-gray-50 min-h-screen">
         <Header />
-        <main className="pt-20">
-          {/* Hero Section with Course Image */}
+        <main className="pt-16 sm:pt-20">
+          {/* Hero Section with Course Image - RESPONSIVE */}
           <div className="relative bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 overflow-hidden">
             <div className="absolute inset-0 opacity-10">
               <div
@@ -286,20 +309,20 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
               />
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-              <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-24">
+              <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
                 {/* Left: Course Image */}
-                <div className="animate-slideInLeft">
+                <div className="animate-slideInLeft order-2 lg:order-1">
                   <div className="relative group">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-500" />
-                    <div className="relative aspect-video rounded-xl overflow-hidden shadow-2xl">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-xl sm:rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-500" />
+                    <div className="relative aspect-video rounded-lg sm:rounded-xl overflow-hidden shadow-2xl">
                       <img
                         src={`https://images.unsplash.com/photo-1559757175-5700dde675bc?w=800&h=450&fit=crop`}
                         alt={course.title}
                         className="w-full h-full object-cover transform group-hover:scale-105 transition duration-700"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                      <div className="absolute bottom-4 left-4 flex items-center gap-2">
+                      <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 flex items-center gap-2">
                         <Badge variant="primary">
                           {courseLevel === "beginner"
                             ? "Начинающий"
@@ -313,28 +336,29 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                 </div>
 
                 {/* Right: Course Info */}
-                <div className="animate-slideInRight">
-                  <h1 className="text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight">
+                <div className="animate-slideInRight order-1 lg:order-2">
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-3 sm:mb-4 leading-tight">
                     {course.title}
                   </h1>
 
-                  <p className="text-lg text-blue-100 mb-6 leading-relaxed">
+                  <p className="text-sm sm:text-base lg:text-lg text-blue-100 mb-4 sm:mb-6 leading-relaxed">
                     {course.description}
                   </p>
 
-                  <div className="flex flex-wrap items-center gap-6 mb-8">
+                  <div className="flex flex-wrap items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
                     <div className="flex items-center gap-2">
                       <Rating rating={courseRating} />
-                      <span className="text-white font-medium">
+                      <span className="text-white font-medium text-sm sm:text-base">
                         {courseRating}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-blue-200">
+                    <div className="flex items-center gap-2 text-blue-200 text-sm sm:text-base">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        width="18"
-                        height="18"
+                        width="16"
+                        height="16"
                         viewBox="0 0 256 256"
+                        className="sm:w-[18px] sm:h-[18px]"
                       >
                         <path
                           fill="currentColor"
@@ -346,14 +370,14 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                   </div>
 
                   {/* Price Card */}
-                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-                    <div className="flex items-baseline gap-2 mb-4">
-                      <span className="text-4xl font-bold text-white">
+                  <div className="bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/20">
+                    <div className="flex items-baseline gap-2 mb-3 sm:mb-4">
+                      <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">
                         ₸{coursePrice.toLocaleString("ru-RU")}
                       </span>
                     </div>
 
-                    <ul className="space-y-3 mb-6">
+                    <ul className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
                       {[
                         `${modules.length} модулей`,
                         "Пожизненный доступ",
@@ -361,14 +385,14 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                       ].map((item, idx) => (
                         <li
                           key={idx}
-                          className="flex items-center gap-3 text-white"
+                          className="flex items-center gap-2 sm:gap-3 text-white text-sm sm:text-base"
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
-                            width="20"
-                            height="20"
+                            width="18"
+                            height="18"
                             viewBox="0 0 256 256"
-                            className="text-green-400 shrink-0"
+                            className="text-green-400 shrink-0 sm:w-5 sm:h-5"
                           >
                             <path
                               fill="currentColor"
@@ -383,7 +407,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                     <Button
                       variant="primary"
                       size="lg"
-                      className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg shadow-blue-500/30 animate-pulseGlow"
+                      className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg shadow-blue-500/30 text-sm sm:text-base py-3 sm:py-4"
                       onClick={() => setIsPaymentOpen(true)}
                     >
                       Оплатить и начать обучение
@@ -394,27 +418,27 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
             </div>
           </div>
 
-          {/* Course Details */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            <div className="grid lg:grid-cols-2 gap-12">
+          {/* Course Details - RESPONSIVE */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+            <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
               {/* What you'll learn */}
               <div className="animate-fadeInUp">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
                   Чему вы научитесь
                 </h2>
-                <div className="grid gap-4">
+                <div className="grid gap-3 sm:gap-4">
                   {whatYouWillLearn.map((item: string, idx: number) => (
                     <div
                       key={idx}
-                      className="flex items-start gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm"
+                      className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 bg-white rounded-lg sm:rounded-xl border border-gray-100 shadow-sm"
                     >
-                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center shrink-0">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 bg-green-100 rounded-full flex items-center justify-center shrink-0">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
-                          width="18"
-                          height="18"
+                          width="16"
+                          height="16"
                           viewBox="0 0 256 256"
-                          className="text-green-600"
+                          className="text-green-600 sm:w-[18px] sm:h-[18px]"
                         >
                           <path
                             fill="currentColor"
@@ -422,7 +446,9 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                           />
                         </svg>
                       </div>
-                      <span className="text-gray-700">{item}</span>
+                      <span className="text-gray-700 text-sm sm:text-base">
+                        {item}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -433,24 +459,24 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                 className="animate-fadeInUp"
                 style={{ animationDelay: "100ms" }}
               >
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
                   Программа курса
                 </h2>
-                <div className="grid gap-4">
+                <div className="grid gap-3 sm:gap-4">
                   {modules.map((module: any, idx: number) => (
                     <div
                       key={module.id}
-                      className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm"
+                      className="bg-white rounded-lg sm:rounded-xl border border-gray-100 p-3 sm:p-4 shadow-sm"
                     >
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-md">
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-md text-sm sm:text-base">
                           {idx + 1}
                         </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
                             {module.title}
                           </h3>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-xs sm:text-sm text-gray-500">
                             {(module.lessons || []).length} уроков
                           </p>
                         </div>
@@ -475,234 +501,219 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
     );
   }
 
-  // ========== PAID STATE ==========
+  // ========== PAID STATE - RESPONSIVE ==========
   return (
     <div className="bg-gray-50 min-h-screen flex flex-col">
       <Header />
 
-      <main className="flex-1 pt-16 flex overflow-hidden">
+      <main className="flex-1 pt-14 sm:pt-16 flex flex-col lg:flex-row overflow-hidden">
+        {/* Mobile Header Bar */}
+        <div className="lg:hidden sticky top-14 sm:top-16 z-40 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 256 256"
+            >
+              <path
+                fill="currentColor"
+                d="M224,128a8,8,0,0,1-8,8H40a8,8,0,0,1,0-16H216A8,8,0,0,1,224,128ZM40,72H216a8,8,0,0,0,0-16H40a8,8,0,0,0,0,16ZM216,184H40a8,8,0,0,0,0,16H216a8,8,0,0,0,0-16Z"
+              />
+            </svg>
+            <span className="font-medium text-sm">Модули</span>
+          </button>
+          {selectedModule && (
+            <span className="text-xs text-gray-500 truncate max-w-[200px]">
+              {selectedModule.title}
+            </span>
+          )}
+        </div>
+
+        {/* Mobile Sidebar Overlay */}
+        {isSidebarOpen && (
+          <div
+            className="lg:hidden fixed inset-0 bg-black/50 z-50"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
         {/* Left Sidebar - Course Modules */}
-        <aside className="w-80 bg-white border-r border-gray-200 overflow-y-auto flex flex-col animate-slideInLeft">
+        <aside
+          className={`
+            fixed lg:relative inset-y-0 left-0 z-50 lg:z-auto
+            w-[280px] sm:w-80 lg:w-80
+            bg-white border-r border-gray-200 
+            transform transition-transform duration-300 ease-in-out
+            ${
+              isSidebarOpen
+                ? "translate-x-0"
+                : "-translate-x-full lg:translate-x-0"
+            }
+            flex flex-col
+            lg:animate-slideInLeft
+          `}
+        >
+          {/* Close button for mobile */}
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="lg:hidden absolute top-3 right-3 w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 256 256"
+            >
+              <path
+                fill="currentColor"
+                d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"
+              />
+            </svg>
+          </button>
+
           {/* Course Title */}
-          <div className="sticky top-0 bg-gradient-to-br from-blue-600 to-indigo-700 p-6 z-10">
-            <h2 className="font-bold text-lg text-white mb-2">
+          <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-4 sm:p-6">
+            <h2 className="font-bold text-base sm:text-lg text-white mb-2 pr-8 lg:pr-0">
               {course.title}
             </h2>
-            <p className="text-blue-100 text-sm">{modules.length} модулей</p>
+            <p className="text-blue-100 text-xs sm:text-sm mb-3">
+              {modules.length} модулей
+            </p>
+            {/* Progress Bar */}
+            <div className="bg-white/10 rounded-lg p-2 sm:p-3">
+              <CourseProgressBar
+                completedLessons={completedLessons.size}
+                totalLessons={modules.reduce(
+                  (acc: number, m: any) => acc + getModuleLessons(m.id).length,
+                  0
+                )}
+                variant="dark"
+              />
+            </div>
           </div>
 
-          {/* Tabs */}
-          <div className="flex border-b border-gray-200">
-            <button
-              onClick={() => setActiveTab("content")}
-              className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
-                activeTab === "content"
-                  ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              }`}
-            >
-              Содержание
-            </button>
-            <button
-              onClick={() => setActiveTab("materials")}
-              className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
-                activeTab === "materials"
-                  ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              }`}
-            >
-              Материалы
-            </button>
-          </div>
-
-          {/* Content Tab - Modules List */}
-          {activeTab === "content" && (
-            <div className="flex-1 p-4 space-y-2 overflow-y-auto">
-              {modules.map((module: any, idx: number) => (
-                <div
-                  key={module.id}
-                  className="animate-fadeInUp"
-                  style={{ animationDelay: `${idx * 50}ms` }}
+          {/* Modules List */}
+          <div className="flex-1 p-3 sm:p-4 space-y-2 overflow-y-auto">
+            {modules.map((module: any, idx: number) => (
+              <div
+                key={module.id}
+                className="animate-fadeInUp"
+                style={{ animationDelay: `${idx * 50}ms` }}
+              >
+                <button
+                  onClick={() => {
+                    handleSelectModule(String(module.id));
+                    toggleModule(String(module.id));
+                  }}
+                  className={`w-full text-left p-3 sm:p-4 rounded-lg sm:rounded-xl transition-all duration-300 ${
+                    selectedModuleId === String(module.id)
+                      ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg"
+                      : "bg-gray-50 text-gray-900 hover:bg-gray-100"
+                  }`}
                 >
-                  <button
-                    onClick={() => {
-                      handleSelectModule(String(module.id));
-                      toggleModule(String(module.id));
-                    }}
-                    className={`w-full text-left p-4 rounded-xl transition-all duration-300 ${
-                      selectedModuleId === String(module.id)
-                        ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg"
-                        : "bg-gray-50 text-gray-900 hover:bg-gray-100"
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <span
-                        className={`text-xs font-bold w-6 h-6 rounded-md flex items-center justify-center ${
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    <span
+                      className={`text-xs font-bold w-5 h-5 sm:w-6 sm:h-6 rounded-md flex items-center justify-center shrink-0 ${
+                        selectedModuleId === String(module.id)
+                          ? "bg-white/20 text-white"
+                          : "bg-blue-100 text-blue-700"
+                      }`}
+                    >
+                      {idx + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-xs sm:text-sm truncate">
+                        {module.title.replace(/^Модуль \d+:\s*/i, "")}
+                      </h4>
+                      <p
+                        className={`text-[10px] sm:text-xs mt-1 ${
                           selectedModuleId === String(module.id)
-                            ? "bg-white/20 text-white"
-                            : "bg-blue-100 text-blue-700"
+                            ? "text-blue-100"
+                            : "text-gray-500"
                         }`}
                       >
-                        {idx + 1}
-                      </span>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-sm">
-                          {module.title.replace(/^Модуль \d+:\s*/i, "")}
-                        </h4>
-                        <p
-                          className={`text-xs mt-1 ${
-                            selectedModuleId === String(module.id)
-                              ? "text-blue-100"
-                              : "text-gray-500"
+                        {getModuleLessons(module.id).length} уроков
+                      </p>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Expanded lessons list */}
+                {expandedModules.has(String(module.id)) && (
+                  <div className="ml-3 sm:ml-4 mt-2 space-y-1 border-l-2 border-blue-200 pl-3 sm:pl-4">
+                    {getModuleLessons(module.id).map(
+                      (lesson: any, lessonIdx: number) => (
+                        <button
+                          key={lesson.id || lessonIdx}
+                          onClick={() => fetchLessonWithMedia(lesson.id)}
+                          className={`w-full text-left text-[11px] sm:text-xs py-2 px-2 sm:px-3 rounded-lg cursor-pointer transition-all flex items-center gap-2 ${
+                            selectedLessonId === lesson.id
+                              ? "bg-blue-100 text-blue-700"
+                              : "text-gray-600 hover:bg-blue-50"
                           }`}
                         >
-                          {getModuleLessons(module.id).length} уроков •{" "}
-                          {module.duration || ""}
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Expanded lessons list */}
-                  {expandedModules.has(String(module.id)) && (
-                    <div className="ml-4 mt-2 space-y-1 border-l-2 border-blue-200 pl-4">
-                      {getModuleLessons(module.id).map(
-                        (lesson: any, lessonIdx: number) => (
-                          <div
-                            key={lesson.id || lessonIdx}
-                            className="text-xs text-gray-600 py-2 px-3 hover:bg-blue-50 rounded-lg cursor-pointer transition-all flex items-center gap-2"
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="12"
+                            height="12"
+                            viewBox="0 0 256 256"
+                            className="text-gray-400 shrink-0 sm:w-[14px] sm:h-[14px]"
                           >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="14"
-                              height="14"
-                              viewBox="0 0 256 256"
-                              className="text-gray-400 shrink-0"
-                            >
-                              <path
-                                fill="currentColor"
-                                d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm48.49,102.83-48,32A8,8,0,0,1,116,152V88a8,8,0,0,1,12.49-6.62l48,32a8,8,0,0,1,0,13.24Z"
-                              />
-                            </svg>
-                            <span className="line-clamp-1 flex-1">
-                              {lesson.title || lesson}
-                            </span>
-                            {/* Lesson type badge */}
-                            {lesson.lesson_type && (
-                              <span
-                                className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                                  lesson.lesson_type === "theory"
-                                    ? "bg-blue-100 text-blue-700"
-                                    : lesson.lesson_type === "practice"
-                                    ? "bg-green-100 text-green-700"
-                                    : lesson.lesson_type === "test"
-                                    ? "bg-orange-100 text-orange-700"
-                                    : "bg-gray-100 text-gray-700"
-                                }`}
-                              >
-                                {lesson.lesson_type === "theory"
-                                  ? "Теория"
+                            <path
+                              fill="currentColor"
+                              d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm48.49,102.83-48,32A8,8,0,0,1,116,152V88a8,8,0,0,1,12.49-6.62l48,32a8,8,0,0,1,0,13.24Z"
+                            />
+                          </svg>
+                          <span className="line-clamp-1 flex-1">
+                            {lesson.title || lesson}
+                          </span>
+                          {/* Lesson type badge */}
+                          {lesson.lesson_type && (
+                            <span
+                              className={`shrink-0 px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-medium ${
+                                lesson.lesson_type === "theory"
+                                  ? "bg-blue-100 text-blue-700"
                                   : lesson.lesson_type === "practice"
-                                  ? "Практика"
+                                  ? "bg-green-100 text-green-700"
                                   : lesson.lesson_type === "test"
-                                  ? "Тест"
-                                  : lesson.lesson_type}
-                              </span>
-                            )}
-                          </div>
-                        )
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Materials Tab - Zoom & Tests */}
-          {activeTab === "materials" && (
-            <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-              <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
-                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="18"
-                    height="18"
-                    viewBox="0 0 256 256"
-                    className="text-blue-600"
-                  >
-                    <path
-                      fill="currentColor"
-                      d="M164.44,105.34l-48-32A8,8,0,0,0,104,80v64a8,8,0,0,0,12.44,6.66l48-32a8,8,0,0,0,0-13.32ZM120,129.05V95l25.58,17ZM216,40H40A16,16,0,0,0,24,56V168a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,128H40V56H216V168Zm16,40a8,8,0,0,1-8,8H32a8,8,0,0,1,0-16H224A8,8,0,0,1,232,208Z"
-                    />
-                  </svg>
-                  Zoom-занятия
-                </h3>
-                {modules.map((module: any, idx: number) => (
-                  <a
-                    key={module.id}
-                    href={moduleContents[module.id]?.zoomLink || "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block p-3 bg-white rounded-lg border border-blue-200 mb-2 hover:border-blue-400 transition-colors"
-                  >
-                    <p className="text-sm font-medium text-gray-900">
-                      Модуль {idx + 1}
-                    </p>
-                    <p className="text-xs text-blue-600">
-                      Присоединиться к занятию →
-                    </p>
-                  </a>
-                ))}
+                                  ? "bg-orange-100 text-orange-700"
+                                  : "bg-gray-100 text-gray-700"
+                              }`}
+                            >
+                              {lesson.lesson_type === "theory"
+                                ? "Теория"
+                                : lesson.lesson_type === "practice"
+                                ? "Практика"
+                                : lesson.lesson_type === "test"
+                                ? "Тест"
+                                : lesson.lesson_type}
+                            </span>
+                          )}
+                        </button>
+                      )
+                    )}
+                  </div>
+                )}
               </div>
-
-              <div className="bg-green-50 rounded-xl p-4 border border-green-100">
-                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="18"
-                    height="18"
-                    viewBox="0 0 256 256"
-                    className="text-green-600"
-                  >
-                    <path
-                      fill="currentColor"
-                      d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm-8-80V80a8,8,0,0,1,16,0v56a8,8,0,0,1-16,0Zm20,36a12,12,0,1,1-12-12A12,12,0,0,1,140,172Z"
-                    />
-                  </svg>
-                  Тесты
-                </h3>
-                {modules.map((module: any, idx: number) => (
-                  <a
-                    key={module.id}
-                    href={
-                      moduleContents[module.id]?.testId
-                        ? `/tests/${moduleContents[module.id].testId}`
-                        : "#"
-                    }
-                    className="block p-3 bg-white rounded-lg border border-green-200 mb-2 hover:border-green-400 transition-colors"
-                  >
-                    <p className="text-sm font-medium text-gray-900">
-                      Тест к модулю {idx + 1}
-                    </p>
-                    <p className="text-xs text-green-600">Пройти тест →</p>
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
+            ))}
+          </div>
 
           {/* Back to Home */}
-          <div className="sticky bottom-0 bg-white border-t border-gray-100 p-4">
+          <div className="sticky bottom-0 bg-white border-t border-gray-100 p-3 sm:p-4">
             <a
               href="/"
-              className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-gray-600 hover:text-blue-600 transition rounded-xl hover:bg-blue-50"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-gray-600 hover:text-blue-600 transition rounded-lg sm:rounded-xl hover:bg-blue-50"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
+                width="14"
+                height="14"
                 viewBox="0 0 256 256"
+                className="sm:w-4 sm:h-4"
               >
                 <path
                   fill="currentColor"
@@ -716,45 +727,45 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
 
         {/* Main Content Area */}
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-4xl mx-auto px-6 py-8">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-6 lg:py-8">
             {selectedModule ? (
               <div className="animate-fadeIn" key={selectedModuleId}>
                 {/* Module Header */}
-                <div className="bg-white border border-gray-200 rounded-2xl p-8 mb-6 shadow-sm">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold shadow-md">
+                <div className="bg-white border border-gray-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 mb-4 sm:mb-6 shadow-sm">
+                  <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg sm:rounded-xl flex items-center justify-center text-white font-bold shadow-md text-sm sm:text-base">
                       {modules.findIndex(
                         (m: any) => String(m.id) === selectedModuleId
                       ) + 1}
                     </div>
                     <Badge variant="primary">Модуль</Badge>
                   </div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-4">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
                     {selectedModule.title}
                   </h1>
-                  <div className="flex items-center gap-6 text-gray-600">
+                  <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-gray-600 text-sm">
                     <span className="flex items-center gap-2">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        width="18"
-                        height="18"
+                        width="16"
+                        height="16"
                         viewBox="0 0 256 256"
-                        className="text-blue-500"
+                        className="text-blue-500 sm:w-[18px] sm:h-[18px]"
                       >
                         <path
                           fill="currentColor"
                           d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm64-88a8,8,0,0,1-8,8H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48A8,8,0,0,1,192,128Z"
                         />
                       </svg>
-                      {selectedModule.duration}
+                      {selectedModule.duration || "—"}
                     </span>
                     <span className="flex items-center gap-2">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        width="18"
-                        height="18"
+                        width="16"
+                        height="16"
                         viewBox="0 0 256 256"
-                        className="text-blue-500"
+                        className="text-blue-500 sm:w-[18px] sm:h-[18px]"
                       >
                         <path
                           fill="currentColor"
@@ -769,177 +780,148 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                   </div>
                 </div>
 
-                {/* Module Content */}
-                {moduleContent ? (
-                  <div className="bg-white border border-gray-200 rounded-2xl p-8 mb-6 shadow-sm">
-                    <h2 className="text-xl font-bold text-gray-900 mb-6">
-                      Материал модуля
-                    </h2>
-                    <ModuleContent
-                      content={moduleContent.content}
-                      images={moduleContent.images}
-                    />
-                  </div>
-                ) : (
-                  <div className="bg-white border border-gray-200 rounded-2xl p-8 mb-6 shadow-sm">
-                    <p className="text-lg text-gray-700 leading-relaxed">
-                      В этом модуле вы изучите{" "}
-                      {selectedModuleId
-                        ? getModuleLessons(parseInt(selectedModuleId)).length
-                        : 0}{" "}
-                      важных тем.
-                    </p>
-                  </div>
-                )}
-
                 {/* Lessons List with Content */}
-                <div className="bg-white border border-gray-200 rounded-2xl p-8 mb-6 shadow-sm">
-                  <h2 className="text-xl font-bold text-gray-900 mb-6">
+                <div className="bg-white border border-gray-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 mb-4 sm:mb-6 shadow-sm">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">
                     Уроки модуля
                   </h2>
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {(selectedModuleId
                       ? getModuleLessons(parseInt(selectedModuleId))
                       : []
-                    ).map((lesson: any, idx: number) => (
-                      <div
-                        key={lesson.id || idx}
-                        className="border border-gray-200 rounded-xl overflow-hidden"
-                      >
-                        {/* Lesson Header */}
-                        <div className="flex items-center gap-4 p-4 bg-gray-50">
-                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold shrink-0">
-                            {idx + 1}
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900">
-                              {lesson.title || lesson}
-                            </h3>
-                            {lesson.lesson_type && (
-                              <span className="text-xs text-gray-500 capitalize">
-                                {lesson.lesson_type === "theory"
-                                  ? "Теория"
-                                  : lesson.lesson_type === "practice"
-                                  ? "Практика"
-                                  : lesson.lesson_type === "test"
-                                  ? "Тест"
-                                  : lesson.lesson_type}
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                    ).map((lesson: any, idx: number) => {
+                      const loadedLesson = lessonsWithMedia.get(lesson.id);
 
-                        {/* Lesson Content */}
-                        {lesson.content && (
-                          <div className="p-4 border-t border-gray-200 bg-white">
-                            <div
-                              className="prose prose-sm max-w-none text-gray-700"
-                              dangerouslySetInnerHTML={{
-                                __html: lesson.content.replace(/\n/g, "<br/>"),
-                              }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                      return (
+                        <div
+                          key={lesson.id || idx}
+                          className="border border-gray-200 rounded-lg sm:rounded-xl overflow-hidden"
+                        >
+                          {/* Lesson Header */}
+                          <button
+                            className="w-full flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+                            onClick={() => fetchLessonWithMedia(lesson.id)}
+                          >
+                            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold shrink-0 text-sm sm:text-base">
+                              {idx + 1}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
+                                {lesson.title || lesson}
+                              </h3>
+                              <div className="flex flex-wrap items-center gap-2 mt-1">
+                                {lesson.lesson_type && (
+                                  <span
+                                    className={`text-[10px] sm:text-xs px-2 py-0.5 rounded ${
+                                      lesson.lesson_type === "theory"
+                                        ? "bg-blue-100 text-blue-700"
+                                        : lesson.lesson_type === "practice"
+                                        ? "bg-green-100 text-green-700"
+                                        : lesson.lesson_type === "test"
+                                        ? "bg-orange-100 text-orange-700"
+                                        : "bg-gray-100 text-gray-700"
+                                    }`}
+                                  >
+                                    {lesson.lesson_type === "theory"
+                                      ? "Теория"
+                                      : lesson.lesson_type === "practice"
+                                      ? "Практика"
+                                      : lesson.lesson_type === "test"
+                                      ? "Тест"
+                                      : lesson.lesson_type}
+                                  </span>
+                                )}
+                                {selectedLessonId === lesson.id && (
+                                  <span className="text-[10px] sm:text-xs text-blue-600 font-medium">
+                                    ▼ Развёрнуто
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="18"
+                              height="18"
+                              viewBox="0 0 256 256"
+                              className={`text-gray-400 transition-transform shrink-0 sm:w-5 sm:h-5 ${
+                                selectedLessonId === lesson.id
+                                  ? "rotate-180"
+                                  : ""
+                              }`}
+                            >
+                              <path
+                                fill="currentColor"
+                                d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"
+                              />
+                            </svg>
+                          </button>
+
+                          {/* Lesson Content - expanded */}
+                          {selectedLessonId === lesson.id && (
+                            <div className="p-3 sm:p-4 border-t border-gray-200 bg-white">
+                              {isLoadingLessonMedia ? (
+                                <div className="flex items-center justify-center py-6 sm:py-8">
+                                  <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+                                  <span className="ml-2 text-gray-500 text-xs sm:text-sm">
+                                    Загрузка контента...
+                                  </span>
+                                </div>
+                              ) : loadedLesson ? (
+                                <LessonContentRenderer
+                                  content={loadedLesson.content || ""}
+                                  lessonMedia={loadedLesson.lesson_media || []}
+                                  urlMedia={loadedLesson.media || []}
+                                />
+                              ) : lesson.content ? (
+                                <LessonContentRenderer
+                                  content={lesson.content}
+                                  lessonMedia={[]}
+                                  urlMedia={[]}
+                                />
+                              ) : (
+                                <p className="text-gray-500 text-xs sm:text-sm">
+                                  Контент урока отсутствует
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
 
                     {/* Empty state */}
                     {selectedModuleId &&
                       getModuleLessons(parseInt(selectedModuleId)).length ===
                         0 &&
                       !isLoadingLessons && (
-                        <div className="text-center py-8 text-gray-500">
-                          <p>Уроки для этого модуля пока не добавлены</p>
+                        <div className="text-center py-6 sm:py-8 text-gray-500">
+                          <p className="text-sm">
+                            Уроки для этого модуля пока не добавлены
+                          </p>
                         </div>
                       )}
 
                     {/* Loading state */}
                     {isLoadingLessons && (
-                      <div className="text-center py-8">
-                        <div className="w-8 h-8 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-2" />
-                        <p className="text-gray-500 text-sm">
+                      <div className="text-center py-6 sm:py-8">
+                        <div className="w-6 h-6 sm:w-8 sm:h-8 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-2" />
+                        <p className="text-gray-500 text-xs sm:text-sm">
                           Загрузка уроков...
                         </p>
                       </div>
                     )}
                   </div>
                 </div>
-
-                {/* Module Actions */}
-                {moduleContent && (
-                  <div className="grid md:grid-cols-2 gap-4">
-                    {moduleContent.zoomLink && (
-                      <a
-                        href={moduleContent.zoomLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-4 p-6 bg-blue-50 rounded-2xl border border-blue-200 hover:bg-blue-100 transition-colors"
-                      >
-                        <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 256 256"
-                            className="text-white"
-                          >
-                            <path
-                              fill="currentColor"
-                              d="M164.44,105.34l-48-32A8,8,0,0,0,104,80v64a8,8,0,0,0,12.44,6.66l48-32a8,8,0,0,0,0-13.32ZM120,129.05V95l25.58,17ZM216,40H40A16,16,0,0,0,24,56V168a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,128H40V56H216V168Z"
-                            />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900">
-                            Zoom-занятие
-                          </p>
-                          <p className="text-sm text-blue-600">
-                            Присоединиться к занятию →
-                          </p>
-                        </div>
-                      </a>
-                    )}
-                    {moduleContent.testId && (
-                      <a
-                        href={`/tests/${moduleContent.testId}`}
-                        className="flex items-center gap-4 p-6 bg-green-50 rounded-2xl border border-green-200 hover:bg-green-100 transition-colors"
-                      >
-                        <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 256 256"
-                            className="text-white"
-                          >
-                            <path
-                              fill="currentColor"
-                              d="M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34Z"
-                            />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900">
-                            Тест по модулю
-                          </p>
-                          <p className="text-sm text-green-600">
-                            Пройти тест →
-                          </p>
-                        </div>
-                      </a>
-                    )}
-                  </div>
-                )}
               </div>
             ) : (
-              <div className="bg-white border border-gray-200 rounded-2xl p-16 text-center animate-fadeIn">
-                <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <div className="bg-white border border-gray-200 rounded-xl sm:rounded-2xl p-8 sm:p-12 lg:p-16 text-center animate-fadeIn">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    width="48"
-                    height="48"
+                    width="32"
+                    height="32"
                     viewBox="0 0 256 256"
-                    className="text-blue-600"
+                    className="text-blue-600 sm:w-10 sm:h-10 lg:w-12 lg:h-12"
                   >
                     <path
                       fill="currentColor"
@@ -947,11 +929,16 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                     />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">
                   Выберите модуль для начала
                 </h2>
-                <p className="text-gray-600 max-w-md mx-auto">
-                  Нажмите на модуль в левой панели, чтобы начать обучение
+                <p className="text-gray-600 text-sm sm:text-base max-w-md mx-auto">
+                  <span className="hidden lg:inline">
+                    Нажмите на модуль в левой панели, чтобы начать обучение
+                  </span>
+                  <span className="lg:hidden">
+                    Нажмите "Модули" чтобы выбрать модуль для обучения
+                  </span>
                 </p>
               </div>
             )}

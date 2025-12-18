@@ -176,3 +176,104 @@ textarea:focus-visible {
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(10px);
 }
+
+/* ===== LESSON CONTENT IMAGES ===== */
+
+/* Responsive images in lesson content */
+.lesson-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.lesson-content img:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Image container constraints */
+.lesson-content {
+  max-width: 100%;
+  overflow-x: hidden;
+  word-wrap: break-word;
+}
+
+/* Inline image preview tooltip */
+.image-preview-tooltip {
+  position: absolute;
+  z-index: 50;
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  padding: 0.5rem;
+  max-width: 300px;
+  max-height: 200px;
+  overflow: hidden;
+  animation: tooltipIn 0.2s ease-out forwards;
+  pointer-events: none;
+}
+
+.image-preview-tooltip img {
+  max-width: 100%;
+  max-height: 180px;
+  object-fit: contain;
+  border-radius: 0.25rem;
+}
+
+/* ===== LESSON RICH TEXT STYLING ===== */
+
+.lesson-content h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 1.5rem 0 1rem;
+  color: #111827;
+}
+
+.lesson-content h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 1.25rem 0 0.75rem;
+  color: #1f2937;
+}
+
+.lesson-content h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 1rem 0 0.5rem;
+  color: #374151;
+}
+
+.lesson-content p {
+  margin: 0.75rem 0;
+  line-height: 1.7;
+}
+
+.lesson-content strong {
+  font-weight: 600;
+}
+
+.lesson-content em {
+  font-style: italic;
+}
+
+.lesson-content ul,
+.lesson-content ol {
+  margin: 0.75rem 0;
+  padding-left: 1.5rem;
+}
+
+.lesson-content li {
+  margin: 0.25rem 0;
+  line-height: 1.6;
+}
+
+.lesson-content ul li {
+  list-style-type: disc;
+}
+
+.lesson-content ol li {
+  list-style-type: decimal;
+}
