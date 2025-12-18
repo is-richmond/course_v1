@@ -40,9 +40,8 @@ export default function AboutPage() {
           <div className="max-w-6xl mx-auto px-6 text-center">
             <h1 className="text-5xl font-bold text-gray-900 mb-6">О нас</h1>
             <p className="text-xl text-gray-700 max-w-2xl mx-auto">
-              MediCourse — платформа профессионального развития медицинских
-              работников. Мы создаем высококачественные онлайн-курсы с
-              экспертами в сфере здравоохранения.
+              Plexus — платформа профессионального развития. Мы создаем
+              высококачественные онлайн-курсы с экспертами в различных сферах.
             </p>
           </div>
         </div>

@@ -219,7 +219,7 @@ export default function HomeContent({
       label: "Мои курсы",
       content: (
         <div className="p-4 sm:p-6 md:p-8">
-          <div className="mb-6 sm:mb-8">
+          <div className="mb-6 sm:mb-8 px-2 sm:px-4">
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
               Мои курсы
             </h2>
@@ -227,8 +227,10 @@ export default function HomeContent({
               Ваши активные курсы и прогресс обучения
             </p>
           </div>
-          <ContinueLearning />
-          <div className="mt-8 sm:mt-10 md:mt-12">
+          <div className="px-2 sm:px-4">
+            <ContinueLearning />
+          </div>
+          <div className="mt-8 sm:mt-10 md:mt-12 px-2 sm:px-4">
             <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">
               Все доступные курсы
             </h3>
@@ -242,7 +244,7 @@ export default function HomeContent({
       label: "Тесты",
       content: (
         <div className="p-4 sm:p-6 md:p-8">
-          <div className="mb-6 sm:mb-8">
+          <div className="mb-6 sm:mb-8 px-2 sm:px-4">
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
               Доступные тесты
             </h2>
@@ -250,7 +252,9 @@ export default function HomeContent({
               Проверьте свои знания с помощью наших тестов
             </p>
           </div>
-          <TestsGrid />
+          <div className="px-2 sm:px-4">
+            <TestsGrid />
+          </div>
         </div>
       ),
     },

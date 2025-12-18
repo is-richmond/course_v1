@@ -267,7 +267,7 @@ const LoginPage: React.FC = () => {
       <div className="bg-white border-t px-6 py-8">
         <div className="max-w-4xl mx-auto text-center">
           <p className="text-gray-600 text-sm">
-            © 2024 Plexus Admin Panel. All rights reserved.
+            © 2026 Plexus Admin Panel. All rights reserved.
           </p>
         </div>
       </div>

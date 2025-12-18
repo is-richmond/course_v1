@@ -44,8 +44,8 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
       {/* Hamburger button for mobile */}
       <HamburgerButton onClick={() => setIsSidebarOpen(true)} />
 
-      {/* Main content area - responsive margin */}
-      <main className="min-h-screen lg:ml-64 transition-[margin] duration-300">
+      {/* Main content area - responsive margin + top padding for fixed header */}
+      <main className="min-h-screen lg:ml-64 pt-14 transition-[margin] duration-300">
         {children}
       </main>
     </>

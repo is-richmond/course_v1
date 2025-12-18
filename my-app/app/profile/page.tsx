@@ -10,14 +10,28 @@ import { Input } from "@/src/components/ui/Input";
 import { Label } from "@/src/components/ui/Label";
 import { Card, CardContent } from "@/src/components/ui/Card";
 import { useAuth } from "@/src/contexts/AuthContext";
-import { User, Mail, Phone, MapPin, Calendar, Award, Edit2, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  Award,
+  Edit2,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 
 export default function ProfilePage() {
   const { user, isLoading, updateProfile } = useAuth();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
   const [formData, setFormData] = useState({
     first_name: user?.first_name || "",
     last_name: user?.last_name || "",
@@ -130,15 +144,18 @@ export default function ProfilePage() {
                       </Button>
                     </div>
                     <p className="text-gray-600 mb-4">
-                      {user.is_superuser ? "Администратор" : "Студент"} платформы MediCourse
+                      {user.is_superuser ? "Администратор" : "Студент"}{" "}
+                      платформы Plexus
                     </p>
 
                     {message && (
-                      <div className={`flex items-center gap-2 p-3 rounded-lg mb-4 ${
-                        message.type === "success"
-                          ? "bg-green-50 text-green-700"
-                          : "bg-red-50 text-red-700"
-                      }`}>
+                      <div
+                        className={`flex items-center gap-2 p-3 rounded-lg mb-4 ${
+                          message.type === "success"
+                            ? "bg-green-50 text-green-700"
+                            : "bg-red-50 text-red-700"
+                        }`}
+                      >
                         {message.type === "success" ? (
                           <CheckCircle2 size={16} />
                         ) : (
@@ -212,7 +229,9 @@ export default function ProfilePage() {
                           <Calendar size={16} className="text-gray-400" />
                           <span>
                             Зарегистрирован:
-                            {new Date(user.created_at).toLocaleDateString("ru-RU")}
+                            {new Date(user.created_at).toLocaleDateString(
+                              "ru-RU"
+                            )}
                           </span>
                         </div>
                         <div className="flex items-center gap-2 text-gray-700">
@@ -234,8 +253,12 @@ export default function ProfilePage() {
             <Link href="/auth/change-password" className="w-full">
               <Card className="cursor-pointer hover:shadow-lg transition-shadow h-full">
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-gray-900 mb-2">Смена пароля</h3>
-                  <p className="text-sm text-gray-600">Обновите пароль для большей безопасности</p>
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    Смена пароля
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Обновите пароль для большей безопасности
+                  </p>
                 </CardContent>
               </Card>
             </Link>
@@ -243,7 +266,9 @@ export default function ProfilePage() {
             <Link href="/my-courses" className="w-full">
               <Card className="cursor-pointer hover:shadow-lg transition-shadow h-full">
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-gray-900 mb-2">Мои курсы</h3>
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    Мои курсы
+                  </h3>
                   <p className="text-sm text-gray-600">
                     {user.enrolled_courses?.length || 0} активных курсов
                   </p>

@@ -16,13 +16,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MediCourse - Медицинские курсы для врачей",
-  description:
-    "Онлайн курсы повышения квалификации с сертификацией от практикующих врачей",
+  title: "Plexus - Курсы и обучение",
+  description: "Онлайн курсы повышения квалификации с сертификацией",
   openGraph: {
-    title: "MediCourse - Медицинские курсы для врачей",
-    description:
-      "Онлайн курсы повышения квалификации с сертификацией от практикующих врачей",
+    title: "Plexus - Курсы и обучение",
+    description: "Онлайн курсы повышения квалификации с сертификацией",
     type: "website",
     locale: "ru_RU",
   },

@@ -270,16 +270,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </button>
         )}
 
-        {/* Logo */}
-        <div className="sticky top-0 bg-blue-950/60 backdrop-blur px-6 py-6 border-b border-blue-700">
-          <Link href="/" className="flex items-center gap-3" onClick={onClose}>
-            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-lg">
-              <span className="text-blue-900 font-bold text-lg">M</span>
-            </div>
-            <div>
-              <div className="font-bold text-lg">MediCourse</div>
-              <div className="text-xs text-blue-300">Обучение</div>
-            </div>
+        {/* Logo - thin header matching main header */}
+        <div className="sticky top-0 bg-blue-950/60 backdrop-blur px-3 py-2 border-b border-blue-400">
+          <Link href="/" className="flex items-center gap-2" onClick={onClose}>
+            <img
+              src="/upscalemedia-transformed.png"
+              alt="Plexus"
+              className="w-10 h-10"
+            />
+            <div className="font-semibold text-medium">Plexus</div>
           </Link>
         </div>
 

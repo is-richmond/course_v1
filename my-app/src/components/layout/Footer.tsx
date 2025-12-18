@@ -10,9 +10,7 @@ export const Footer: React.FC = () => (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10 lg:gap-12 mb-8 sm:mb-10 md:mb-12">
         {/* Brand */}
         <div className="text-center sm:text-left">
-          <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">
-            MediCourse
-          </h3>
+          <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Plexus</h3>
           <p className="text-sm sm:text-base text-gray-400">
             Профессиональное развитие медицинских работников через качественное
             образование.
@@ -130,7 +128,7 @@ export const Footer: React.FC = () => (
       {/* Divider - responsive layout */}
       <div className="border-t border-gray-800 pt-6 sm:pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
         <p className="text-gray-400 text-xs sm:text-sm text-center sm:text-left">
-          © 2025 MediCourse. Все права защищены.
+          © 2025 Plexus. Все права защищены.
         </p>
         {/* Social icons with touch-friendly sizes */}
         <div className="flex gap-4">

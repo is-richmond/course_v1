@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Settings, LogOut } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/src/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 
@@ -28,28 +29,56 @@ export const Header: React.FC = () => {
 
   if (isLoading || !mounted) {
     return (
-      <header className="sticky top-0 bg-white border-b border-gray-200 shadow-sm z-30">
-        {/* Responsive padding: smaller on mobile, larger on desktop */}
-        <div className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-end">
-          <div className="text-gray-600 text-sm sm:text-base">Загрузка...</div>
+      <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 shadow-sm z-30">
+        <div className="px-3 sm:px-4 py-1.5 sm:py-2 flex items-center justify-between">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2">
+            <Image
+              src="/plexus-logo.png"
+              alt="Plexus"
+              width={24}
+              height={24}
+              className="w-6 h-6"
+            />
+            <span className="font-bold text-gray-900 text-sm sm:text-base">
+              Plexus
+            </span>
+          </Link>
+          <div className="text-gray-600 text-xs sm:text-sm">Загрузка...</div>
         </div>
       </header>
     );
   }
 
   return (
-    <header className="sticky top-0 bg-white border-b border-gray-200 shadow-sm z-30">
-      {/* Responsive padding and offset for mobile hamburger button */}
-      <div className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-end pl-14 lg:pl-4">
+    <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 shadow-sm z-30">
+      <div className="px-3 sm:px-4 py-1.5 sm:py-2 flex items-center justify-between">
+        {/* Left Section - Logo & Brand */}
+        <Link
+          href="/"
+          className="flex items-center gap-2 hover:opacity-80 transition"
+        >
+          <Image
+            src="/plexus-logo.png"
+            alt="Plexus"
+            width={24}
+            height={24}
+            className="w-6 h-6 sm:w-7 sm:h-7"
+          />
+          <span className="font-bold text-gray-900 text-sm sm:text-base">
+            Plexus
+          </span>
+        </Link>
+
         {/* Right Section - User Controls */}
-        <div className="flex items-center gap-3 sm:gap-6">
+        <div className="flex items-center gap-2 sm:gap-4">
           {/* Settings - hidden on very small screens */}
           <Link href="/profile" className="hidden sm:block">
             <button
-              className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-md transition"
               aria-label="Настройки профиля"
             >
-              <Settings size={20} />
+              <Settings size={16} />
             </button>
           </Link>
 
@@ -57,21 +86,21 @@ export const Header: React.FC = () => {
           <div className="relative">
             <button
               onClick={() => setShowDropdown(!showDropdown)}
-              className="flex items-center gap-2 sm:gap-3 sm:pl-6 sm:border-l border-gray-200 hover:bg-gray-50 py-2 px-2 rounded-lg transition min-h-[44px]"
+              className="flex items-center gap-2 sm:pl-3 sm:border-l border-gray-200 hover:bg-gray-50 py-1 px-1.5 rounded-md transition"
               aria-expanded={showDropdown}
               aria-haspopup="true"
             >
               {/* User info - hidden on mobile, shown on sm+ */}
               <div className="text-right hidden sm:block">
-                <p className="font-medium text-gray-900 text-sm">
+                <p className="font-medium text-gray-900 text-xs">
                   {user?.first_name || "Пользователь"}
                 </p>
-                <p className="text-xs text-gray-500">
-                  {user?.is_superuser ? "Администратор" : "Студент"}
+                <p className="text-[10px] text-gray-500">
+                  {user?.is_superuser ? "Админ" : "Студент"}
                 </p>
               </div>
               {/* Avatar - always visible */}
-              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-linear-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm sm:text-base">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-linear-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm">
                 {getInitials(user?.first_name, user?.last_name)}
               </div>
             </button>
@@ -85,23 +114,23 @@ export const Header: React.FC = () => {
                   onClick={() => setShowDropdown(false)}
                   aria-hidden="true"
                 />
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                  <div className="p-4 border-b border-gray-100">
-                    <p className="font-medium text-sm text-gray-900">
+                <div className="absolute right-0 mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                  <div className="p-3 border-b border-gray-100">
+                    <p className="font-medium text-xs text-gray-900">
                       {user?.first_name} {user?.last_name}
                     </p>
-                    <p className="text-xs text-gray-500 truncate">
+                    <p className="text-[10px] text-gray-500 truncate">
                       {user?.email}
                     </p>
                   </div>
 
-                  <div className="py-2">
+                  <div className="py-1">
                     <Link
                       href="/profile"
                       onClick={() => setShowDropdown(false)}
                     >
-                      <button className="w-full text-left px-4 py-3 sm:py-2 text-sm text-gray-700 hover:bg-gray-100 transition flex items-center gap-2 min-h-[44px]">
-                        <Settings size={16} />
+                      <button className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 transition flex items-center gap-2">
+                        <Settings size={14} />
                         Профиль
                       </button>
                     </Link>
@@ -110,19 +139,19 @@ export const Header: React.FC = () => {
                       href="/auth/change-password"
                       onClick={() => setShowDropdown(false)}
                     >
-                      <button className="w-full text-left px-4 py-3 sm:py-2 text-sm text-gray-700 hover:bg-gray-100 transition flex items-center gap-2 min-h-[44px]">
-                        <Settings size={16} />
+                      <button className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 transition flex items-center gap-2">
+                        <Settings size={14} />
                         Смена пароля
                       </button>
                     </Link>
                   </div>
 
-                  <div className="border-t border-gray-100 p-2">
+                  <div className="border-t border-gray-100 p-1">
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-4 py-3 sm:py-2 text-sm text-red-600 hover:bg-red-50 transition flex items-center gap-2 min-h-[44px]"
+                      className="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 transition flex items-center gap-2"
                     >
-                      <LogOut size={16} />
+                      <LogOut size={14} />
                       Выход
                     </button>
                   </div>
