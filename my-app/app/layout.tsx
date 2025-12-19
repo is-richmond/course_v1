@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ChatSupport } from "@/src/components/ChatSupport";
 import { ResponsiveLayout } from "@/src/components/layout/ResponsiveLayout";
 import { AuthProvider } from "@/src/contexts/AuthContext";
 import "./globals.css";
@@ -39,7 +38,6 @@ export default function RootLayout({
       >
         <AuthProvider>
           <ResponsiveLayout>{children}</ResponsiveLayout>
-          <ChatSupport />
         </AuthProvider>
       </body>
     </html>

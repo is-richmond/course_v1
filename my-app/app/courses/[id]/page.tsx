@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/src/contexts/AuthContext";
 import { Header } from "@/src/components/layout/Header";
 import { Footer } from "@/src/components/layout/Footer";
 import { PaymentModal } from "@/src/components/PaymentModal";
@@ -23,11 +25,12 @@ interface PageProps {
 }
 
 export default function CoursePage({ params: paramsPromise }: PageProps) {
+  const router = useRouter();
+  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const [course, setCourse] = useState<any>(null);
   const [courseId, setCourseId] = useState<string | null>(null);
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
-  const [isPaid, setIsPaid] = useState(false);
   const [expandedModules, setExpandedModules] = useState<Set<string>>(
     new Set()
   );
@@ -51,7 +54,24 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
   // Mobile sidebar toggle
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Fetch lesson with all media (for content rendering)
+  // Check if user has access to the course:
+  // 1. User must be authenticated
+  // 2. User must be verified by admin (is_verified: true)
+  // 3. User must be enrolled in this course
+  const isEnrolled = courseId
+    ? user?.enrolled_courses?.includes(courseId)
+    : false;
+  const isVerified = user?.is_verified === true;
+  const hasAccess = isAuthenticated && isVerified && isEnrolled;
+
+  // Navigate to fullscreen lesson page
+  const navigateToLesson = (lessonId: number) => {
+    if (courseId) {
+      router.push(`/courses/${courseId}/lesson/${lessonId}`);
+    }
+  };
+
+  // Fetch lesson with all media (for content rendering in sidebar preview)
   const fetchLessonWithMedia = async (lessonId: number) => {
     // Check cache first
     if (lessonsWithMedia.has(lessonId)) {
@@ -74,20 +94,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
     } finally {
       setIsLoadingLessonMedia(false);
     }
-
-    // Mark lesson as completed and save to localStorage
-    if (courseId) {
-      setCompletedLessons((prev) => {
-        const newSet = new Set(prev);
-        newSet.add(lessonId);
-        // Save to localStorage
-        localStorage.setItem(
-          `course_${courseId}_completed`,
-          JSON.stringify([...newSet])
-        );
-        return newSet;
-      });
-    }
+    // NOTE: Progress is NOT marked here - only on "Next" button in lesson page
   };
 
   // Fetch all modules with their lessons
@@ -135,26 +142,22 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
         );
         setCourse(fetchedCourse);
 
-        const paid = localStorage.getItem(`course_paid_${params.id}`);
-        if (paid === "true") {
-          setIsPaid(true);
-          // Fetch lessons for all modules if already paid
-          if (fetchedCourse.modules && fetchedCourse.modules.length > 0) {
-            const moduleIds = fetchedCourse.modules.map((m: any) => m.id);
-            fetchModulesWithLessons(moduleIds);
-          }
+        // If user has access, fetch lessons for all modules
+        if (fetchedCourse.modules && fetchedCourse.modules.length > 0) {
+          const moduleIds = fetchedCourse.modules.map((m: any) => m.id);
+          fetchModulesWithLessons(moduleIds);
+        }
 
-          // Load completed lessons from localStorage
-          const savedCompleted = localStorage.getItem(
-            `course_${params.id}_completed`
-          );
-          if (savedCompleted) {
-            try {
-              const completedArray = JSON.parse(savedCompleted);
-              setCompletedLessons(new Set(completedArray));
-            } catch (e) {
-              console.error("Failed to parse completed lessons:", e);
-            }
+        // Load completed lessons from localStorage
+        const savedCompleted = localStorage.getItem(
+          `course_${params.id}_progress`
+        );
+        if (savedCompleted) {
+          try {
+            const completedArray = JSON.parse(savedCompleted);
+            setCompletedLessons(new Set(completedArray));
+          } catch (e) {
+            console.error("Failed to parse completed lessons:", e);
           }
         }
 
@@ -220,16 +223,10 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
     );
   }
 
-  const handlePaymentComplete = () => {
-    localStorage.setItem(`course_paid_${courseId}`, "true");
-    setIsPaid(true);
+  const handleEnrollmentRequest = () => {
+    // User requested enrollment - close modal and inform them
     setIsPaymentOpen(false);
-
-    // Fetch lessons for all modules after payment
-    if (modules.length > 0) {
-      const moduleIds = modules.map((m: any) => m.id);
-      fetchModulesWithLessons(moduleIds);
-    }
+    // The enrollment will be handled by the PaymentModal
   };
 
   const toggleModule = (moduleId: string) => {
@@ -292,8 +289,18 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
     (m: any) => String(m.id) === selectedModuleId
   );
 
-  // ========== UNPAID STATE ==========
-  if (!isPaid) {
+  // ========== ACCESS DENIED STATE ==========
+  // User needs: 1) to be authenticated, 2) to be verified by admin, 3) to be enrolled in course
+  if (!hasAccess) {
+    // Determine the reason for access denial
+    const accessDeniedReason = !isAuthenticated
+      ? "login"
+      : !isEnrolled
+      ? "not_enrolled"
+      : !isVerified
+      ? "not_verified"
+      : "unknown";
+
     return (
       <div className="bg-gray-50 min-h-screen">
         <Header />
@@ -404,14 +411,66 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                       ))}
                     </ul>
 
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg shadow-blue-500/30 text-sm sm:text-base py-3 sm:py-4"
-                      onClick={() => setIsPaymentOpen(true)}
-                    >
-                      Оплатить и начать обучение
-                    </Button>
+                    {/* Show appropriate message and button based on access status */}
+                    {accessDeniedReason === "login" ? (
+                      <Button
+                        variant="primary"
+                        size="lg"
+                        className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg shadow-blue-500/30 text-sm sm:text-base py-3 sm:py-4"
+                        onClick={() => router.push("/login")}
+                      >
+                        Войти для записи на курс
+                      </Button>
+                    ) : accessDeniedReason === "not_enrolled" ? (
+                      <div className="space-y-3">
+                        <Button
+                          variant="primary"
+                          size="lg"
+                          className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg shadow-blue-500/30 text-sm sm:text-base py-3 sm:py-4"
+                          onClick={() => setIsPaymentOpen(true)}
+                        >
+                          Записаться на курс
+                        </Button>
+                        <p className="text-blue-100 text-xs sm:text-sm text-center">
+                          После записи администратор подтвердит ваш доступ
+                        </p>
+                      </div>
+                    ) : accessDeniedReason === "not_verified" ? (
+                      <div className="space-y-3">
+                        <div className="bg-yellow-500/20 border border-yellow-400/30 rounded-lg p-3 sm:p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="20"
+                              height="20"
+                              viewBox="0 0 256 256"
+                              className="text-yellow-400"
+                            >
+                              <path
+                                fill="currentColor"
+                                d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm-8-80V80a8,8,0,0,1,16,0v56a8,8,0,0,1-16,0Zm20,36a12,12,0,1,1-12-12A12,12,0,0,1,140,172Z"
+                              />
+                            </svg>
+                            <span className="font-semibold text-yellow-400 text-sm sm:text-base">
+                              Ожидание подтверждения
+                            </span>
+                          </div>
+                          <p className="text-blue-100 text-xs sm:text-sm">
+                            Вы записаны на курс. Ожидайте подтверждения от
+                            администратора для получения доступа к материалам.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="primary"
+                        size="lg"
+                        className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg shadow-blue-500/30 text-sm sm:text-base py-3 sm:py-4"
+                        onClick={() => setIsPaymentOpen(true)}
+                      >
+                        Оплатить и начать обучение
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -492,7 +551,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
             isOpen={isPaymentOpen}
             courseTitle={course.title}
             price={coursePrice}
-            onPay={handlePaymentComplete}
+            onPay={handleEnrollmentRequest}
             onClose={() => setIsPaymentOpen(false)}
           />
         </main>
@@ -501,7 +560,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
     );
   }
 
-  // ========== PAID STATE - RESPONSIVE ==========
+  // ========== HAS ACCESS STATE - User is verified and enrolled ==========
   return (
     <div className="bg-gray-50 min-h-screen flex flex-col">
       <Header />
@@ -649,7 +708,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                       (lesson: any, lessonIdx: number) => (
                         <button
                           key={lesson.id || lessonIdx}
-                          onClick={() => fetchLessonWithMedia(lesson.id)}
+                          onClick={() => navigateToLesson(lesson.id)}
                           className={`w-full text-left text-[11px] sm:text-xs py-2 px-2 sm:px-3 rounded-lg cursor-pointer transition-all flex items-center gap-2 ${
                             selectedLessonId === lesson.id
                               ? "bg-blue-100 text-blue-700"
@@ -800,7 +859,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                           {/* Lesson Header */}
                           <button
                             className="w-full flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
-                            onClick={() => fetchLessonWithMedia(lesson.id)}
+                            onClick={() => navigateToLesson(lesson.id)}
                           >
                             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold shrink-0 text-sm sm:text-base">
                               {idx + 1}

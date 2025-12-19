@@ -225,6 +225,7 @@ export interface QuestionOptionUpdate {
 export interface QuestionOptionResponse {
   id: number;
   option_text: string;
+  description?: string | null;
   is_correct: boolean;
   question_id: number;
 }

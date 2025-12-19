@@ -20,35 +20,18 @@ export const ContinueLearning: React.FC = () => {
   useEffect(() => {
     const fetchEnrolledCourses = async () => {
       try {
-        // Get enrolled course IDs from API
+        // Get enrolled course IDs from API only
         const enrollmentData = await enrollmentAPI.getEnrolledCourses();
         const enrolledIds: string[] = enrollmentData.enrolled_courses || [];
 
-        // Also check localStorage for paid courses as fallback
-        const localPaidIds: string[] = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (
-            key?.startsWith("course_paid_") &&
-            localStorage.getItem(key) === "true"
-          ) {
-            const courseId = key.replace("course_paid_", "");
-            if (!enrolledIds.includes(courseId)) {
-              localPaidIds.push(courseId);
-            }
-          }
-        }
-
-        const allEnrolledIds = [...enrolledIds, ...localPaidIds];
-
-        if (allEnrolledIds.length === 0) {
+        if (enrolledIds.length === 0) {
           setActiveCourses([]);
           setIsLoading(false);
           return;
         }
 
         // Fetch full course data with modules for each enrolled course
-        const coursePromises = allEnrolledIds.map(async (courseId) => {
+        const coursePromises = enrolledIds.map(async (courseId) => {
           try {
             const course = await coursesAPI.getWithModules(parseInt(courseId));
             const lastModule = localStorage.getItem(
@@ -70,7 +53,6 @@ export const ContinueLearning: React.FC = () => {
             }
 
             // Use modules count as estimation for total lessons
-            // Each module typically has 1+ lessons
             const totalLessons = course.modules.length;
 
             return {
@@ -88,56 +70,8 @@ export const ContinueLearning: React.FC = () => {
         setActiveCourses(courses.filter((c): c is ActiveCourse => c !== null));
       } catch (err) {
         console.error("Failed to fetch enrolled courses:", err);
-        // Fallback: check localStorage for any started or paid courses
-        const localCourses: ActiveCourse[] = [];
-        const checkedCourseIds = new Set<string>();
-
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-
-          // Check for paid courses
-          if (
-            key?.startsWith("course_paid_") &&
-            localStorage.getItem(key) === "true"
-          ) {
-            const courseId = key.replace("course_paid_", "");
-            if (checkedCourseIds.has(courseId)) continue;
-            checkedCourseIds.add(courseId);
-
-            try {
-              const course = await coursesAPI.getWithModules(
-                parseInt(courseId)
-              );
-              const lastModule = localStorage.getItem(
-                `course_${courseId}_lastModule`
-              );
-
-              let completedLessons = 0;
-              const savedCompleted = localStorage.getItem(
-                `course_${courseId}_completed`
-              );
-              if (savedCompleted) {
-                try {
-                  completedLessons = JSON.parse(savedCompleted).length;
-                } catch {
-                  // Ignore
-                }
-              }
-
-              const totalLessons = course.modules.length;
-
-              localCourses.push({
-                ...course,
-                lastModuleIndex: lastModule ? parseInt(lastModule) : 0,
-                completedLessons,
-                totalLessons: totalLessons || course.modules.length,
-              });
-            } catch {
-              // Course not found, skip
-            }
-          }
-        }
-        setActiveCourses(localCourses);
+        // If API fails, show empty state
+        setActiveCourses([]);
       } finally {
         setIsLoading(false);
       }

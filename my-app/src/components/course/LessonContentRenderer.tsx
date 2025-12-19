@@ -6,9 +6,9 @@ import { ImageModal } from "@/src/components/ui/ImageModal";
 // Types for lesson media from API
 interface LessonMedia {
   id: string;
-  download_url: string;
-  original_filename?: string;
-  custom_name?: string;
+  download_url?: string | null; // Made optional to match CourseMediaResponse
+  original_filename?: string | null;
+  custom_name?: string | null;
   media_type: "image" | "video";
 }
 

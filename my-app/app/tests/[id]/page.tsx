@@ -445,36 +445,122 @@ export default function TestPage() {
 
               {/* Answers - touch-friendly */}
               <div className="space-y-2 sm:space-y-3">
-                {question.options.map((option) => (
-                  <button
-                    key={option.id}
-                    onClick={() => handleAnswerSelect(option.id)}
-                    className={`w-full text-left p-3 sm:p-4 rounded-lg border-2 transition-all min-h-[48px] ${
-                      selectedOptions.includes(option.id)
-                        ? "border-blue-600 bg-blue-50"
-                        : "border-gray-200 hover:border-gray-300 active:border-gray-400"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <div
-                        className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
-                          selectedOptions.includes(option.id)
-                            ? "border-blue-600 bg-blue-600"
-                            : "border-gray-300"
+                {question.options.map((option) => {
+                  const isSelected = selectedOptions.includes(option.id);
+                  const hasAnswered = selectedOptions.length > 0;
+                  const isLocked = hasAnswered; // Lock after any selection
+
+                  // Determine styling based on answer state
+                  let borderClass = "border-gray-200";
+                  let bgClass = "";
+                  let iconColor = "border-gray-300";
+
+                  if (hasAnswered) {
+                    if (option.is_correct) {
+                      // Always highlight correct answer in green
+                      borderClass = "border-green-500";
+                      bgClass = "bg-green-50";
+                      iconColor = "border-green-500 bg-green-500";
+                    } else if (isSelected && !option.is_correct) {
+                      // User selected wrong answer - red
+                      borderClass = "border-red-500";
+                      bgClass = "bg-red-50";
+                      iconColor = "border-red-500 bg-red-500";
+                    } else {
+                      // Not selected, not correct - gray out
+                      borderClass = "border-gray-200";
+                      bgClass = "bg-gray-50";
+                    }
+                  } else if (isSelected) {
+                    borderClass = "border-blue-600";
+                    bgClass = "bg-blue-50";
+                    iconColor = "border-blue-600 bg-blue-600";
+                  }
+
+                  return (
+                    <div key={option.id} className="space-y-1">
+                      <button
+                        onClick={() =>
+                          !isLocked && handleAnswerSelect(option.id)
+                        }
+                        disabled={isLocked}
+                        className={`w-full text-left p-3 sm:p-4 rounded-lg border-2 transition-all min-h-[48px] ${borderClass} ${bgClass} ${
+                          isLocked
+                            ? "cursor-default"
+                            : "hover:border-gray-300 active:border-gray-400"
                         }`}
                       >
-                        {selectedOptions.includes(option.id) && (
-                          <span className="text-white text-xs sm:text-sm">
-                            ✓
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <div
+                            className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${iconColor}`}
+                          >
+                            {hasAnswered && option.is_correct && (
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                viewBox="0 0 256 256"
+                                className="text-white"
+                              >
+                                <path
+                                  fill="currentColor"
+                                  d="M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34Z"
+                                />
+                              </svg>
+                            )}
+                            {hasAnswered &&
+                              isSelected &&
+                              !option.is_correct && (
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 256 256"
+                                  className="text-white"
+                                >
+                                  <path
+                                    fill="currentColor"
+                                    d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"
+                                  />
+                                </svg>
+                              )}
+                            {!hasAnswered && isSelected && (
+                              <span className="text-white text-xs sm:text-sm">
+                                ✓
+                              </span>
+                            )}
+                          </div>
+                          <span
+                            className={`text-sm sm:text-base font-medium ${
+                              hasAnswered && option.is_correct
+                                ? "text-green-800"
+                                : hasAnswered &&
+                                  isSelected &&
+                                  !option.is_correct
+                                ? "text-red-800"
+                                : "text-gray-900"
+                            }`}
+                          >
+                            {option.option_text}
                           </span>
-                        )}
-                      </div>
-                      <span className="text-sm sm:text-base text-gray-900 font-medium">
-                        {option.option_text}
-                      </span>
+                        </div>
+                      </button>
+
+                      {/* Description in small line under answer */}
+                      {hasAnswered && option.description && (
+                        <p
+                          className={`text-xs sm:text-sm ml-8 sm:ml-9 pl-2 border-l-2 ${
+                            option.is_correct
+                              ? "border-green-400 text-green-700"
+                              : "border-gray-300 text-gray-600"
+                          }`}
+                        >
+                          {option.description}
+                        </p>
+                      )}
                     </div>
-                  </button>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
