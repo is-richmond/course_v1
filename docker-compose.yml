@@ -75,13 +75,22 @@ services:
       - "traefik.http.routers.auth-api.tls.certresolver=letsencrypt"
       - "traefik.http.routers.auth-api.service=auth"
       - "traefik.http.routers.auth-api.priority=10"
-      
+      - "traefik.http.routers.auth-api.middlewares=cors-api"
+
       - "traefik.http.routers.auth-docs.rule=Host(`api.${DOMAIN}`) && PathPrefix(`/auth`)"
       - "traefik.http.routers.auth-docs.entrypoints=websecure"
       - "traefik.http.routers.auth-docs.tls.certresolver=letsencrypt"
       - "traefik.http.routers.auth-docs.service=auth"
       - "traefik.http.routers.auth-docs.priority=100"
-      
+      - "traefik.http.routers.auth-docs.middlewares=cors-api"
+
+      - "traefik.http.middlewares.cors-api.headers.accesscontrolallowmethods=GET,OPTIONS,PUT,POST,DELETE,PATCH"
+      - "traefik.http.middlewares.cors-api.headers.accesscontrolalloworiginlist=https://admin.${DOMAIN},https://${DOMAIN}"
+      - "traefik.http.middlewares.cors-api.headers.accesscontrolallowheaders=Content-Type,Authorization,Accept,X-Requested-With"
+      - "traefik.http.middlewares.cors-api.headers.accesscontrolallowcredentials=true"
+      - "traefik.http.middlewares.cors-api.headers.accesscontrolmaxage=100"
+      - "traefik.http.middlewares.cors-api.headers.addvaryheader=true"
+
       - "traefik.http.services.auth.loadbalancer.server.port=8000"
     entrypoint: []
     command: >
@@ -128,13 +137,15 @@ services:
       - "traefik.http.routers.core-api.tls.certresolver=letsencrypt"
       - "traefik.http.routers.core-api.service=core"
       - "traefik.http.routers.core-api.priority=5"
+      - "traefik.http.routers.core-api.middlewares=cors-api"
       
       - "traefik.http.routers.core-docs.rule=Host(`api.${DOMAIN}`) && PathPrefix(`/core`)"
       - "traefik.http.routers.core-docs.entrypoints=websecure"
       - "traefik.http.routers.core-docs.tls.certresolver=letsencrypt"
       - "traefik.http.routers.core-docs.service=core"
       - "traefik.http.routers.core-docs.priority=100"
-      
+      - "traefik.http.routers.core-docs.middlewares=cors-api"  # ADD THIS LINE
+
       - "traefik.http.services.core.loadbalancer.server.port=8000"
     entrypoint: []
     command: >
