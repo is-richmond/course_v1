@@ -113,7 +113,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       ),
       children: [
         { label: "Мой профиль", href: "/profile" },
-        { label: "Мои сертификаты", href: "/certificates" },
         { label: "Смена пароля", href: "/auth/change-password" },
       ],
     },
@@ -134,7 +133,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       ),
       children: [
         { label: "FAQ", href: "/faq" },
-        { label: "Контакты", href: "/contact" },
         { label: "О платформе", href: "/about" },
       ],
     },
@@ -176,23 +174,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </svg>
       ),
     },
-    {
-      label: "Контакты",
-      href: "/contact",
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 256 256"
-        >
-          <path
-            fill="currentColor"
-            d="M224,48H32a8,8,0,0,0-8,8V192a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A8,8,0,0,0,224,48ZM98.71,128,40,181.81V74.19Zm11.84,10.85,12,11.05a8,8,0,0,0,10.82,0l12-11.05,58,53.15H52.57ZM157.29,128,216,74.18V181.82Z"
-          />
-        </svg>
-      ),
-    },
+
     {
       label: "FAQ",
       href: "/faq",
@@ -229,7 +211,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       {/* Overlay for mobile */}
       {isMobileMode && isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300"
           onClick={onClose}
           aria-hidden="true"
         />
@@ -237,23 +219,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
       <aside
         className={`
-          fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-blue-900 via-blue-800 to-blue-900 
+          fixed left-0 top-0 h-screen w-72 bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900 
           text-white shadow-2xl z-50 overflow-y-auto
-          transition-transform duration-300 ease-in-out
+          transition-all duration-300 ease-out
           ${
             isMobileMode
               ? isOpen
-                ? "translate-x-0"
-                : "-translate-x-full"
-              : "hidden lg:block"
+                ? "translate-x-0 opacity-100"
+                : "-translate-x-full opacity-0"
+              : "hidden lg:block lg:w-64"
           }
         `}
       >
-        {/* Close button for mobile */}
+        {/* Close button for mobile - positioned in header area */}
         {isMobileMode && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 text-white/70 hover:text-white lg:hidden"
+            className="absolute top-4 right-4 p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200 lg:hidden z-10"
             aria-label="Закрыть меню"
           >
             <svg
@@ -270,20 +252,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </button>
         )}
 
-        {/* Logo - thin header matching main header */}
-        <div className="sticky top-0 bg-blue-950/60 backdrop-blur px-3 py-2 border-b border-blue-400">
-          <Link href="/" className="flex items-center gap-2" onClick={onClose}>
+        {/* Logo - sticky header */}
+        <div className="sticky top-0 bg-slate-900/90 backdrop-blur-md px-4 py-4 border-b border-white/10">
+          <Link href="/" className="flex items-center gap-3" onClick={onClose}>
             <img
               src="/upscalemedia-transformed.png"
               alt="Plexus"
               className="w-10 h-10"
             />
-            <div className="font-semibold text-medium">Plexus</div>
+            <span className="font-bold text-lg tracking-tight">Plexus</span>
           </Link>
         </div>
 
         {/* Navigation */}
-        <nav className="px-3 py-6 space-y-1">
+        <nav className="px-3 py-5 space-y-1">
           {navItems.map((item) => (
             <div key={item.label}>
               {item.href ? (

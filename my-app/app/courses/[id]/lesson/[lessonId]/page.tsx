@@ -224,9 +224,13 @@ export default function LessonPage({ params: paramsPromise }: PageProps) {
     router.push(`/courses/${courseId}/lesson/${navigation.prevLesson.id}`);
   };
 
-  // Back to course list
+  // Back to course page
   const handleBackToCourse = () => {
-    router.push("/");
+    if (courseId) {
+      router.push(`/courses/${courseId}`);
+    } else {
+      router.push("/my-courses");
+    }
   };
 
   // Loading state
@@ -322,7 +326,7 @@ export default function LessonPage({ params: paramsPromise }: PageProps) {
                 d="M224,128a8,8,0,0,1-8,8H59.31l58.35,58.34a8,8,0,0,1-11.32,11.32l-72-72a8,8,0,0,1,0-11.32l72-72a8,8,0,0,1,11.32,11.32L59.31,120H216A8,8,0,0,1,224,128Z"
               />
             </svg>
-            <span className="hidden sm:inline">К курсам</span>
+            <span className="hidden sm:inline">К курсу </span>
           </button>
         </div>
       </header>

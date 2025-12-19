@@ -45,14 +45,6 @@ export const Footer: React.FC = () => (
                 О нас
               </Link>
             </li>
-            <li>
-              <Link
-                href="/contact"
-                className="hover:text-white transition inline-block py-1"
-              >
-                Контакты
-              </Link>
-            </li>
           </ul>
         </div>
 

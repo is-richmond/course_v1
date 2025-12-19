@@ -1,17 +1,26 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Settings, LogOut } from "lucide-react";
+import { Settings, LogOut, Menu } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/src/contexts/AuthContext";
 import { useRouter } from "next/navigation";
+import { useSidebar } from "./ResponsiveLayout";
 
 export const Header: React.FC = () => {
   const { user, logout, isLoading } = useAuth();
   const router = useRouter();
   const [showDropdown, setShowDropdown] = useState(false);
   const [mounted, setMounted] = useState(false);
+
+  // Try to get sidebar context - will be null if not in ResponsiveLayout
+  let sidebarContext: { toggle: () => void } | null = null;
+  try {
+    sidebarContext = useSidebar();
+  } catch {
+    // Not wrapped in ResponsiveLayout context
+  }
 
   useEffect(() => {
     setMounted(true);
@@ -27,23 +36,36 @@ export const Header: React.FC = () => {
     return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
   };
 
+  // Hamburger button component - integrated into the header
+  const HamburgerButton = () => (
+    <button
+      onClick={() => sidebarContext?.toggle()}
+      className="lg:hidden p-2 -ml-2 mr-1 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+      aria-label="Открыть меню"
+    >
+      <Menu size={22} />
+    </button>
+  );
+
   if (isLoading || !mounted) {
     return (
       <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 shadow-sm z-30">
-        <div className="px-3 sm:px-4 py-1.5 sm:py-2 flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <Image
-              src="/plexus-logo.png"
-              alt="Plexus"
-              width={24}
-              height={24}
-              className="w-6 h-6"
-            />
-            <span className="font-bold text-gray-900 text-sm sm:text-base">
-              Plexus
-            </span>
-          </Link>
+        <div className="px-3 sm:px-4 py-2 flex items-center justify-between">
+          <div className="flex items-center">
+            {/* Hamburger placeholder for layout consistency */}
+            <div className="lg:hidden w-10 h-10 mr-1" />
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-2">
+              <Image
+                src="/plexus-logo.png"
+                alt="Plexus"
+                width={28}
+                height={28}
+                className="w-7 h-7"
+              />
+              <span className="font-bold text-gray-900 text-base">Plexus</span>
+            </Link>
+          </div>
           <div className="text-gray-600 text-xs sm:text-sm">Загрузка...</div>
         </div>
       </header>
@@ -52,33 +74,39 @@ export const Header: React.FC = () => {
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 shadow-sm z-30">
-      <div className="px-3 sm:px-4 py-1.5 sm:py-2 flex items-center justify-between">
-        {/* Left Section - Logo & Brand */}
-        <Link
-          href="/"
-          className="flex items-center gap-2 hover:opacity-80 transition"
-        >
-          <Image
-            src="/plexus-logo.png"
-            alt="Plexus"
-            width={24}
-            height={24}
-            className="w-6 h-6 sm:w-7 sm:h-7"
-          />
-          <span className="font-bold text-gray-900 text-sm sm:text-base">
-            Plexus
-          </span>
-        </Link>
+      <div className="px-3 sm:px-4 py-2 flex items-center justify-between">
+        {/* Left Section - Hamburger, Logo & Brand */}
+        <div className="flex items-center">
+          {/* Hamburger Menu - mobile only */}
+          {sidebarContext && <HamburgerButton />}
+
+          {/* Logo */}
+          <Link
+            href="/"
+            className="flex items-center gap-2.5 hover:opacity-80 transition"
+          >
+            <Image
+              src="/plexus-logo.png"
+              alt="Plexus"
+              width={28}
+              height={28}
+              className="w-7 h-7 sm:w-8 sm:h-8"
+            />
+            <span className="font-bold text-gray-900 text-base sm:text-lg tracking-tight">
+              Plexus
+            </span>
+          </Link>
+        </div>
 
         {/* Right Section - User Controls */}
         <div className="flex items-center gap-2 sm:gap-4">
           {/* Settings - hidden on very small screens */}
           <Link href="/profile" className="hidden sm:block">
             <button
-              className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-md transition"
+              className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
               aria-label="Настройки профиля"
             >
-              <Settings size={16} />
+              <Settings size={18} />
             </button>
           </Link>
 
@@ -86,21 +114,21 @@ export const Header: React.FC = () => {
           <div className="relative">
             <button
               onClick={() => setShowDropdown(!showDropdown)}
-              className="flex items-center gap-2 sm:pl-3 sm:border-l border-gray-200 hover:bg-gray-50 py-1 px-1.5 rounded-md transition"
+              className="flex items-center gap-2 sm:pl-3 sm:border-l border-gray-200 hover:bg-gray-50 py-1.5 px-2 rounded-lg transition"
               aria-expanded={showDropdown}
               aria-haspopup="true"
             >
               {/* User info - hidden on mobile, shown on sm+ */}
               <div className="text-right hidden sm:block">
-                <p className="font-medium text-gray-900 text-xs">
+                <p className="font-medium text-gray-900 text-sm">
                   {user?.first_name || "Пользователь"}
                 </p>
-                <p className="text-[10px] text-gray-500">
+                <p className="text-xs text-gray-500">
                   {user?.is_superuser ? "Админ" : "Студент"}
                 </p>
               </div>
               {/* Avatar - always visible */}
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-linear-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 bg-linear-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md">
                 {getInitials(user?.first_name, user?.last_name)}
               </div>
             </button>
@@ -110,27 +138,36 @@ export const Header: React.FC = () => {
               <>
                 {/* Backdrop for closing on mobile */}
                 <div
-                  className="fixed inset-0 z-40 sm:hidden"
+                  className="fixed inset-0 z-40"
                   onClick={() => setShowDropdown(false)}
                   aria-hidden="true"
                 />
-                <div className="absolute right-0 mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                  <div className="p-3 border-b border-gray-100">
-                    <p className="font-medium text-xs text-gray-900">
-                      {user?.first_name} {user?.last_name}
-                    </p>
-                    <p className="text-[10px] text-gray-500 truncate">
-                      {user?.email}
-                    </p>
+                <div className="absolute right-0 mt-2 w-52 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                  {/* User Info Section */}
+                  <div className="p-4 bg-linear-to-r from-blue-50 to-indigo-50 border-b border-gray-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-linear-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md">
+                        {getInitials(user?.first_name, user?.last_name)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-gray-900 truncate">
+                          {user?.first_name} {user?.last_name}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {user?.email}
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="py-1">
+                  {/* Menu Items */}
+                  <div className="py-2">
                     <Link
                       href="/profile"
                       onClick={() => setShowDropdown(false)}
                     >
-                      <button className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 transition flex items-center gap-2">
-                        <Settings size={14} />
+                      <button className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-3">
+                        <Settings size={16} className="text-gray-400" />
                         Профиль
                       </button>
                     </Link>
@@ -139,19 +176,31 @@ export const Header: React.FC = () => {
                       href="/auth/change-password"
                       onClick={() => setShowDropdown(false)}
                     >
-                      <button className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 transition flex items-center gap-2">
-                        <Settings size={14} />
+                      <button className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-3">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 256 256"
+                          className="text-gray-400"
+                        >
+                          <path
+                            fill="currentColor"
+                            d="M208,80H176V56a48,48,0,0,0-96,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM96,56a32,32,0,0,1,64,0V80H96ZM208,208H48V96H208V208Zm-80-36a12,12,0,1,1,12-12A12,12,0,0,1,128,172Z"
+                          />
+                        </svg>
                         Смена пароля
                       </button>
                     </Link>
                   </div>
 
-                  <div className="border-t border-gray-100 p-1">
+                  {/* Logout Section */}
+                  <div className="border-t border-gray-100 p-2">
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 transition flex items-center gap-2"
+                      className="w-full text-left px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition flex items-center gap-3 font-medium"
                     >
-                      <LogOut size={14} />
+                      <LogOut size={16} />
                       Выход
                     </button>
                   </div>
