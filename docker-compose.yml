@@ -249,5 +249,4 @@ networks:
     driver: bridge
   traefik-network:
     external: true 
-    driver: bridge
     name: traefik-network

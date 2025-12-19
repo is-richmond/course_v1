@@ -11,6 +11,14 @@ global:
 entryPoints:
   web:
     address: :80
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+
+  websecure:
+    address: :443
 
 ################################################################
 # Traefik logs configuration
@@ -39,3 +47,14 @@ providers:
   docker:
     network: traefik-network
     exposedByDefault: false
+
+################################################################
+# Let's Encrypt configuration
+################################################################
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: admin@plexus.kz
+      storage: /letsencrypt/acme.json
+      httpChallenge:
+        entryPoint: web
