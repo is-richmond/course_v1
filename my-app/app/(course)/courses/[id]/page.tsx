@@ -717,7 +717,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
 
       <main className="flex-1 pt-14 sm:pt-16 flex flex-col lg:flex-row overflow-hidden">
         {/* Mobile Header Bar */}
-        <div className="lg:hidden sticky top-14 sm:top-16 z-40 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+        <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
           <button
             onClick={() => setIsSidebarOpen(true)}
             className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition"
@@ -735,11 +735,6 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
             </svg>
             <span className="font-medium text-sm">Модули</span>
           </button>
-          {currentLesson && (
-            <span className="text-xs text-gray-500 truncate max-w-[200px]">
-              {currentLesson.title}
-            </span>
-          )}
         </div>
 
         {/* Mobile Sidebar Overlay */}
