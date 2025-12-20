@@ -224,13 +224,14 @@ const UsersPage: React.FC = () => {
   const handleEnrollUser = async (userId: string, courseId: string) => {
     setLoading(prev => ({ ...prev, enrollment: true }));
     try {
-      await enrollmentApi.enrollInCourse(courseId);
+      await enrollmentApi.enrollInCourse(courseId, userId); // ← передаем userId
       addToast({
         type: 'success',
         title: 'Enrollment Success',
         message: 'User enrolled in course successfully',
       });
       fetchUsers();
+      setIsEnrollModalOpen(false); // Закрываем модалку после успешной записи
     } catch (error) {
       console.error('Error enrolling user:', error);
       addToast({
@@ -243,11 +244,12 @@ const UsersPage: React.FC = () => {
     }
   };
 
+
   // Unenroll user from course
-  const handleUnenrollUser = async (courseId: string) => {
+  const handleUnenrollUser = async (userId: string, courseId: string) => {
     setLoading(prev => ({ ...prev, enrollment: true }));
     try {
-      await enrollmentApi.unenrollFromCourse(courseId);
+      await enrollmentApi.unenrollFromCourse(courseId, userId); // ← передаем userId
       addToast({
         type: 'success',
         title: 'Unenrollment Success',
@@ -781,7 +783,7 @@ const UsersPage: React.FC = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleUnenrollUser(course.id)}
+                            onClick={() => handleUnenrollUser(selectedUser.id, course.id)}
                             disabled={loading.enrollment}
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
