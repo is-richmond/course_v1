@@ -144,16 +144,18 @@ export const userApi = {
 // ============================================================================
 export const enrollmentApi = {
   // Enroll user in course (admin only - requires user_id)
-  enrollInCourse: async (courseId: string, userId?: string): Promise<EnrollmentResponse> => {
-    const params = userId ? { user_id: userId } : {};
-    const response = await axios.post(`/enrollment/courses/${courseId}`, null, { params });
+  enrollInCourse: async (courseId: string, userId: string): Promise<EnrollmentResponse> => {
+    const response = await axios.post(`/enrollment/courses/${courseId}`, null, { 
+      params: { user_id: userId } 
+    });
     return response.data;
   },
 
   // Unenroll user from course (admin only - requires user_id)
-  unenrollFromCourse: async (courseId: string, userId?: string): Promise<EnrollmentResponse> => {
-    const params = userId ? { user_id: userId } : {};
-    const response = await axios.delete(`/enrollment/courses/${courseId}`, { params });
+  unenrollFromCourse: async (courseId: string, userId: string): Promise<EnrollmentResponse> => {
+    const response = await axios.delete(`/enrollment/courses/${courseId}`, { 
+      params: { user_id: userId } 
+    });
     return response.data;
   },
 
