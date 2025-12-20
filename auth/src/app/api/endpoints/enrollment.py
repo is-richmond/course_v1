@@ -2,11 +2,12 @@
 
 import logging
 from typing import List
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from auth.src.app.api.deps import get_current_active_user
+from auth.src.app.api.deps import get_current_superuser
 from auth.src.app.db.database import get_async_session
 from auth.src.app.models.user import User
 from auth.src.app.repositories import UserRepository
@@ -14,6 +15,7 @@ from auth.src.app.schemas.enrollment import (
     EnrollmentResponse,
     MyCoursesResponse,
 )
+
 from auth.src.app.api.deps import (
     get_db_session,
     get_current_user,
@@ -34,7 +36,7 @@ router = APIRouter()
 async def enroll_in_course(
     course_id: str,
     user_id: str = Query(..., description="ID of the user to enroll"),
-    current_user: User = Depends(get_current_superuser),  # ← используем get_current_superuser
+    current_user: User = Depends(get_current_superuser),
     session: AsyncSession = Depends(get_async_session),
 ) -> EnrollmentResponse:
     """
@@ -52,9 +54,18 @@ async def enroll_in_course(
     Raises:
         HTTPException: If user is already enrolled or user not found
     """
+    # Преобразуем user_id в UUID
+    try:
+        user_uuid = UUID(user_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid user ID format: {user_id}"
+        )
+    
     # Получаем пользователя, которого нужно записать
     user_repo = UserRepository(session)
-    target_user = await user_repo.get_by_id(user_id)
+    target_user = await user_repo.get(user_uuid)
     
     if not target_user:
         raise HTTPException(
@@ -97,7 +108,7 @@ async def enroll_in_course(
 async def unenroll_from_course(
     course_id: str,
     user_id: str = Query(..., description="ID of the user to unenroll"),
-    current_user: User = Depends(get_current_superuser),  # ← используем get_current_superuser
+    current_user: User = Depends(get_current_superuser),
     session: AsyncSession = Depends(get_async_session),
 ) -> EnrollmentResponse:
     """
@@ -115,9 +126,18 @@ async def unenroll_from_course(
     Raises:
         HTTPException: If user is not enrolled or user not found
     """
+    # Преобразуем user_id в UUID
+    try:
+        user_uuid = UUID(user_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid user ID format: {user_id}"
+        )
+    
     # Получаем пользователя
     user_repo = UserRepository(session)
-    target_user = await user_repo.get_by_id(user_id)
+    target_user = await user_repo.get(user_uuid)
     
     if not target_user:
         raise HTTPException(
