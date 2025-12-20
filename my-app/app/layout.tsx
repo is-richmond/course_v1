@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ResponsiveLayout } from "@/src/components/layout/ResponsiveLayout";
 import { AuthProvider } from "@/src/contexts/AuthContext";
 import "./globals.css";
 
@@ -36,9 +35,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-zinc-900`}
         suppressHydrationWarning
       >
-        <AuthProvider>
-          <ResponsiveLayout>{children}</ResponsiveLayout>
-        </AuthProvider>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );
