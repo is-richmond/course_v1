@@ -3,7 +3,7 @@
 import logging
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth.src.app.api.deps import get_current_active_user
@@ -14,6 +14,12 @@ from auth.src.app.schemas.enrollment import (
     EnrollmentResponse,
     MyCoursesResponse,
 )
+from auth.src.app.api.deps import (
+    get_db_session,
+    get_current_user,
+    get_current_active_user,
+    get_current_superuser,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -23,29 +29,41 @@ router = APIRouter()
     "/courses/{course_id}",
     status_code=status.HTTP_201_CREATED,
     response_model=EnrollmentResponse,
-    description="Enroll current user in a course",
+    description="Enroll a user in a course (admin only)",
 )
 async def enroll_in_course(
     course_id: str,
-    current_user: User = Depends(get_current_active_user),
+    user_id: str = Query(..., description="ID of the user to enroll"),
+    current_user: User = Depends(get_current_superuser),  # ← используем get_current_superuser
     session: AsyncSession = Depends(get_async_session),
 ) -> EnrollmentResponse:
     """
-    Enroll the current authenticated user in a course.
+    Enroll a user in a course. Only accessible by superusers.
     
     Args:
         course_id: ID of the course to enroll in
-        current_user: Current authenticated user
+        user_id: ID of the user to enroll
+        current_user: Current authenticated superuser
         session: Database session
         
     Returns:
         EnrollmentResponse: Response with enrollment status and updated course list
         
     Raises:
-        HTTPException: If user is already enrolled in the course
+        HTTPException: If user is already enrolled or user not found
     """
+    # Получаем пользователя, которого нужно записать
+    user_repo = UserRepository(session)
+    target_user = await user_repo.get_by_id(user_id)
+    
+    if not target_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User {user_id} not found"
+        )
+    
     # Get current enrolled courses
-    enrolled_courses = current_user.enrolled_courses
+    enrolled_courses = target_user.enrolled_courses
     
     # Check if already enrolled
     if course_id in enrolled_courses:
@@ -54,16 +72,15 @@ async def enroll_in_course(
             detail=f"User is already enrolled in course {course_id}"
         )
     
-    # Add course to enrolled courses (create new list to avoid mutation issues)
+    # Add course to enrolled courses
     updated_courses = enrolled_courses + [course_id]
-    current_user.enrolled_courses = updated_courses
+    target_user.enrolled_courses = updated_courses
     
     # Save to database
-    user_repo = UserRepository(session)
-    await user_repo.update(current_user.id, _enrolled_courses=current_user._enrolled_courses)
+    await user_repo.update(target_user.id, _enrolled_courses=target_user._enrolled_courses)
     await session.commit()
     
-    logger.info(f"User {current_user.email} enrolled in course {course_id}")
+    logger.info(f"Admin {current_user.email} enrolled user {target_user.email} in course {course_id}")
     
     return EnrollmentResponse(
         message="Successfully enrolled",
@@ -75,47 +92,54 @@ async def enroll_in_course(
     "/courses/{course_id}",
     status_code=status.HTTP_200_OK,
     response_model=EnrollmentResponse,
-    description="Unenroll current user from a course",
+    description="Unenroll a user from a course (admin only)",
 )
 async def unenroll_from_course(
     course_id: str,
-    current_user: User = Depends(get_current_active_user),
+    user_id: str = Query(..., description="ID of the user to unenroll"),
+    current_user: User = Depends(get_current_superuser),  # ← используем get_current_superuser
     session: AsyncSession = Depends(get_async_session),
 ) -> EnrollmentResponse:
     """
-    Unenroll the current authenticated user from a course.
+    Unenroll a user from a course. Only accessible by superusers.
     
     Args:
         course_id: ID of the course to unenroll from
-        current_user: Current authenticated user
+        user_id: ID of the user to unenroll
+        current_user: Current authenticated superuser
         session: Database session
         
     Returns:
         EnrollmentResponse: Response with unenrollment status and updated course list
         
     Raises:
-        HTTPException: If user is not enrolled in the course
+        HTTPException: If user is not enrolled or user not found
     """
-    # Get current enrolled courses
-    enrolled_courses = current_user.enrolled_courses
+    # Получаем пользователя
+    user_repo = UserRepository(session)
+    target_user = await user_repo.get_by_id(user_id)
     
-    # Check if enrolled
+    if not target_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User {user_id} not found"
+        )
+    
+    enrolled_courses = target_user.enrolled_courses
+    
     if course_id not in enrolled_courses:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"User is not enrolled in course {course_id}"
         )
     
-    # Remove course from enrolled courses (create new list to avoid mutation issues)
     updated_courses = [c for c in enrolled_courses if c != course_id]
-    current_user.enrolled_courses = updated_courses
+    target_user.enrolled_courses = updated_courses
     
-    # Save to database
-    user_repo = UserRepository(session)
-    await user_repo.update(current_user.id, _enrolled_courses=current_user._enrolled_courses)
+    await user_repo.update(target_user.id, _enrolled_courses=target_user._enrolled_courses)
     await session.commit()
     
-    logger.info(f"User {current_user.email} unenrolled from course {course_id}")
+    logger.info(f"Admin {current_user.email} unenrolled user {target_user.email} from course {course_id}")
     
     return EnrollmentResponse(
         message="Successfully unenrolled",
