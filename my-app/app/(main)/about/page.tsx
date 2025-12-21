@@ -243,7 +243,7 @@ export default function AboutPage() {
         </div>
 
         {/* Reviews */}
-        <ReviewsSection reviews={reviews} />
+
       </main>
       <Footer />
     </div>

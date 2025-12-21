@@ -188,16 +188,16 @@ export default function HomeContent({
                 <Button
                   variant="primary"
                   size="lg"
-                  className="w-full sm:w-auto bg-white text-blue-600 hover:bg-gray-100 min-h-[48px]"
+                  className="w-full sm:w-auto bg-blue-600 text-white hover:bg-blue-700 min-h-[48px]"
                 >
                   Зарегистрироваться бесплатно
                 </Button>
               </Link>
               <Link href="/auth/login" className="w-full sm:w-auto">
                 <Button
-                  variant="secondary"
+                  variant="primary"
                   size="lg"
-                  className="w-full sm:w-auto border-white text-white hover:bg-white/10 min-h-[48px]"
+                  className="w-full sm:w-auto bg-blue-600 text-white hover:bg-blue-700/10 min-h-[48px]"
                 >
                   Войти
                 </Button>
