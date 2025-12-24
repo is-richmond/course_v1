@@ -24,7 +24,7 @@ class CombinedTestSourceResponse(BaseModel):
 class CombinedTestResponse(BaseModel):
     """Response for combined test."""
     id: int
-    user_id: int
+    user_id: str
     title: str
     total_questions: int
     created_at: datetime
@@ -49,7 +49,7 @@ class CombinedTestQuestionResponse(BaseModel):
 class CombinedTestDetailResponse(BaseModel):
     """Detailed response for combined test with questions."""
     id: int
-    user_id: int
+    user_id: str
     title: str
     total_questions: int
     created_at: datetime
@@ -106,7 +106,7 @@ class CombinedTestAttemptResponse(BaseModel):
     id: int
     combined_test_id: int
     combined_test_title: str
-    user_id: int
+    user_id: str
     score: int
     total_questions: int
     percentage: float
@@ -121,7 +121,7 @@ class CombinedTestAttemptDetailResponse(BaseModel):
     id: int
     combined_test_id: int
     combined_test_title: str
-    user_id: int
+    user_id: str
     score: int
     total_questions: int
     percentage: float

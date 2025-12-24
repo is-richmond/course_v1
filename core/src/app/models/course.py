@@ -243,7 +243,7 @@ class UserProgress(Base):
     __tablename__ = "user_progress"
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     course_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
     lesson_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("lessons.id", ondelete="CASCADE"), nullable=True)
     completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -263,7 +263,7 @@ class TestAttempt(Base):
     __tablename__ = "test_attempts"
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     test_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("tests.id", ondelete="CASCADE"), nullable=False)
     score: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     total_points: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

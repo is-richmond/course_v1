@@ -32,19 +32,8 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
 
 async def get_current_user_id(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-) -> int:
-    """
-    Get current authenticated user ID from JWT token.
-    
-    Args:
-        credentials: HTTP authorization credentials
-        
-    Returns:
-        int: Current authenticated user ID
-        
-    Raises:
-        HTTPException: If token is invalid
-    """
+) -> str:
+    """Get current authenticated user ID from JWT token."""
     token = credentials.credentials
     
     try:
@@ -62,15 +51,7 @@ async def get_current_user_id(
                 headers={"WWW-Authenticate": "Bearer"},
             )
         
-        # Try to convert to int (for compatibility with both UUID and int user IDs)
-        # In this case, we'll store user_id as a hash of UUID or the actual int
-        try:
-            user_id = int(user_id_str)
-        except ValueError:
-            # If it's a UUID string, hash it to get an int
-            user_id = abs(hash(user_id_str)) % USER_ID_HASH_MODULO
-        
-        return user_id
+        return str(user_id_str)  # Возвращаем UUID как строку
         
     except JWTError as e:
         logger.error(f"Token decode error: {str(e)}")
