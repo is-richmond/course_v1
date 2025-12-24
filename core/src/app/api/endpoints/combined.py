@@ -50,7 +50,7 @@ router = APIRouter()
 @router.post("/generate", response_model=CombinedTestResponse, status_code=status.HTTP_201_CREATED)
 async def generate_combined_test(
     request: CombinedTestGenerateRequest,
-    user_id: int = Depends(get_current_user_id),
+    user_id: str = Depends(get_current_user_id),
     session: AsyncSession = Depends(get_async_session)
 ):
     """Generate a new combined test from selected base tests."""
@@ -172,7 +172,7 @@ async def generate_combined_test(
 
 @router.get("/my-tests", response_model=List[CombinedTestResponse])
 async def get_my_combined_tests(
-    user_id: int = Depends(get_current_user_id),
+    user_id: str = Depends(get_current_user_id),
     session: AsyncSession = Depends(get_async_session)
 ):
     """Get all combined tests created by the current user."""
@@ -202,7 +202,7 @@ async def get_my_combined_tests(
 @router.get("/{test_id}", response_model=CombinedTestDetailResponse)
 async def get_combined_test(
     test_id: int,
-    user_id: int = Depends(get_current_user_id),
+    user_id: str = Depends(get_current_user_id),
     session: AsyncSession = Depends(get_async_session)
 ):
     """Get a combined test with all questions."""
@@ -260,7 +260,7 @@ async def get_combined_test(
 async def submit_combined_test(
     test_id: int,
     submission: CombinedTestSubmission,
-    user_id: int = Depends(get_current_user_id),
+    user_id: str = Depends(get_current_user_id),
     session: AsyncSession = Depends(get_async_session)
 ):
     """Submit answers for a combined test."""
@@ -367,7 +367,7 @@ async def submit_combined_test(
 async def get_attempts_history(
     skip: int = 0,
     limit: int = 100,
-    user_id: int = Depends(get_current_user_id),
+    user_id: str = Depends(get_current_user_id),
     session: AsyncSession = Depends(get_async_session)
 ):
     """Get all test attempts for the current user."""
@@ -393,7 +393,7 @@ async def get_attempts_history(
 @router.get("/attempts/{attempt_id}", response_model=CombinedTestAttemptDetailResponse)
 async def get_attempt_details(
     attempt_id: int,
-    user_id: int = Depends(get_current_user_id),
+    user_id: str = Depends(get_current_user_id),
     session: AsyncSession = Depends(get_async_session)
 ):
     """Get detailed information about a specific attempt."""
@@ -462,7 +462,7 @@ async def get_attempt_details(
 @router.get("/statistics/attempt/{attempt_id}", response_model=AttemptTopicStatistics)
 async def get_attempt_statistics(
     attempt_id: int,
-    user_id: int = Depends(get_current_user_id),
+    user_id: str = Depends(get_current_user_id),
     session: AsyncSession = Depends(get_async_session)
 ):
     """Get topic statistics for a specific attempt."""
@@ -521,7 +521,7 @@ async def get_attempt_statistics(
 
 @router.get("/statistics/overall", response_model=OverallStatistics)
 async def get_overall_statistics(
-    user_id: int = Depends(get_current_user_id),
+    user_id: str = Depends(get_current_user_id),
     session: AsyncSession = Depends(get_async_session)
 ):
     """Get overall statistics across all attempts."""
