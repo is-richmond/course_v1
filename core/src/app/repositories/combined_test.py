@@ -22,7 +22,7 @@ class CombinedTestRepository(BaseRepository[CombinedTest]):
     def __init__(self, session: AsyncSession):
         super().__init__(CombinedTest, session)
     
-    async def get_user_tests(self, user_id: str) -> List[CombinedTest]:
+    async def get_user_tests(self, user_id: int) -> List[CombinedTest]:
         """Get all combined tests for a user."""
         stmt = (
             select(CombinedTest)
@@ -71,7 +71,7 @@ class CombinedTestAttemptRepository(BaseRepository[CombinedTestAttempt]):
     
     async def get_user_attempts(
         self, 
-        user_id: str,  # Changed to str
+        user_id: int,  # Changed to str
         skip: int = 0,
         limit: int = 100
     ) -> List:
@@ -104,7 +104,7 @@ class CombinedTestAttemptRepository(BaseRepository[CombinedTestAttempt]):
         result = await self.session.execute(stmt)
         return result.unique().scalar_one_or_none()
     
-    async def get_user_statistics(self, user_id: str) -> dict:  # Changed to str
+    async def get_user_statistics(self, user_id: int) -> dict:  # Changed to str
         """Get overall statistics for a user."""
         # Get all completed attempts
         stmt = (

@@ -13,7 +13,7 @@ class CombinedTest(Base):
     __tablename__ = "combined_tests"
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)  # Changed to String for UUID
+    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False, index=True)  # Changed to BigInteger
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     total_questions: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
@@ -22,7 +22,7 @@ class CombinedTest(Base):
         nullable=False
     )
     
-    # Relationships
+    # Relationships остаются без изменений
     questions: Mapped[List["CombinedTestQuestion"]] = relationship(
         "CombinedTestQuestion",
         back_populates="combined_test",
@@ -103,7 +103,7 @@ class CombinedTestAttempt(Base):
         ForeignKey("combined_tests.id", ondelete="CASCADE"),
         nullable=False
     )
-    user_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)  # Changed to String for UUID
+    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False, index=True)  # Changed to BigInteger
     score: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     total_questions: Mapped[int] = mapped_column(Integer, nullable=False)
     started_at: Mapped[datetime] = mapped_column(

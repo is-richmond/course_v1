@@ -548,7 +548,7 @@ async def get_overall_statistics(
 @router.delete("/{test_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_combined_test(
     test_id: int,
-    user_id: int = Depends(get_current_user_id),
+    user_id: str = Depends(get_current_user_id),
     session: AsyncSession = Depends(get_async_session)
 ):
     """Delete a combined test."""
