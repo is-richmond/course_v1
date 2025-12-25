@@ -225,7 +225,7 @@ class QuestionOptionWithMedia(QuestionOptionResponse):
 # User Progress Schemas
 class UserProgressBase(BaseModel):
     """Base user progress schema."""
-    user_id: int
+    user_id: str
     course_id: int
     lesson_id: Optional[int] = None
     completed: bool = False
@@ -326,7 +326,7 @@ class TestResult(BaseModel):
 class TestAttemptResponse(BaseModel):
     """Schema for test attempt response."""
     id: int
-    user_id: int
+    user_id: str
     test_id: int
     score: int
     total_points: int

@@ -229,7 +229,7 @@ class UserProgressRepository(BaseRepository[UserProgress]):
     def __init__(self, session: AsyncSession):
         super().__init__(UserProgress, session)
     
-    async def get_by_user_and_course(self, user_id: int, course_id: int) -> List[UserProgress]:
+    async def get_by_user_and_course(self, user_id: str, course_id: int) -> List[UserProgress]:
         """Get all progress records for a user in a course."""
         stmt = select(UserProgress).where(
             and_(
@@ -241,7 +241,7 @@ class UserProgressRepository(BaseRepository[UserProgress]):
         return list(result.scalars().all())
     
     async def get_by_user_and_lesson(
-        self, user_id: int, lesson_id: int
+        self, user_id: str, lesson_id: int
     ) -> Optional[UserProgress]:
         """Get progress record for a user and specific lesson."""
         stmt = select(UserProgress).where(
@@ -261,7 +261,7 @@ class TestAttemptRepository(BaseRepository["TestAttempt"]):
         from core.src.app.models.course import TestAttempt
         super().__init__(TestAttempt, session)
     
-    async def get_by_user_and_test(self, user_id: int, test_id: int) -> List:
+    async def get_by_user_and_test(self, user_id: str, test_id: int) -> List:
         """Get all attempts for a user and test."""
         from core.src.app.models.course import TestAttempt
         stmt = select(TestAttempt).where(

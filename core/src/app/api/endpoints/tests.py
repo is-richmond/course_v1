@@ -120,7 +120,7 @@ async def delete_test(
 @router.post("/{test_id}/start", response_model=TestAttemptResponse, status_code=status.HTTP_201_CREATED)
 async def start_test(
     test_id: int,
-    user_id: int = Depends(get_current_user_id),
+    user_id: str = Depends(get_current_user_id),
     session: AsyncSession = Depends(get_async_session)
 ):
     """Start a new test attempt for the authenticated user."""
@@ -152,7 +152,7 @@ async def start_test(
 async def submit_test(
     test_id: int,
     submission: TestSubmission,
-    user_id: int = Depends(get_current_user_id),
+    user_id: str = Depends(get_current_user_id),
     session: AsyncSession = Depends(get_async_session)
 ):
     """Submit test answers and get results."""
@@ -256,7 +256,7 @@ async def submit_test(
 @router.get("/{test_id}/attempts", response_model=List[TestAttemptResponse])
 async def get_test_attempts(
     test_id: int,
-    user_id: int = Depends(get_current_user_id),
+    user_id: str = Depends(get_current_user_id),
     session: AsyncSession = Depends(get_async_session)
 ):
     """Get all attempts for a test by the authenticated user."""
@@ -280,7 +280,7 @@ async def get_test_attempts(
 async def get_test_result(
     test_id: int,
     attempt_id: int,
-    user_id: int = Depends(get_current_user_id),
+    user_id: str = Depends(get_current_user_id),
     session: AsyncSession = Depends(get_async_session)
 ):
     """Get detailed results for a specific test attempt."""
