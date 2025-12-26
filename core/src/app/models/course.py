@@ -226,6 +226,13 @@ class TestQuestion(Base):
         cascade="all, delete-orphan"
     )
 
+    description_media: Mapped[List["CourseMedia"]] = relationship(
+        "CourseMedia",
+        back_populates="test_question",
+        cascade="all, delete-orphan",
+        foreign_keys="CourseMedia.test_question_id"
+    )
+
 
 class QuestionOption(Base):
     """Question option/answer model."""

@@ -1,4 +1,4 @@
-# core/src/app/models/course_media.py - обновленная модель
+# core/src/app/models/course_media.py - обновленная модель с test_question_id
 
 from sqlalchemy import Column, String, Integer, DateTime, BigInteger, ForeignKey
 from sqlalchemy.sql import func
@@ -23,8 +23,11 @@ class CourseMedia(Base):
     course_id = Column(Integer, ForeignKey('courses.id'), nullable=True)
     lesson_id = Column(Integer, ForeignKey('lessons.id'), nullable=True)
     
-    # НОВОЕ: Привязка к описанию ответа
+    # Привязка к описанию ответа
     question_option_id = Column(Integer, ForeignKey('question_options.id'), nullable=True)
+    
+    # НОВОЕ: Привязка к описанию вопроса
+    test_question_id = Column(Integer, ForeignKey('test_questions.id'), nullable=True)
     
     # Метаданные
     width = Column(Integer, nullable=True)
@@ -39,8 +42,11 @@ class CourseMedia(Base):
     course = relationship("Course", back_populates="course_media")
     lesson = relationship("Lesson", back_populates="lesson_media")
     
-    # НОВОЕ: Связь с ответом на вопрос
+    # Связь с ответом на вопрос
     question_option = relationship("QuestionOption", back_populates="description_media")
+    
+    # НОВОЕ: Связь с вопросом теста
+    test_question = relationship("TestQuestion", back_populates="description_media")
     
     def to_dict(self):
         return {
@@ -55,6 +61,7 @@ class CourseMedia(Base):
             'course_id': self.course_id,
             'lesson_id': self.lesson_id,
             'question_option_id': self.question_option_id,
+            'test_question_id': self.test_question_id,
             'width': self.width,
             'height': self.height,
             'duration': self.duration,

@@ -165,6 +165,7 @@ class TestResponse(TestBase):
 class TestQuestionBase(BaseModel):
     """Base test question schema."""
     question_text: str = Field(..., min_length=1)
+    description: Optional[str] = None  # НОВОЕ ПОЛЕ
     question_type: QuestionType = QuestionType.SINGLE_CHOICE
     points: int = Field(default=1, ge=0)
     order_index: int = Field(default=0, ge=0)
@@ -178,6 +179,7 @@ class TestQuestionCreate(TestQuestionBase):
 class TestQuestionUpdate(BaseModel):
     """Schema for updating a test question."""
     question_text: Optional[str] = Field(None, min_length=1)
+    description: Optional[str] = None  # НОВОЕ ПОЛЕ
     question_type: Optional[QuestionType] = None
     points: Optional[int] = Field(None, ge=0)
     order_index: Optional[int] = Field(None, ge=0)
@@ -187,6 +189,13 @@ class TestQuestionResponse(TestQuestionBase):
     """Schema for test question response."""
     id: int
     test_id: int
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TestQuestionWithMedia(TestQuestionResponse):
+    """Test question response with media files."""
+    description_media: List[CourseMediaResponse] = []
     
     model_config = ConfigDict(from_attributes=True)
 

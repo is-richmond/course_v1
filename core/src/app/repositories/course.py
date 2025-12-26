@@ -212,7 +212,42 @@ class TestQuestionRepository(BaseRepository[TestQuestion]):
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
-
+    
+    async def get_with_media(self, question_id: int) -> Optional[TestQuestion]:
+        """Get question with description media loaded."""
+        stmt = (
+            select(TestQuestion)
+            .options(selectinload(TestQuestion.description_media))
+            .where(TestQuestion.id == question_id)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+    
+    # НОВОЕ: Получить вопросы теста с медиа
+    async def get_by_test_with_media(self, test_id: int) -> List[TestQuestion]:
+        """Get all questions for a test with media loaded."""
+        stmt = (
+            select(TestQuestion)
+            .options(selectinload(TestQuestion.description_media))
+            .where(TestQuestion.test_id == test_id)
+            .order_by(TestQuestion.order_index)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+    
+    # НОВОЕ: Получить вопрос с опциями и медиа
+    async def get_with_options_and_media(self, question_id: int) -> Optional[TestQuestion]:
+        """Get question with options and media loaded."""
+        stmt = (
+            select(TestQuestion)
+            .options(
+                selectinload(TestQuestion.options).selectinload(QuestionOption.description_media),
+                selectinload(TestQuestion.description_media)
+            )
+            .where(TestQuestion.id == question_id)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
 
 class QuestionOptionRepository(BaseRepository[QuestionOption]):
     """Repository for QuestionOption model."""
