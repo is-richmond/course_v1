@@ -216,6 +216,7 @@ class TestQuestion(Base):
         nullable=False
     )
     points: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    description = Column(Text, nullable=True) 
     order_index: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     
     # Relationships
