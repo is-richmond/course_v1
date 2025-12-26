@@ -78,13 +78,9 @@ services:
       # Docs routes - ИЗМЕНИТЬ правило и УБРАТЬ middleware
       - "traefik.http.routers.auth-docs.rule=Host(`localhost`) && PathPrefix(`/auth`)"  # Изменено!
       - "traefik.http.routers.auth-docs.entrypoints=web"
-      # - "traefik.http.routers.auth-docs.middlewares=auth-docs-strip"  # УБРАТЬ!
       - "traefik.http.routers.auth-docs.service=auth"
       - "traefik.http.routers.auth-docs.priority=100"
-      
-      # Middleware - МОЖНО УДАЛИТЬ
-      # - "traefik.http.middlewares.auth-docs-strip.stripprefix.prefixes=/auth"
-      
+            
       - "traefik.http.services.auth.loadbalancer.server.port=8000"
     entrypoint: []
     command: >
@@ -126,20 +122,16 @@ services:
       - traefik-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.core-api.rule=Host(`localhost`) && (PathPrefix(`/v1/courses`) || PathPrefix(`/v1/media`) || PathPrefix(`/v1/s3`) || PathPrefix(`/v1/lessons`) || PathPrefix(`/v1/progress`) || PathPrefix(`/v1/modules`) || PathPrefix(`/v1/options`) || PathPrefix(`/v1/progress`) || PathPrefix(`/v1/questions`) || PathPrefix(`/v1/tests`) || PathPrefix(`/v1/combined-tests`))"
+      - "traefik.http.routers.core-api.rule=Host(`localhost`) && (PathPrefix(`/v1/courses`) || PathPrefix(`/v1/media`) || PathPrefix(`/v1/s3`) || PathPrefix(`/v1/lessons`) || PathPrefix(`/v1/progress`) || PathPrefix(`/v1/modules`) || PathPrefix(`/v1/options`) || PathPrefix(`/v1/progress`) || PathPrefix(`/v1/questions`) || PathPrefix(`/v1/tests`) || PathPrefix(`/v1/combined`))"
       - "traefik.http.routers.core-api.entrypoints=web"
       - "traefik.http.routers.core-api.service=core"
       - "traefik.http.routers.core-api.priority=5"
       
-      # Docs routes - ИЗМЕНИТЬ правило и УБРАТЬ middleware
       - "traefik.http.routers.core-docs.rule=Host(`localhost`) && PathPrefix(`/core`)"  # Изменено!
       - "traefik.http.routers.core-docs.entrypoints=web"
-      # - "traefik.http.routers.core-docs.middlewares=core-docs-strip"  # УБРАТЬ!
       - "traefik.http.routers.core-docs.service=core"
       - "traefik.http.routers.core-docs.priority=100"
       
-      # Middleware - МОЖНО УДАЛИТЬ
-      # - "traefik.http.middlewares.core-docs-strip.stripprefix.prefixes=/core"
       
       - "traefik.http.services.core.loadbalancer.server.port=8000"
     entrypoint: []
@@ -155,13 +147,13 @@ services:
     image: traefik:v2.10
     container_name: course-traefik
     command:
-      - "--configFile=/etc/traefik/traefik.yml"
+      - "--configFile=/etc/traefik/traefik.dev.yml"
     ports:
       - "80:80"
       - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./traefik.yml:/etc/traefik/traefik.yml
+      - ./traefik.dev.yml:/etc/traefik/traefik.dev.yml
     networks:
       - traefik-network
     restart: unless-stopped
