@@ -5,6 +5,9 @@ from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from core.src.app.models.course import Test, TestType
+from core.src.app.repositories.base import BaseRepository
+
 from core.src.app.models.course import (
     Course,
     CourseModule,
@@ -128,7 +131,7 @@ class LessonMediaRepository(BaseRepository[LessonMedia]):
 
 
 class TestRepository(BaseRepository[Test]):
-    """Repository for Test model."""
+    """Repository for Test model with type filtering."""
     
     def __init__(self, session: AsyncSession):
         super().__init__(Test, session)
@@ -138,6 +141,28 @@ class TestRepository(BaseRepository[Test]):
         stmt = select(Test).order_by(Test.created_at.desc())
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+    
+    async def get_by_type(self, test_type: TestType) -> List[Test]:
+        """Get all tests of a specific type."""
+        stmt = (
+            select(Test)
+            .where(Test.test_type == test_type)
+            .order_by(Test.created_at.desc())
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+    
+    async def get_for_combined(self) -> List[Test]:
+        """Get all tests available for combining."""
+        return await self.get_by_type(TestType.FOR_COMBINED)
+    
+    async def get_weekly_tests(self) -> List[Test]:
+        """Get all weekly tests."""
+        return await self.get_by_type(TestType.WEEKLY)
+    
+    async def get_course_tests(self) -> List[Test]:
+        """Get all course tests."""
+        return await self.get_by_type(TestType.COURSE_TEST)
     
     async def get_with_questions(self, test_id: int) -> Optional[Test]:
         """Get test with questions and their options loaded."""
@@ -151,6 +176,9 @@ class TestRepository(BaseRepository[Test]):
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
+
+# Import TestQuestion to avoid circular imports
+from core.src.app.models.course import TestQuestion
 
 class TestQuestionRepository(BaseRepository[TestQuestion]):
     """Repository for TestQuestion model."""

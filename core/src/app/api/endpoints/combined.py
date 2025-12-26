@@ -1,4 +1,4 @@
-"""API endpoints for combined tests."""
+"""API endpoints for combined tests - updated to use only FOR_COMBINED type tests."""
 
 import json
 import random
@@ -10,6 +10,7 @@ from sqlalchemy import select
 
 from core.src.app.db.database import get_async_session
 from core.src.app.api.deps import get_current_user_id
+from core.src.app.models.course import TestType
 from core.src.app.schemas.combined_test import (
     CombinedTestGenerateRequest,
     CombinedTestResponse,
@@ -47,15 +48,35 @@ from core.src.app.models.course import TestQuestion
 router = APIRouter()
 
 
+@router.get("/available-tests", response_model=List[dict])
+async def get_available_tests_for_combining(
+    session: AsyncSession = Depends(get_async_session)
+):
+    """Get all tests available for combining (only FOR_COMBINED type)."""
+    test_repo = TestRepository(session)
+    tests = await test_repo.get_for_combined()
+    
+    return [
+        {
+            "id": test.id,
+            "title": test.title,
+            "description": test.description,
+            "total_questions": len(test.questions) if hasattr(test, 'questions') else 0,
+            "test_type": test.test_type.value
+        }
+        for test in tests
+    ]
+
+
 @router.post("/generate", response_model=CombinedTestResponse, status_code=status.HTTP_201_CREATED)
 async def generate_combined_test(
     request: CombinedTestGenerateRequest,
     user_id: str = Depends(get_current_user_id),
     session: AsyncSession = Depends(get_async_session)
 ):
-    """Generate a new combined test from selected base tests."""
+    """Generate a new combined test from selected FOR_COMBINED tests."""
     
-    # Verify all source tests exist
+    # Verify all source tests exist and are FOR_COMBINED type
     test_repo = TestRepository(session)
     source_tests = []
     for test_id in request.source_test_ids:
@@ -65,6 +86,14 @@ async def generate_combined_test(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Test with id {test_id} not found"
             )
+        
+        # Check if test is FOR_COMBINED type
+        if test.test_type != TestType.FOR_COMBINED:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Test '{test.title}' (type: {test.test_type.value}) is not available for combining. Only FOR_COMBINED tests can be used."
+            )
+        
         if not test.questions:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

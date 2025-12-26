@@ -8,7 +8,8 @@ from core.src.app.models.course import (
     CourseStatus,
     LessonType,
     MediaType,
-    QuestionType
+    QuestionType,
+    TestType
 )
 
 
@@ -129,16 +130,17 @@ class LessonMediaResponse(LessonMediaBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-# Test Schemas - now independent
+# Test Schemas - now with test_type
 class TestBase(BaseModel):
     """Base test schema."""
     title: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = None
     passing_score: int = Field(default=0, ge=0)
+    test_type: TestType = TestType.FOR_COMBINED
 
 
 class TestCreate(TestBase):
-    """Schema for creating a test - no lesson_id needed."""
+    """Schema for creating a test."""
     pass
 
 
@@ -147,6 +149,7 @@ class TestUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=255)
     description: Optional[str] = None
     passing_score: Optional[int] = Field(None, ge=0)
+    test_type: Optional[TestType] = None
 
 
 class TestResponse(TestBase):
@@ -337,10 +340,6 @@ class TestAttemptResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-# В начале файла добавьте импорт
-
-
-# В конце файла добавьте только это:
 class LessonWithAllMedia(LessonResponse):
     """Lesson response with URL media and S3 files."""
     media: List[LessonMediaResponse] = []  # URL-ссылки (LessonMedia)

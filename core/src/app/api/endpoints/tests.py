@@ -2,12 +2,13 @@
 
 import json
 from datetime import datetime, timezone
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.src.app.db.database import get_async_session
 from core.src.app.api.deps import get_current_user_id
+from core.src.app.models.course import TestType
 from core.src.app.schemas.course import (
     TestCreate,
     TestUpdate,
@@ -41,11 +42,28 @@ async def create_test(
 
 @router.get("/", response_model=List[TestResponse])
 async def get_all_tests(
+    test_type: Optional[TestType] = Query(None, description="Filter tests by type"),
     session: AsyncSession = Depends(get_async_session)
 ):
-    """Get all tests."""
+    """Get all tests, optionally filtered by type."""
     repository = TestRepository(session)
-    tests = await repository.get_all()
+    
+    if test_type:
+        tests = await repository.get_by_type(test_type)
+    else:
+        tests = await repository.get_all()
+    
+    return tests
+
+
+@router.get("/by-type/{test_type}", response_model=List[TestResponse])
+async def get_tests_by_type(
+    test_type: TestType,
+    session: AsyncSession = Depends(get_async_session)
+):
+    """Get all tests of a specific type."""
+    repository = TestRepository(session)
+    tests = await repository.get_by_type(test_type)
     return tests
 
 

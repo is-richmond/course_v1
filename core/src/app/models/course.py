@@ -39,6 +39,13 @@ class QuestionType(str, PyEnum):
     TEXT = "text"
 
 
+class TestType(str, PyEnum):
+    """Test type enum."""
+    WEEKLY = "weekly"
+    COURSE_TEST = "course_test"
+    FOR_COMBINED = "for_combined"
+
+
 class Course(Base):
     """Course model."""
     
@@ -158,7 +165,7 @@ class LessonMedia(Base):
 
 
 class Test(Base):
-    """Test model - now independent from lessons."""
+    """Test model - now independent from lessons with type."""
     
     __tablename__ = "tests"
     
@@ -166,6 +173,11 @@ class Test(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     passing_score: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    test_type: Mapped[TestType] = mapped_column(
+        Enum(TestType, values_callable=lambda x: [e.value for e in x]),
+        default=TestType.FOR_COMBINED,
+        nullable=False
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -303,4 +315,3 @@ class TestAnswer(Base):
     # Relationships
     attempt: Mapped["TestAttempt"] = relationship("TestAttempt", back_populates="answers")
     question: Mapped["TestQuestion"] = relationship("TestQuestion", backref="answers")
-
