@@ -153,8 +153,15 @@ class TestRepository(BaseRepository[Test]):
         return list(result.scalars().all())
     
     async def get_for_combined(self) -> List[Test]:
-        """Get all tests available for combining."""
-        return await self.get_by_type(TestType.FOR_COMBINED)
+        """Get all tests available for combining with questions loaded."""
+        stmt = (
+            select(Test)
+            .where(Test.test_type == TestType.FOR_COMBINED)
+            .options(selectinload(Test.questions))  # Добавьте эту строку!
+            .order_by(Test.created_at.desc())
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
     
     async def get_weekly_tests(self) -> List[Test]:
         """Get all weekly tests."""
