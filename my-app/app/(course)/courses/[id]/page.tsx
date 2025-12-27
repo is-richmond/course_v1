@@ -11,7 +11,13 @@ import { CourseProgressBar } from "@/src/components/course/CourseProgressBar";
 import { Button } from "@/src/components/ui/Button";
 import { Badge } from "@/src/components/ui/Badge";
 import { Rating } from "@/src/components/ui/Rating";
-import { coursesAPI, modulesAPI, lessonsAPI, progressAPI } from "@/src/lib/api";
+import {
+  coursesAPI,
+  modulesAPI,
+  lessonsAPI,
+  progressAPI,
+  testsAPI,
+} from "@/src/lib/api";
 import type {
   CourseWithModules,
   ModuleWithLessons,
@@ -51,6 +57,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
   const [completedLessons, setCompletedLessons] = useState<Set<number>>(
     new Set()
   );
+  const [courseTests, setCourseTests] = useState<any[]>([]);
   // Mobile sidebar toggle
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   // Navigation state
@@ -251,6 +258,14 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
           loadedModules = await fetchModulesWithLessons(moduleIds);
         }
 
+        // Fetch course tests
+        try {
+          const tests = await testsAPI.getCourseTests(parseInt(params.id));
+          setCourseTests(tests);
+        } catch (err) {
+          console.error("Failed to fetch course tests:", err);
+        }
+
         // Load completed lessons from localStorage
         const savedCompleted = localStorage.getItem(
           `course_${params.id}_progress`
@@ -412,11 +427,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
   const courseRating = course.rating ?? 4.5;
   const courseLevel = course.level ?? "beginner";
   const courseDuration = course.duration ?? "4 недели";
-  const whatYouWillLearn = course.whatYouWillLearn ?? [
-    "Основные концепции курса",
-    "Практические навыки",
-    "Сертификация по окончании",
-  ];
+  const whatYouWillLearn = course.whatYouWillLearn;
 
   const handleSelectModule = (moduleId: string) => {
     setSelectedModuleId(moduleId);
@@ -469,7 +480,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-24">
               <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
                 {/* Left: Course Image */}
-                <div className="animate-slideInLeft order-2 lg:order-1">
+                <div className="animate-slideInLeft order-1 lg:order-1">
                   <div className="relative group">
                     <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-xl sm:rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-500" />
                     <div className="relative aspect-video rounded-lg sm:rounded-xl overflow-hidden shadow-2xl">
@@ -493,7 +504,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                 </div>
 
                 {/* Right: Course Info */}
-                <div className="animate-slideInRight order-1 lg:order-2">
+                <div className="animate-slideInRight order-2 lg:order-2">
                   <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-3 sm:mb-4 leading-tight">
                     {course.title}
                   </h1>
@@ -630,39 +641,6 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
           {/* Course Details - RESPONSIVE */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
             <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
-              {/* What you'll learn */}
-              <div className="animate-fadeInUp">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
-                  Чему вы научитесь
-                </h2>
-                <div className="grid gap-3 sm:gap-4">
-                  {whatYouWillLearn.map((item: string, idx: number) => (
-                    <div
-                      key={idx}
-                      className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 bg-white rounded-lg sm:rounded-xl border border-gray-100 shadow-sm"
-                    >
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 bg-green-100 rounded-full flex items-center justify-center shrink-0">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 256 256"
-                          className="text-green-600 sm:w-[18px] sm:h-[18px]"
-                        >
-                          <path
-                            fill="currentColor"
-                            d="M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34Z"
-                          />
-                        </svg>
-                      </div>
-                      <span className="text-gray-700 text-sm sm:text-base">
-                        {item}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
               {/* Syllabus Preview */}
               <div
                 className="animate-fadeInUp"
@@ -924,6 +902,47 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                 )}
               </div>
             ))}
+
+            {/* Course Tests Section */}
+            {courseTests.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase px-2 mb-2">
+                  Тесты курса
+                </h3>
+                <div className="space-y-1">
+                  {courseTests.map((test: any) => (
+                    <a
+                      key={test.id}
+                      href={`/tests/${test.id}`}
+                      className="block p-2 sm:p-3 text-xs sm:text-sm rounded-lg transition bg-purple-50 hover:bg-purple-100 text-purple-700 hover:text-purple-900"
+                    >
+                      <div className="flex items-center gap-2">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 256 256"
+                          className="shrink-0"
+                        >
+                          <path
+                            fill="currentColor"
+                            d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,160H40V56H216V200Z M176,88a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h80A8,8,0,0,1,176,88Zm0,32a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h80A8,8,0,0,1,176,120Zm0,32a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h80A8,8,0,0,1,176,152Z"
+                          />
+                        </svg>
+                        <span className="font-medium truncate">
+                          {test.title}
+                        </span>
+                      </div>
+                      {test.description && (
+                        <p className="text-[10px] text-purple-600 mt-1 line-clamp-2 pl-5">
+                          {test.description}
+                        </p>
+                      )}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Back to Home */}
@@ -951,7 +970,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
 
         {/* Main Content Area - Lesson Content */}
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-6 lg:py-8">
+          <div className="max-w-7xl ml-5 px-4 sm:px-6 py-4 sm:py-6 lg:py-8">
             {currentLesson ? (
               <div className="animate-fadeIn" key={selectedLessonId}>
                 {/* Lesson Header */}

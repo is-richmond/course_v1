@@ -51,8 +51,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
+          width="15"
+          height="15"
           viewBox="0 0 256 256"
         >
           <path
@@ -68,8 +68,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
+          width="15"
+          height="15"
           viewBox="0 0 256 256"
         >
           <path
@@ -85,8 +85,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
+          width="15"
+          height="15"
           viewBox="0 0 256 256"
         >
           <path
@@ -101,8 +101,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
+          width="15"
+          height="15"
           viewBox="0 0 256 256"
         >
           <path
@@ -121,8 +121,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
+          width="15"
+          height="15"
           viewBox="0 0 256 256"
         >
           <path
@@ -146,8 +146,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
+          width="15"
+          height="15"
           viewBox="0 0 256 256"
         >
           <path
@@ -163,8 +163,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
+          width="15"
+          height="15"
           viewBox="0 0 256 256"
         >
           <path
@@ -181,8 +181,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
+          width="15"
+          height="15"
           viewBox="0 0 256 256"
         >
           <path
@@ -219,7 +219,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
       <aside
         className={`
-          fixed left-0 top-0 h-screen w-72 bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900 
+          fixed left-0 top-0 h-screen w-72 bg-blue-900
           text-white shadow-2xl z-50 overflow-y-auto
           transition-all duration-300 ease-out
           ${
@@ -253,7 +253,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         )}
 
         {/* Logo - sticky header */}
-        <div className="sticky top-0 bg-slate-900/90 backdrop-blur-md px-4 py-4 border-b border-white/10">
+        <div className="sticky top-0 bg-blue-900 backdrop-blur-md px-4 py-4 border-b border-white/10">
           <Link href="/" className="flex items-center gap-3" onClick={onClose}>
             <img
               src="/upscalemedia-transformed.png"
@@ -279,7 +279,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   }`}
                 >
                   {item.icon}
-                  <span className="font-semibold">{item.label}</span>
+                  <span className="text-sm">{item.label}</span>
                 </Link>
               ) : (
                 <>
@@ -288,14 +288,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-blue-100 hover:bg-blue-700/60 hover:text-white"
                   >
                     {item.icon}
-                    <span className="font-semibold flex-1 text-left">
+                    <span className="text-sm flex-1 text-left">
                       {item.label}
                     </span>
                     {item.children && (
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
+                        width="10"
+                        height="10"
                         viewBox="0 0 256 256"
                         className={`transition-transform duration-300 ${
                           expandedItems.includes(item.label) ? "rotate-180" : ""
@@ -317,23 +317,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                           key={child.label}
                           href={child.href || "#"}
                           onClick={onClose}
-                          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 text-sm font-medium ${
+                          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 text-[12.2px] font-medium ${
                             isActive(child.href)
                               ? "bg-blue-600 text-white shadow-md translate-x-1"
                               : "text-blue-200 hover:text-white hover:bg-blue-700/50"
                           }`}
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="14"
-                            height="14"
-                            viewBox="0 0 256 256"
-                          >
-                            <path
-                              fill="currentColor"
-                              d="M184.49,136.49l-80,80a12,12,0,0,1-17-17L159,128,87.51,56.49a12,12,0,1,1,17-17l80,80A12,12,0,0,1,184.49,136.49Z"
-                            />
-                          </svg>
                           <span>{child.label}</span>
                         </Link>
                       ))}

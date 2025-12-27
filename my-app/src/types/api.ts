@@ -10,6 +10,7 @@ export type CourseStatus = "draft" | "published" | "archived";
 export type LessonType = "theory" | "test" | "practice";
 export type MediaType = "image" | "video" | "document";
 export type QuestionType = "single_choice" | "multiple_choice" | "text";
+export type TestType = "weekly" | "course_test" | "for_combined";
 
 // =============================================================================
 // COURSES
@@ -162,12 +163,16 @@ export interface TestCreate {
   title: string;
   description?: string | null;
   passing_score?: number;
+  test_type?: TestType;
+  course_id?: number | null;
 }
 
 export interface TestUpdate {
   title?: string | null;
   description?: string | null;
   passing_score?: number | null;
+  test_type?: TestType | null;
+  course_id?: number | null;
 }
 
 export interface TestResponse {
@@ -175,6 +180,8 @@ export interface TestResponse {
   title: string;
   description?: string | null;
   passing_score: number;
+  test_type: TestType;
+  course_id?: number | null;
   created_at: string;
   updated_at?: string | null;
 }
@@ -330,4 +337,136 @@ export interface MediaConfigResponse {
   allowed_image_types: string[];
   allowed_video_types: string[];
   connection_status: boolean;
+}
+
+// =============================================================================
+// COMBINED TESTS
+// =============================================================================
+
+export interface CombinedTestSourceResponse {
+  source_test_id: number;
+  source_test_title: string;
+  questions_count: number;
+}
+
+export interface CombinedTestResponse {
+  id: number;
+  user_id: string;
+  title: string;
+  total_questions: number;
+  created_at: string;
+  source_tests: CombinedTestSourceResponse[];
+}
+
+export interface QuestionOption {
+  id: number;
+  question_id: number;
+  option_text: string;
+  description: string | null;
+  is_correct: boolean;
+}
+
+export interface CombinedTestQuestionResponse {
+  id: number;
+  question_id: number;
+  order_index: number;
+  question_text: string;
+  question_type: string;
+  points: number;
+  source_test_title: string;
+  options: QuestionOption[];
+}
+
+export interface CombinedTestDetailResponse extends CombinedTestResponse {
+  questions: CombinedTestQuestionResponse[];
+}
+
+export interface CombinedTestGenerateRequest {
+  source_test_ids: number[];
+  questions_count: number;
+}
+
+export interface CombinedTestAnswerSubmit {
+  question_id: number;
+  selected_option_ids?: number[] | null;
+  text_answer?: string | null;
+}
+
+export interface CombinedTestSubmission {
+  answers: CombinedTestAnswerSubmit[];
+}
+
+export interface CombinedTestAnswerResult {
+  question_id: number;
+  question_text: string;
+  source_test_title: string;
+  selected_option_ids?: number[] | null;
+  text_answer?: string | null;
+  is_correct: boolean;
+  points_earned: number;
+  points_possible: number;
+}
+
+export interface CombinedTestResult {
+  attempt_id: number;
+  combined_test_id: number;
+  score: number;
+  total_questions: number;
+  percentage: number;
+  started_at: string;
+  completed_at: string;
+  answers: CombinedTestAnswerResult[];
+}
+
+export interface CombinedTestAttemptResponse {
+  id: number;
+  combined_test_id: number;
+  combined_test_title: string;
+  user_id: string;
+  score: number;
+  total_questions: number;
+  percentage: number;
+  started_at: string;
+  completed_at: string | null;
+}
+
+export interface CombinedTestAttemptDetailResponse
+  extends CombinedTestAttemptResponse {
+  answers: CombinedTestAnswerResult[];
+  source_tests: CombinedTestSourceResponse[];
+}
+
+export interface TopicStatistics {
+  test_id: number;
+  test_title: string;
+  total_questions_answered: number;
+  correct_answers: number;
+  percentage: number;
+}
+
+export interface AttemptTopicStatistics {
+  attempt_id: number;
+  combined_test_title: string;
+  started_at: string;
+  completed_at: string | null;
+  topics: TopicStatistics[];
+}
+
+export interface OverallStatistics {
+  total_attempts: number;
+  total_questions_answered: number;
+  total_correct_answers: number;
+  overall_percentage: number;
+  best_attempt_score: number | null;
+  worst_attempt_score: number | null;
+  average_score: number;
+  topics: TopicStatistics[];
+}
+
+export interface AvailableTestForCombining {
+  id: number;
+  title: string;
+  description: string | null;
+  total_questions: number;
+  test_type: string;
 }

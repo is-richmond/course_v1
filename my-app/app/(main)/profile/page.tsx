@@ -3,7 +3,6 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Header } from "@/src/components/layout/Header";
 import { Footer } from "@/src/components/layout/Footer";
 import { Button } from "@/src/components/ui/Button";
 import { Card, CardContent } from "@/src/components/ui/Card";
@@ -17,7 +16,7 @@ export default function ProfilePage() {
   if (isLoading) {
     return (
       <>
-        <Header />
+        {/* Header provided by ResponsiveLayout */}
         <div className="min-h-[calc(100vh-300px)] flex items-center justify-center">
           <div className="text-gray-600">Загрузка...</div>
         </div>
@@ -29,7 +28,7 @@ export default function ProfilePage() {
   if (!user) {
     return (
       <>
-        <Header />
+        {/* Header provided by ResponsiveLayout */}
         <div className="min-h-[calc(100vh-300px)] flex items-center justify-center">
           <div className="text-center">
             <p className="text-gray-600 mb-4">Требуется авторизация</p>
@@ -50,7 +49,7 @@ export default function ProfilePage() {
 
   return (
     <>
-      <Header />
+      {/* Header provided by ResponsiveLayout */}
       <div className="min-h-[calc(100vh-300px)] bg-gray-50">
         {/* Gradient Header Section */}
         <div className="bg-gradient-to-br from-blue-50 to-indigo-100 py-6 sm:py-8 md:py-12">

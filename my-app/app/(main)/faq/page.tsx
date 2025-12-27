@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { Header } from "@/src/components/layout/Header";
 import { Footer } from "@/src/components/layout/Footer";
 import { Tabs } from "@/src/components/ui/Tabs";
 import { FAQSection } from "@/src/components/sections/FAQSection";
@@ -99,7 +98,7 @@ export default function FAQPage() {
 
   return (
     <div className="bg-white min-h-screen flex flex-col">
-      <Header />
+      {/* Header provided by ResponsiveLayout */}
 
       <main className="flex-1">
         <div className="max-w-4xl mx-auto px-6 py-8">

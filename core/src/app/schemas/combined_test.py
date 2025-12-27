@@ -3,6 +3,7 @@
 from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel, Field, ConfigDict
+from core.src.app.schemas.course import QuestionOptionResponse
 
 
 # Base Schemas
@@ -42,6 +43,7 @@ class CombinedTestQuestionResponse(BaseModel):
     question_type: str
     points: int
     source_test_title: str
+    options: List["QuestionOptionResponse"] = []
     
     model_config = ConfigDict(from_attributes=True)
 

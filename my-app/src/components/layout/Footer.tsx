@@ -48,44 +48,7 @@ export const Footer: React.FC = () => (
           </ul>
         </div>
 
-        {/* Courses */}
-        <div className="text-center sm:text-left">
-          <h4 className="font-bold mb-3 sm:mb-4">Популярные курсы</h4>
-          <ul className="space-y-2 text-gray-400 text-sm sm:text-base">
-            <li>
-              <Link
-                href="/courses/1"
-                className="hover:text-white transition inline-block py-1"
-              >
-                Кардиология
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/courses/2"
-                className="hover:text-white transition inline-block py-1"
-              >
-                Хирургия
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/courses/3"
-                className="hover:text-white transition inline-block py-1"
-              >
-                Педиатрия
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/courses/4"
-                className="hover:text-white transition inline-block py-1"
-              >
-                Сестринский уход
-              </Link>
-            </li>
-          </ul>
-        </div>
+        
 
         {/* Contact */}
         <div className="text-center sm:text-left">

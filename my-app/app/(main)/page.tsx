@@ -1,6 +1,5 @@
 "use client";
 
-import { Header } from "@/src/components/layout/Header";
 import { Footer } from "@/src/components/layout/Footer";
 import { HeroSection } from "@/src/components/sections/HeroSection";
 import { ReviewsSection } from "@/src/components/sections/ReviewsSection";
@@ -66,7 +65,7 @@ const HomeContent = dynamic(
 export default function Home() {
   return (
     <div className="bg-white min-h-screen flex flex-col">
-      <Header />
+      {/* Header is provided by ResponsiveLayout - no need to render here */}
       <main className="flex-1">
         <HomeContent
           heroComponent={<HeroSection />}

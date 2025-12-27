@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Header } from "@/src/components/layout/Header";
 import { Footer } from "@/src/components/layout/Footer";
 import { Button } from "@/src/components/ui/Button";
 import { Card, CardContent } from "@/src/components/ui/Card";
@@ -37,7 +36,7 @@ export default function MyCoursesPage() {
 
   return (
     <div className="bg-white min-h-screen flex flex-col">
-      <Header />
+      {/* Header is provided by ResponsiveLayout */}
 
       <main className="flex-1 pt-20">
         <div className="max-w-7xl mx-auto px-6 py-8">
@@ -158,7 +157,7 @@ export default function MyCoursesPage() {
                           <p className="text-xs text-gray-500">Цена</p>
                           <p className="text-xl font-bold text-blue-600">
                             {course.price > 0
-                              ? `₽${course.price.toLocaleString("ru-RU")}`
+                              ? `₸${course.price.toLocaleString("ru-RU")}`
                               : "Бесплатно"}
                           </p>
                         </div>

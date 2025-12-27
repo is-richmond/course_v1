@@ -16,6 +16,17 @@ import type {
   UserProgressCreate,
   MediaListResponse,
   CourseMediaResponse,
+  TestType,
+  AvailableTestForCombining,
+  CombinedTestResponse,
+  CombinedTestDetailResponse,
+  CombinedTestGenerateRequest,
+  CombinedTestSubmission,
+  CombinedTestResult,
+  CombinedTestAttemptResponse,
+  CombinedTestAttemptDetailResponse,
+  AttemptTopicStatistics,
+  OverallStatistics,
 } from "@/src/types/api";
 
 // API Configuration
@@ -75,6 +86,11 @@ const progressClient = axios.create({
 
 const s3Client = axios.create({
   baseURL: `${coreBaseURL}/s3`,
+  headers: { "Content-Type": "application/json" },
+});
+
+const combinedTestsClient = axios.create({
+  baseURL: `${coreBaseURL}/combined-tests`,
   headers: { "Content-Type": "application/json" },
 });
 
@@ -142,6 +158,7 @@ setupInterceptors(lessonsClient);
 setupInterceptors(testsClient);
 setupInterceptors(progressClient);
 setupInterceptors(s3Client);
+setupInterceptors(combinedTestsClient);
 
 // =============================================================================
 // AUTH API
@@ -346,6 +363,11 @@ export const testsAPI = {
     const response = await testsClient.get(`/${testId}/result/${attemptId}`);
     return response.data;
   },
+
+  getCourseTests: async (courseId: number): Promise<TestResponse[]> => {
+    const response = await testsClient.get(`/course/${courseId}`);
+    return response.data;
+  },
 };
 
 // =============================================================================
@@ -418,5 +440,88 @@ export const mediaAPI = {
 
   delete: async (mediaId: string): Promise<void> => {
     await s3Client.delete(`/media/${mediaId}`);
+  },
+};
+
+// =============================================================================
+// COMBINED TESTS API
+// =============================================================================
+export const combinedTestsAPI = {
+  // Get available tests for combining (FOR_COMBINED type only)
+  getAvailableTests: async (): Promise<AvailableTestForCombining[]> => {
+    const response = await combinedTestsClient.get("/available-tests");
+    return response.data;
+  },
+
+  // Generate a new combined test
+  generate: async (
+    data: CombinedTestGenerateRequest
+  ): Promise<CombinedTestResponse> => {
+    const response = await combinedTestsClient.post("/generate", data);
+    return response.data;
+  },
+
+  // Get user's combined tests
+  getMyTests: async (): Promise<CombinedTestResponse[]> => {
+    const response = await combinedTestsClient.get("/my-tests");
+    return response.data;
+  },
+
+  // Get specific combined test with questions
+  get: async (testId: number): Promise<CombinedTestDetailResponse> => {
+    const response = await combinedTestsClient.get(`/${testId}`);
+    return response.data;
+  },
+
+  // Submit combined test answers
+  submit: async (
+    testId: number,
+    submission: CombinedTestSubmission
+  ): Promise<CombinedTestResult> => {
+    const response = await combinedTestsClient.post(
+      `/${testId}/submit`,
+      submission
+    );
+    return response.data;
+  },
+
+  // Get attempts history
+  getAttemptsHistory: async (
+    skip = 0,
+    limit = 100
+  ): Promise<CombinedTestAttemptResponse[]> => {
+    const response = await combinedTestsClient.get("/attempts/history", {
+      params: { skip, limit },
+    });
+    return response.data;
+  },
+
+  // Get specific attempt details
+  getAttempt: async (
+    attemptId: number
+  ): Promise<CombinedTestAttemptDetailResponse> => {
+    const response = await combinedTestsClient.get(`/attempts/${attemptId}`);
+    return response.data;
+  },
+
+  // Get attempt statistics (topic breakdown)
+  getAttemptStatistics: async (
+    attemptId: number
+  ): Promise<AttemptTopicStatistics> => {
+    const response = await combinedTestsClient.get(
+      `/statistics/attempt/${attemptId}`
+    );
+    return response.data;
+  },
+
+  // Get overall statistics for user
+  getOverallStatistics: async (): Promise<OverallStatistics> => {
+    const response = await combinedTestsClient.get("/statistics/overall");
+    return response.data;
+  },
+
+  // Delete combined test
+  delete: async (testId: number): Promise<void> => {
+    await combinedTestsClient.delete(`/${testId}`);
   },
 };

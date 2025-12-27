@@ -1,5 +1,4 @@
 import React from "react";
-import { Header } from "@/src/components/layout/Header";
 import { Footer } from "@/src/components/layout/Footer";
 import { Card, CardContent } from "@/src/components/ui/Card";
 import { Badge } from "@/src/components/ui/Badge";
@@ -33,7 +32,7 @@ const reviews = [
 export default function AboutPage() {
   return (
     <div className="bg-white min-h-screen flex flex-col">
-      <Header />
+      {/* Header provided by ResponsiveLayout */}
       <main className="flex-1">
         {/* Hero */}
         <div className="bg-linear-to-br from-blue-50 to-indigo-100 py-16">
@@ -243,7 +242,6 @@ export default function AboutPage() {
         </div>
 
         {/* Reviews */}
-
       </main>
       <Footer />
     </div>

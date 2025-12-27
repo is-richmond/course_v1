@@ -137,6 +137,7 @@ class TestBase(BaseModel):
     description: Optional[str] = None
     passing_score: int = Field(default=0, ge=0)
     test_type: TestType = TestType.FOR_COMBINED
+    course_id: Optional[int] = None
 
 
 class TestCreate(TestBase):
@@ -150,11 +151,13 @@ class TestUpdate(BaseModel):
     description: Optional[str] = None
     passing_score: Optional[int] = Field(None, ge=0)
     test_type: Optional[TestType] = None
+    course_id: Optional[int] = None
 
 
 class TestResponse(TestBase):
     """Schema for test response."""
     id: int
+    course_id: Optional[int] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
     

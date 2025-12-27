@@ -178,6 +178,12 @@ class Test(Base):
         default=TestType.FOR_COMBINED,
         nullable=False
     )
+    course_id: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        ForeignKey("courses.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

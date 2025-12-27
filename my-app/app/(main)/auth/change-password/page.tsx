@@ -6,9 +6,14 @@ import { useAuth } from "@/src/contexts/AuthContext";
 import { Button } from "@/src/components/ui/Button";
 import { Input } from "@/src/components/ui/Input";
 import { Label } from "@/src/components/ui/Label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/Card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/Card";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
-import { Header } from "@/src/components/layout/Header";
 import { Footer } from "@/src/components/layout/Footer";
 
 export default function ChangePasswordPage() {
@@ -90,12 +95,14 @@ export default function ChangePasswordPage() {
 
   return (
     <>
-      <Header />
+      {/* Header provided by ResponsiveLayout */}
       <div className="min-h-[calc(100vh-300px)] flex items-center justify-center bg-white py-8">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-2">
             <CardTitle className="text-2xl">Смена пароля</CardTitle>
-            <CardDescription>Обновите ваш пароль для большей безопасности</CardDescription>
+            <CardDescription>
+              Обновите ваш пароль для большей безопасности
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -143,7 +150,9 @@ export default function ChangePasswordPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Подтвердите новый пароль</Label>
+                <Label htmlFor="confirmPassword">
+                  Подтвердите новый пароль
+                </Label>
                 <Input
                   id="confirmPassword"
                   name="confirmPassword"

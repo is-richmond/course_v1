@@ -1,18 +1,18 @@
-import axios from '@/config/axiosConfig';
-import { 
-  User, 
-  UserCreate, 
+import axios from "@/config/axiosConfig";
+import {
+  User,
+  UserCreate,
   UserUpdate,
   UserProfileUpdate,
-  TokenResponse, 
-  LoginRequest, 
+  TokenResponse,
+  LoginRequest,
   RefreshTokenRequest,
   PasswordChangeRequest,
   PasswordResetRequest,
   GrantAdminRequest,
   EnrollmentResponse,
-  MyCoursesResponse 
-} from '../types/types';
+  MyCoursesResponse,
+} from "../types/types";
 
 // ============================================================================
 // AUTHENTICATION API
@@ -21,65 +21,72 @@ import {
 export const authApi = {
   // Register new user
   register: async (userData: UserCreate): Promise<TokenResponse> => {
-    const response = await axios.post('/auth/register', userData);
+    const response = await axios.post("/auth/register", userData);
     return response.data;
   },
 
   // Login
   login: async (credentials: LoginRequest): Promise<TokenResponse> => {
-    const response = await axios.post('/auth/login', credentials);
+    const response = await axios.post("/auth/login", credentials);
     const { access_token, refresh_token } = response.data;
-    
+
     // Store tokens
-    localStorage.setItem('access_token', access_token);
-    localStorage.setItem('refresh_token', refresh_token);
-    
+    localStorage.setItem("access_token", access_token);
+    localStorage.setItem("refresh_token", refresh_token);
+
     return response.data;
   },
 
   // Refresh token
-  refreshToken: async (refreshData: RefreshTokenRequest): Promise<TokenResponse> => {
-    const response = await axios.post('/auth/refresh', refreshData);
+  refreshToken: async (
+    refreshData: RefreshTokenRequest
+  ): Promise<TokenResponse> => {
+    const response = await axios.post("/auth/refresh", refreshData);
     const { access_token, refresh_token } = response.data;
-    
+
     // Update tokens
-    localStorage.setItem('access_token', access_token);
-    localStorage.setItem('refresh_token', refresh_token);
-    
+    localStorage.setItem("access_token", access_token);
+    localStorage.setItem("refresh_token", refresh_token);
+
     return response.data;
   },
 
   // Logout
   logout: () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user_info');
-    window.location.href = '/auth/login';
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("user_info");
+    window.location.href = "/auth/login";
   },
 
   // Forgot password
   forgotPassword: async (email: string): Promise<{ message: string }> => {
-    const response = await axios.post('/auth/forgot-password', { email });
+    const response = await axios.post("/auth/forgot-password", { email });
     return response.data;
   },
 
   // Reset password
-  resetPassword: async (token: string, newPassword: string): Promise<{ message: string }> => {
-    const response = await axios.post('/auth/reset-password', null, {
-      params: { token, new_password: newPassword }
+  resetPassword: async (
+    token: string,
+    newPassword: string
+  ): Promise<{ message: string }> => {
+    const response = await axios.post("/auth/reset-password", null, {
+      params: { token, new_password: newPassword },
     });
     return response.data;
   },
 
   // Change password (authenticated)
-  changePassword: async (passwordData: PasswordChangeRequest): Promise<{ message: string }> => {
-    const response = await axios.post('/auth/change-password', passwordData);
+  changePassword: async (
+    passwordData: PasswordChangeRequest
+  ): Promise<{ message: string }> => {
+    const response = await axios.post("/auth/change-password", passwordData);
     return response.data;
   },
 
   // Grant admin role (superuser only)
   grantAdminRole: async (grantData: GrantAdminRequest): Promise<User> => {
-    const response = await axios.post('/auth/admin', grantData);
+    const response = await axios.post("/auth/admin", grantData);
     return response.data;
   },
 };
@@ -91,26 +98,32 @@ export const authApi = {
 export const userApi = {
   // Get current user
   getCurrentUser: async (): Promise<User> => {
-    const response = await axios.get('/user/me');
+    const response = await axios.get("/user/me");
     return response.data;
   },
 
   // Update current user
   updateCurrentUser: async (userData: UserUpdate): Promise<User> => {
-    const response = await axios.patch('/user/me', userData);
+    const response = await axios.patch("/user/me", userData);
     return response.data;
   },
 
   // Update current user profile (with detailed info)
-  updateMyProfile: async (userId: string, userData: UserProfileUpdate): Promise<User> => {
+  updateMyProfile: async (
+    userId: string,
+    userData: UserProfileUpdate
+  ): Promise<User> => {
     const response = await axios.patch(`/user/${userId}`, userData);
     return response.data;
   },
 
   // Get all users (admin only)
-  getAllUsers: async (skip: number = 0, limit: number = 100): Promise<User[]> => {
-    const response = await axios.get('/user/all', {
-      params: { skip, limit }
+  getAllUsers: async (
+    skip: number = 0,
+    limit: number = 100
+  ): Promise<User[]> => {
+    const response = await axios.get("/user/all", {
+      params: { skip, limit },
     });
     return response.data;
   },
@@ -122,7 +135,10 @@ export const userApi = {
   },
 
   // Update user by ID (admin only)
-  updateUserById: async (userId: string, userData: UserUpdate): Promise<User> => {
+  updateUserById: async (
+    userId: string,
+    userData: UserUpdate
+  ): Promise<User> => {
     const response = await axios.patch(`/user/${userId}`, userData);
     return response.data;
   },
@@ -144,30 +160,36 @@ export const userApi = {
 // ============================================================================
 export const enrollmentApi = {
   // Enroll user in course (admin only - requires user_id)
-  enrollInCourse: async (courseId: string, userId: string): Promise<EnrollmentResponse> => {
-    const response = await axios.post(`/enrollment/courses/${courseId}`, null, { 
-      params: { user_id: userId } 
+  enrollInCourse: async (
+    courseId: string,
+    userId: string
+  ): Promise<EnrollmentResponse> => {
+    const response = await axios.post(`/enrollment/courses/${courseId}`, null, {
+      params: { user_id: userId },
     });
     return response.data;
   },
 
   // Unenroll user from course (admin only - requires user_id)
-  unenrollFromCourse: async (courseId: string, userId: string): Promise<EnrollmentResponse> => {
-    const response = await axios.delete(`/enrollment/courses/${courseId}`, { 
-      params: { user_id: userId } 
+  unenrollFromCourse: async (
+    courseId: string,
+    userId: string
+  ): Promise<EnrollmentResponse> => {
+    const response = await axios.delete(`/enrollment/courses/${courseId}`, {
+      params: { user_id: userId },
     });
     return response.data;
   },
 
   // Get my courses
   getMyCourses: async (): Promise<MyCoursesResponse> => {
-    const response = await axios.get('/enrollment/my-courses');
+    const response = await axios.get("/enrollment/my-courses");
     return response.data;
   },
 
   // Get my courses with details
   getMyCoursesDetails: async (): Promise<MyCoursesResponse> => {
-    const response = await axios.get('/enrollment/my-courses/details');
+    const response = await axios.get("/enrollment/my-courses/details");
     return response.data;
   },
 };
@@ -179,8 +201,8 @@ export const enrollmentApi = {
 export const courseApi = {
   // Get all courses
   getAllCourses: async (skip: number = 0, limit: number = 100) => {
-    const response = await axios.get('/courses/', {
-      params: { skip, limit }
+    const response = await axios.get("/courses/", {
+      params: { skip, limit },
     });
     return response.data;
   },
@@ -205,7 +227,7 @@ export const courseApi = {
 
   // Create course
   createCourse: async (data: any) => {
-    const response = await axios.post('/courses/', data);
+    const response = await axios.post("/courses/", data);
     return response.data;
   },
 
@@ -246,7 +268,7 @@ export const moduleApi = {
 
   // Create module
   createModule: async (data: any) => {
-    const response = await axios.post('/modules/', data);
+    const response = await axios.post("/modules/", data);
     return response.data;
   },
 
@@ -287,7 +309,7 @@ export const lessonApi = {
 
   // Create lesson
   createLesson: async (data: any) => {
-    const response = await axios.post('/lessons/', data);
+    const response = await axios.post("/lessons/", data);
     return response.data;
   },
 
@@ -322,7 +344,7 @@ export const mediaApi = {
 
   // Create media
   createMedia: async (data: any) => {
-    const response = await axios.post('/media/', data);
+    const response = await axios.post("/media/", data);
     return response.data;
   },
 
@@ -345,7 +367,7 @@ export const mediaApi = {
 export const testApi = {
   // Get all tests
   getAllTests: async () => {
-    const response = await axios.get('/tests/');
+    const response = await axios.get("/tests/");
     return response.data;
   },
 
@@ -363,7 +385,7 @@ export const testApi = {
 
   // Create test
   createTest: async (data: any) => {
-    const response = await axios.post('/tests/', data);
+    const response = await axios.post("/tests/", data);
     return response.data;
   },
 
@@ -401,6 +423,26 @@ export const testApi = {
     const response = await axios.get(`/tests/${testId}/result/${attemptId}`);
     return response.data;
   },
+
+  // Get tests by course
+  getCourseTests: async (courseId: number) => {
+    const response = await axios.get(`/tests/course/${courseId}`);
+    return response.data;
+  },
+
+  // Assign test to course (by updating test's course_id)
+  assignTestToCourse: async (testId: number, courseId: number) => {
+    const response = await axios.put(`/tests/${testId}`, {
+      course_id: courseId,
+    });
+    return response.data;
+  },
+
+  // Unassign test from course
+  unassignTestFromCourse: async (testId: number) => {
+    const response = await axios.put(`/tests/${testId}`, { course_id: null });
+    return response.data;
+  },
 };
 
 // ============================================================================
@@ -428,7 +470,7 @@ export const questionApi = {
 
   // Create question
   createQuestion: async (data: any) => {
-    const response = await axios.post('/questions/', data);
+    const response = await axios.post("/questions/", data);
     return response.data;
   },
 
@@ -463,7 +505,7 @@ export const optionApi = {
 
   // Create option
   createOption: async (data: any) => {
-    const response = await axios.post('/options/', data);
+    const response = await axios.post("/options/", data);
     return response.data;
   },
 
@@ -492,13 +534,15 @@ export const progressApi = {
 
   // Get progress by user and course
   getProgressByUserAndCourse: async (userId: number, courseId: number) => {
-    const response = await axios.get(`/progress/user/${userId}/course/${courseId}`);
+    const response = await axios.get(
+      `/progress/user/${userId}/course/${courseId}`
+    );
     return response.data;
   },
 
   // Create progress
   createProgress: async (data: any) => {
-    const response = await axios.post('/progress/', data);
+    const response = await axios.post("/progress/", data);
     return response.data;
   },
 
@@ -520,15 +564,15 @@ export const progressApi = {
 
 export const apiClient = {
   setToken: (token: string) => {
-    localStorage.setItem('access_token', token);
+    localStorage.setItem("access_token", token);
   },
   removeToken: () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
   },
   getCurrentUser: userApi.getCurrentUser,
   request: async (endpoint: string, options?: any) => {
-    const method = options?.method || 'GET';
+    const method = options?.method || "GET";
     const response = await axios({
       method,
       url: endpoint,
@@ -547,22 +591,22 @@ export const s3Api = {
   // Upload media file (image or video)
   uploadMedia: async (
     file: File,
-    mediaType: 'image' | 'video',
+    mediaType: "image" | "video",
     courseId?: number,
     lessonId?: number,
     customName?: string
   ) => {
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('media_type', mediaType);
-    
-    if (courseId) formData.append('course_id', courseId.toString());
-    if (lessonId) formData.append('lesson_id', lessonId.toString());
-    if (customName) formData.append('custom_name', customName);
+    formData.append("file", file);
+    formData.append("media_type", mediaType);
 
-    const response = await axios.post('/s3/upload', formData, {
+    if (courseId) formData.append("course_id", courseId.toString());
+    if (lessonId) formData.append("lesson_id", lessonId.toString());
+    if (customName) formData.append("custom_name", customName);
+
+    const response = await axios.post("/s3/upload", formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
     return response.data;
@@ -572,7 +616,7 @@ export const s3Api = {
   getAllMedia: async (
     skip: number = 0,
     limit: number = 100,
-    mediaType?: 'image' | 'video',
+    mediaType?: "image" | "video",
     courseId?: number,
     lessonId?: number
   ) => {
@@ -581,7 +625,7 @@ export const s3Api = {
     if (courseId) params.course_id = courseId;
     if (lessonId) params.lesson_id = lessonId;
 
-    const response = await axios.get('/s3/media', { params });
+    const response = await axios.get("/s3/media", { params });
     return response.data;
   },
 
@@ -593,7 +637,7 @@ export const s3Api = {
 
   // Get media configuration
   getMediaConfig: async () => {
-    const response = await axios.get('/s3/config');
+    const response = await axios.get("/s3/config");
     return response.data;
   },
 };

@@ -26,6 +26,7 @@ from core.src.app.schemas.combined_test import (
     CombinedTestAnswerResult,
     TopicStatistics,
 )
+from core.src.app.schemas.course import QuestionOptionResponse
 from core.src.app.repositories.combined_test import (
     CombinedTestRepository,
     CombinedTestSourceRepository,
@@ -253,6 +254,18 @@ async def get_combined_test(
     # Build question responses
     questions = []
     for ctq in sorted(test.questions, key=lambda x: x.order_index):
+        # Build options list
+        options = [
+            QuestionOptionResponse(
+                id=opt.id,
+                question_id=opt.question_id,
+                option_text=opt.option_text,
+                description=opt.description,
+                is_correct=opt.is_correct
+            )
+            for opt in ctq.question.options
+        ]
+        
         questions.append(
             CombinedTestQuestionResponse(
                 id=ctq.id,
@@ -261,7 +274,8 @@ async def get_combined_test(
                 question_text=ctq.question.question_text,
                 question_type=ctq.question.question_type.value,
                 points=ctq.question.points,
-                source_test_title=ctq.question.test.title
+                source_test_title=ctq.question.test.title,
+                options=options
             )
         )
     

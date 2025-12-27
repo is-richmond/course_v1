@@ -177,7 +177,7 @@ export const CoursesGrid: React.FC = () => {
                     <p className="text-[10px] sm:text-xs text-gray-600">Цена</p>
                     <p className="text-xl sm:text-2xl font-bold text-blue-600">
                       {course.price > 0
-                        ? `₽${course.price.toLocaleString("ru-RU")}`
+                        ? `₸${course.price.toLocaleString("ru-RU")}`
                         : "Бесплатно"}
                     </p>
                   </div>

@@ -48,13 +48,32 @@ async def get_all_tests(
     """Get all tests, optionally filtered by type."""
     repository = TestRepository(session)
     
-    if test_type:
-        tests = await repository.get_by_type(test_type)
-    else:
-        tests = await repository.get_all()
+    from sqlalchemy import select
+    from core.src.app.models.course import Test
     
-    return tests
+    if test_type:
+        stmt = select(Test).where(Test.test_type == test_type)
+    else:
+        stmt = select(Test)
+    
+    result = await session.execute(stmt)
+    tests = result.scalars().all()
+    return [TestResponse.model_validate(test) for test in tests]
 
+
+@router.get("/course/{course_id}", response_model=List[TestResponse])
+async def get_course_tests(
+    course_id: int,
+    session: AsyncSession = Depends(get_async_session)
+):
+    """Get all tests for a specific course."""
+    from sqlalchemy import select
+    from core.src.app.models.course import Test
+    
+    stmt = select(Test).where(Test.course_id == course_id)
+    result = await session.execute(stmt)
+    tests = result.scalars().all()
+    return [TestResponse.model_validate(test) for test in tests]
 
 @router.get("/by-type/{test_type}", response_model=List[TestResponse])
 async def get_tests_by_type(

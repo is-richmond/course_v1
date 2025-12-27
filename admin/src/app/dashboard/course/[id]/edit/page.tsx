@@ -1,14 +1,20 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/text-area';
-import { 
+import React, { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/text-area";
+import {
   ArrowLeft,
   Plus,
   Trash2,
@@ -17,19 +23,25 @@ import {
   Save,
   FileText,
   Loader2,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { courseApi, moduleApi, lessonApi, mediaApi } from '@/lib/api/api';
-import ContentEditor from '@/components/ContentEditor';
-import { 
-  CourseFormData, 
-  ModuleFormData, 
-  LessonFormData, 
+import {
+  courseApi,
+  moduleApi,
+  lessonApi,
+  mediaApi,
+  testApi,
+} from "@/lib/api/api";
+import ContentEditor from "@/components/ContentEditor";
+import {
+  CourseFormData,
+  ModuleFormData,
+  LessonFormData,
   MediaFormData,
   CourseStatus,
   LessonType,
-  MediaType 
-} from '@/lib/types/types';
+  MediaType,
+} from "@/lib/types/types";
 
 const CourseEditPage = () => {
   const params = useParams();
@@ -38,13 +50,15 @@ const CourseEditPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<CourseFormData>({
-    title: '',
-    description: '',
+    title: "",
+    description: "",
     author_id: null,
     status: CourseStatus.DRAFT,
     price: 0,
-    modules: []
+    modules: [],
   });
+  const [availableTests, setAvailableTests] = useState<any[]>([]);
+  const [selectedTests, setSelectedTests] = useState<number[]>([]);
   const [toasts, setToasts] = useState<any[]>([]);
 
   useEffect(() => {
@@ -58,12 +72,12 @@ const CourseEditPage = () => {
     try {
       // Fetch course with modules
       const courseData = await courseApi.getCourseWithModules(courseId);
-      
+
       // Fetch lessons for each module
       const modulesWithLessons = await Promise.all(
         courseData.modules.map(async (module: any) => {
           const lessonsData = await lessonApi.getLessonsByModule(module.id);
-          
+
           // Fetch media for each lesson
           const lessonsWithMedia = await Promise.all(
             lessonsData.map(async (lesson: any) => {
@@ -71,7 +85,7 @@ const CourseEditPage = () => {
               return {
                 ...lesson,
                 media: mediaData,
-                isExpanded: false
+                isExpanded: false,
               };
             })
           );
@@ -79,25 +93,41 @@ const CourseEditPage = () => {
           return {
             ...module,
             lessons: lessonsWithMedia,
-            isExpanded: false
+            isExpanded: false,
           };
         })
       );
 
       setFormData({
         title: courseData.title,
-        description: courseData.description || '',
+        description: courseData.description || "",
         author_id: courseData.author_id,
         status: courseData.status,
         price: courseData.price || 0,
-        modules: modulesWithLessons
+        modules: modulesWithLessons,
       });
+
+      // Load available tests and course tests
+      try {
+        const allTests = await testApi.getAllTests();
+        // Filter only course_test type
+        const courseTestsOnly = allTests.filter(
+          (t: any) => t.test_type === "course_test"
+        );
+        setAvailableTests(courseTestsOnly);
+
+        // Get tests assigned to this course
+        const coursTestsData = await testApi.getCourseTests(courseId);
+        setSelectedTests(coursTestsData.map((t: any) => t.id));
+      } catch (err) {
+        console.error("Error loading tests:", err);
+      }
     } catch (error) {
-      console.error('Error fetching course:', error);
+      console.error("Error fetching course:", error);
       addToast({
-        type: 'error',
-        title: 'Error',
-        message: 'Failed to load course'
+        type: "error",
+        title: "Error",
+        message: "Failed to load course",
       });
     } finally {
       setLoading(false);
@@ -107,10 +137,10 @@ const CourseEditPage = () => {
   const addToast = (toast: any) => {
     const id = Math.random().toString(36).substr(2, 9);
     const newToast = { ...toast, id };
-    setToasts(prev => [...prev, newToast]);
-    
+    setToasts((prev) => [...prev, newToast]);
+
     setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
+      setToasts((prev) => prev.filter((t) => t.id !== id));
     }, toast.duration || 5000);
   };
 
@@ -125,7 +155,7 @@ const CourseEditPage = () => {
         description: formData.description,
         author_id: formData.author_id || undefined,
         status: formData.status,
-        price: formData.price
+        price: formData.price,
       });
 
       // Update modules and lessons
@@ -136,14 +166,14 @@ const CourseEditPage = () => {
           // Update existing module
           await moduleApi.updateModule(moduleId, {
             title: module.title,
-            order_index: module.order_index
+            order_index: module.order_index,
           });
         } else {
           // Create new module
           const createdModule = await moduleApi.createModule({
             title: module.title,
             order_index: module.order_index,
-            course_id: courseId
+            course_id: courseId,
           });
           moduleId = createdModule.id;
         }
@@ -158,7 +188,7 @@ const CourseEditPage = () => {
               title: lesson.title,
               content: lesson.content,
               lesson_type: lesson.lesson_type,
-              order_index: lesson.order_index
+              order_index: lesson.order_index,
             });
           } else {
             // Create new lesson
@@ -167,7 +197,7 @@ const CourseEditPage = () => {
               content: lesson.content,
               lesson_type: lesson.lesson_type,
               order_index: lesson.order_index,
-              module_id: moduleId
+              module_id: moduleId,
             });
             lessonId = createdLesson.id;
           }
@@ -178,14 +208,14 @@ const CourseEditPage = () => {
               await mediaApi.updateMedia(media.id, {
                 media_url: media.media_url,
                 media_type: media.media_type,
-                order_index: media.order_index
+                order_index: media.order_index,
               });
             } else {
               await mediaApi.createMedia({
                 media_url: media.media_url,
                 media_type: media.media_type,
                 order_index: media.order_index,
-                lesson_id: lessonId
+                lesson_id: lessonId,
               });
             }
           }
@@ -193,20 +223,20 @@ const CourseEditPage = () => {
       }
 
       addToast({
-        type: 'success',
-        title: 'Success',
-        message: 'Course updated successfully'
+        type: "success",
+        title: "Success",
+        message: "Course updated successfully",
       });
 
       setTimeout(() => {
         fetchCourse();
       }, 1000);
     } catch (error) {
-      console.error('Error updating course:', error);
+      console.error("Error updating course:", error);
       addToast({
-        type: 'error',
-        title: 'Error',
-        message: 'Failed to update course'
+        type: "error",
+        title: "Error",
+        message: "Failed to update course",
       });
     } finally {
       setSaving(false);
@@ -214,145 +244,195 @@ const CourseEditPage = () => {
   };
 
   const addModule = () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       modules: [
         ...prev.modules,
         {
-          title: '',
+          title: "",
           order_index: prev.modules.length,
           lessons: [],
-          isExpanded: true
-        }
-      ]
+          isExpanded: true,
+        },
+      ],
     }));
   };
 
   const removeModule = async (moduleIndex: number) => {
     const module = formData.modules[moduleIndex];
-    
+
     if (module.id) {
       try {
         await moduleApi.deleteModule(module.id);
         addToast({
-          type: 'success',
-          title: 'Success',
-          message: 'Module deleted'
+          type: "success",
+          title: "Success",
+          message: "Module deleted",
         });
       } catch (error) {
         addToast({
-          type: 'error',
-          title: 'Error',
-          message: 'Failed to delete module'
+          type: "error",
+          title: "Error",
+          message: "Failed to delete module",
         });
         return;
       }
     }
 
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      modules: prev.modules.filter((_, i) => i !== moduleIndex)
+      modules: prev.modules.filter((_, i) => i !== moduleIndex),
     }));
   };
 
-  const updateModule = (moduleIndex: number, field: keyof ModuleFormData, value: any) => {
-    setFormData(prev => ({
+  const updateModule = (
+    moduleIndex: number,
+    field: keyof ModuleFormData,
+    value: any
+  ) => {
+    setFormData((prev) => ({
       ...prev,
-      modules: prev.modules.map((m, i) => 
+      modules: prev.modules.map((m, i) =>
         i === moduleIndex ? { ...m, [field]: value } : m
-      )
+      ),
     }));
   };
 
   const toggleModule = (moduleIndex: number) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      modules: prev.modules.map((m, i) => 
+      modules: prev.modules.map((m, i) =>
         i === moduleIndex ? { ...m, isExpanded: !m.isExpanded } : m
-      )
+      ),
     }));
   };
 
   const addLesson = (moduleIndex: number) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      modules: prev.modules.map((m, i) => 
-        i === moduleIndex ? {
-          ...m,
-          lessons: [
-            ...m.lessons,
-            {
-              title: '',
-              content: '',
-              lesson_type: LessonType.THEORY,
-              order_index: m.lessons.length,
-              media: [],
-              isExpanded: true
+      modules: prev.modules.map((m, i) =>
+        i === moduleIndex
+          ? {
+              ...m,
+              lessons: [
+                ...m.lessons,
+                {
+                  title: "",
+                  content: "",
+                  lesson_type: LessonType.THEORY,
+                  order_index: m.lessons.length,
+                  media: [],
+                  isExpanded: true,
+                },
+              ],
             }
-          ]
-        } : m
-      )
+          : m
+      ),
     }));
   };
 
   const removeLesson = async (moduleIndex: number, lessonIndex: number) => {
     const lesson = formData.modules[moduleIndex].lessons[lessonIndex];
-    
+
     if (lesson.id) {
       try {
         await lessonApi.deleteLesson(lesson.id);
         addToast({
-          type: 'success',
-          title: 'Success',
-          message: 'Lesson deleted'
+          type: "success",
+          title: "Success",
+          message: "Lesson deleted",
         });
       } catch (error) {
         addToast({
-          type: 'error',
-          title: 'Error',
-          message: 'Failed to delete lesson'
+          type: "error",
+          title: "Error",
+          message: "Failed to delete lesson",
         });
         return;
       }
     }
 
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      modules: prev.modules.map((m, i) => 
-        i === moduleIndex ? {
-          ...m,
-          lessons: m.lessons.filter((_, li) => li !== lessonIndex)
-        } : m
-      )
+      modules: prev.modules.map((m, i) =>
+        i === moduleIndex
+          ? {
+              ...m,
+              lessons: m.lessons.filter((_, li) => li !== lessonIndex),
+            }
+          : m
+      ),
     }));
   };
 
-  const updateLesson = (moduleIndex: number, lessonIndex: number, field: keyof LessonFormData, value: any) => {
-    setFormData(prev => ({
+  const updateLesson = (
+    moduleIndex: number,
+    lessonIndex: number,
+    field: keyof LessonFormData,
+    value: any
+  ) => {
+    setFormData((prev) => ({
       ...prev,
-      modules: prev.modules.map((m, i) => 
-        i === moduleIndex ? {
-          ...m,
-          lessons: m.lessons.map((l, li) => 
-            li === lessonIndex ? { ...l, [field]: value } : l
-          )
-        } : m
-      )
+      modules: prev.modules.map((m, i) =>
+        i === moduleIndex
+          ? {
+              ...m,
+              lessons: m.lessons.map((l, li) =>
+                li === lessonIndex ? { ...l, [field]: value } : l
+              ),
+            }
+          : m
+      ),
     }));
   };
 
   const toggleLesson = (moduleIndex: number, lessonIndex: number) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      modules: prev.modules.map((m, i) => 
-        i === moduleIndex ? {
-          ...m,
-          lessons: m.lessons.map((l, li) => 
-            li === lessonIndex ? { ...l, isExpanded: !l.isExpanded } : l
-          )
-        } : m
-      )
+      modules: prev.modules.map((m, i) =>
+        i === moduleIndex
+          ? {
+              ...m,
+              lessons: m.lessons.map((l, li) =>
+                li === lessonIndex ? { ...l, isExpanded: !l.isExpanded } : l
+              ),
+            }
+          : m
+      ),
     }));
+  };
+
+  const toggleTestSelection = async (testId: number) => {
+    const isCurrentlySelected = selectedTests.includes(testId);
+
+    try {
+      if (isCurrentlySelected) {
+        // Unassign test from course
+        await testApi.unassignTestFromCourse(testId);
+        setSelectedTests((prev) => prev.filter((id) => id !== testId));
+        addToast({
+          type: "success",
+          title: "Success",
+          message: "Test unassigned from course",
+        });
+      } else {
+        // Assign test to course
+        await testApi.assignTestToCourse(testId, courseId);
+        setSelectedTests((prev) => [...prev, testId]);
+        addToast({
+          type: "success",
+          title: "Success",
+          message: "Test assigned to course",
+        });
+      }
+    } catch (error) {
+      console.error("Error toggling test:", error);
+      addToast({
+        type: "error",
+        title: "Error",
+        message: "Failed to update test assignment",
+      });
+    }
   };
 
   if (loading) {
@@ -376,12 +456,14 @@ const CourseEditPage = () => {
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => window.location.href = '/dashboard/course'}
+                onClick={() => (window.location.href = "/dashboard/course")}
               >
                 <ArrowLeft className="w-4 h-4" />
               </Button>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Edit Course</h1>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  Edit Course
+                </h1>
                 <p className="text-gray-600">Course ID: {courseId}</p>
               </div>
             </div>
@@ -389,7 +471,7 @@ const CourseEditPage = () => {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => window.location.href = '/dashboard/course'}
+                onClick={() => (window.location.href = "/dashboard/course")}
                 disabled={saving}
               >
                 Cancel
@@ -401,7 +483,7 @@ const CourseEditPage = () => {
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 <Save className="w-4 h-4 mr-2" />
-                {saving ? 'Saving...' : 'Save Changes'}
+                {saving ? "Saving..." : "Save Changes"}
               </Button>
             </div>
           </div>
@@ -421,7 +503,12 @@ const CourseEditPage = () => {
                   <Input
                     id="title"
                     value={formData.title}
-                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        title: e.target.value,
+                      }))
+                    }
                     placeholder="Course title"
                     required
                   />
@@ -431,7 +518,12 @@ const CourseEditPage = () => {
                   <Label htmlFor="status">Status</Label>
                   <Select
                     value={formData.status}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as CourseStatus }))}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        status: value as CourseStatus,
+                      }))
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -450,7 +542,12 @@ const CourseEditPage = () => {
                 <Textarea
                   id="description"
                   value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
                   placeholder="Course description"
                   rows={4}
                 />
@@ -465,7 +562,12 @@ const CourseEditPage = () => {
                     step="0.01"
                     min="0"
                     value={formData.price}
-                    onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        price: parseFloat(e.target.value) || 0,
+                      }))
+                    }
                   />
                 </div>
 
@@ -474,10 +576,80 @@ const CourseEditPage = () => {
                   <Input
                     id="author_id"
                     type="number"
-                    value={formData.author_id || ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, author_id: parseInt(e.target.value) || null }))}
+                    value={formData.author_id || ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        author_id: parseInt(e.target.value) || null,
+                      }))
+                    }
                   />
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Course Tests */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Course Tests</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600 mb-4">
+                  Select tests of type "course_test" to assign to this course.
+                  Tests will appear in the course sidebar for students.
+                </p>
+                {availableTests.length === 0 ? (
+                  <p className="text-sm text-gray-500 text-center py-8">
+                    No course tests available. Create tests с типом
+                    "course_test" first.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3">
+                    {availableTests.map((test: any) => {
+                      const isSelected = selectedTests.includes(test.id);
+                      return (
+                        <div
+                          key={test.id}
+                          className={`flex items-start gap-3 p-4 border rounded-lg transition cursor-pointer ${
+                            isSelected
+                              ? "border-blue-500 bg-blue-50"
+                              : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+                          }`}
+                          onClick={() => toggleTestSelection(test.id)}
+                        >
+                          <div className="flex items-center justify-center mt-0.5">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleTestSelection(test.id)}
+                              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-gray-900">
+                              {test.title}
+                            </h4>
+                            {test.description && (
+                              <p className="text-sm text-gray-600 mt-1">
+                                {test.description}
+                              </p>
+                            )}
+                            <div className="flex gap-2 mt-2">
+                              <span className="inline-flex items-center px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded">
+                                Course Test
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                Passing score: {test.passing_score}%
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -518,7 +690,8 @@ const CourseEditPage = () => {
                             <ChevronRight className="w-5 h-5" />
                           )}
                           <span className="font-semibold">
-                            Module {moduleIndex + 1}: {module.title || 'Untitled'}
+                            Module {moduleIndex + 1}:{" "}
+                            {module.title || "Untitled"}
                           </span>
                         </button>
                         <Button
@@ -538,7 +711,13 @@ const CourseEditPage = () => {
                             <Label>Module Title *</Label>
                             <Input
                               value={module.title}
-                              onChange={(e) => updateModule(moduleIndex, 'title', e.target.value)}
+                              onChange={(e) =>
+                                updateModule(
+                                  moduleIndex,
+                                  "title",
+                                  e.target.value
+                                )
+                              }
                               required
                             />
                           </div>
@@ -568,7 +747,9 @@ const CourseEditPage = () => {
                                     <div className="flex items-center justify-between p-3 bg-gray-100">
                                       <button
                                         type="button"
-                                        onClick={() => toggleLesson(moduleIndex, lessonIndex)}
+                                        onClick={() =>
+                                          toggleLesson(moduleIndex, lessonIndex)
+                                        }
                                         className="flex items-center gap-2 flex-1"
                                       >
                                         {lesson.isExpanded ? (
@@ -577,14 +758,17 @@ const CourseEditPage = () => {
                                           <ChevronRight className="w-4 h-4" />
                                         )}
                                         <span className="text-sm font-medium">
-                                          Lesson {lessonIndex + 1}: {lesson.title || 'Untitled'}
+                                          Lesson {lessonIndex + 1}:{" "}
+                                          {lesson.title || "Untitled"}
                                         </span>
                                       </button>
                                       <Button
                                         type="button"
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => removeLesson(moduleIndex, lessonIndex)}
+                                        onClick={() =>
+                                          removeLesson(moduleIndex, lessonIndex)
+                                        }
                                         className="text-red-600"
                                       >
                                         <Trash2 className="w-3 h-3" />
@@ -595,27 +779,51 @@ const CourseEditPage = () => {
                                       <CardContent className="pt-3 space-y-3">
                                         <div className="grid grid-cols-2 gap-3">
                                           <div className="space-y-2">
-                                            <Label className="text-sm">Title *</Label>
+                                            <Label className="text-sm">
+                                              Title *
+                                            </Label>
                                             <Input
                                               value={lesson.title}
-                                              onChange={(e) => updateLesson(moduleIndex, lessonIndex, 'title', e.target.value)}
+                                              onChange={(e) =>
+                                                updateLesson(
+                                                  moduleIndex,
+                                                  lessonIndex,
+                                                  "title",
+                                                  e.target.value
+                                                )
+                                              }
                                               required
                                             />
                                           </div>
 
                                           <div className="space-y-2">
-                                            <Label className="text-sm">Type</Label>
+                                            <Label className="text-sm">
+                                              Type
+                                            </Label>
                                             <Select
                                               value={lesson.lesson_type}
-                                              onValueChange={(value) => updateLesson(moduleIndex, lessonIndex, 'lesson_type', value)}
+                                              onValueChange={(value) =>
+                                                updateLesson(
+                                                  moduleIndex,
+                                                  lessonIndex,
+                                                  "lesson_type",
+                                                  value
+                                                )
+                                              }
                                             >
                                               <SelectTrigger>
                                                 <SelectValue />
                                               </SelectTrigger>
                                               <SelectContent>
-                                                <SelectItem value="theory">Theory</SelectItem>
-                                                <SelectItem value="test">Test</SelectItem>
-                                                <SelectItem value="practice">Practice</SelectItem>
+                                                <SelectItem value="theory">
+                                                  Theory
+                                                </SelectItem>
+                                                <SelectItem value="test">
+                                                  Test
+                                                </SelectItem>
+                                                <SelectItem value="practice">
+                                                  Practice
+                                                </SelectItem>
                                               </SelectContent>
                                             </Select>
                                           </div>
@@ -624,7 +832,14 @@ const CourseEditPage = () => {
                                         {/* Content Editor - NOW WITH VALID courseId and lessonId */}
                                         <ContentEditor
                                           value={lesson.content}
-                                          onChange={(value) => updateLesson(moduleIndex, lessonIndex, 'content', value)}
+                                          onChange={(value) =>
+                                            updateLesson(
+                                              moduleIndex,
+                                              lessonIndex,
+                                              "content",
+                                              value
+                                            )
+                                          }
                                           courseId={courseId}
                                           lessonId={lesson.id}
                                           placeholder="Enter lesson content..."
@@ -654,7 +869,9 @@ const CourseEditPage = () => {
             <div
               key={toast.id}
               className={`p-4 rounded-lg shadow-lg max-w-sm ${
-                toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                toast.type === "success"
+                  ? "bg-green-500 text-white"
+                  : "bg-red-500 text-white"
               }`}
             >
               <div className="font-semibold">{toast.title}</div>
