@@ -1,3 +1,5 @@
+// admin/src/lib/api/test-api.ts
+
 import { 
   Test, 
   TestWithQuestions, 
@@ -12,7 +14,11 @@ import {
   QuestionWithOptions,
   TestAttempt,
   TestSubmission,
-  TestResult
+  TestResult,
+  TestType,
+  QuestionOptionWithMedia,
+  TestQuestionWithMedia,
+  CourseMediaResponse
 } from '../types/test-types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -42,11 +48,45 @@ async function apiCall<T>(
   return response.json();
 }
 
+// Helper function for file uploads
+async function uploadFile<T>(
+  endpoint: string,
+  file: File,
+  additionalData?: Record<string, string>
+): Promise<T> {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  if (additionalData) {
+    Object.entries(additionalData).forEach(([key, value]) => {
+      formData.append(key, value);
+    });
+  }
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || `HTTP error! status: ${response.status}`);
+  }
+
+  return response.json();
+}
+
 // Test API
 export const testApi = {
   // Get all tests
-  getAllTests: async (): Promise<Test[]> => {
-    return apiCall<Test[]>('/tests/');
+  getAllTests: async (testType?: TestType): Promise<Test[]> => {
+    const params = testType ? `?test_type=${testType}` : '';
+    return apiCall<Test[]>(`/tests/${params}`);
+  },
+
+  // Get tests by type
+  getTestsByType: async (testType: TestType): Promise<Test[]> => {
+    return apiCall<Test[]>(`/tests/by-type/${testType}`);
   },
 
   // Get test by ID
@@ -129,9 +169,19 @@ export const questionApi = {
     return apiCall<TestQuestion[]>(`/questions/test/${testId}`);
   },
 
+  // Get questions by test with media
+  getQuestionsByTestWithMedia: async (testId: number): Promise<TestQuestionWithMedia[]> => {
+    return apiCall<TestQuestionWithMedia[]>(`/questions/test/${testId}/with-media`);
+  },
+
   // Get question by ID
   getQuestion: async (questionId: number): Promise<TestQuestion> => {
     return apiCall<TestQuestion>(`/questions/${questionId}`);
+  },
+
+  // Get question with media
+  getQuestionWithMedia: async (questionId: number): Promise<TestQuestionWithMedia> => {
+    return apiCall<TestQuestionWithMedia>(`/questions/${questionId}/with-media`);
   },
 
   // Get question with options
@@ -161,6 +211,26 @@ export const questionApi = {
       method: 'DELETE',
     });
   },
+
+  // Upload description image for question
+  uploadDescriptionImage: async (
+    questionId: number, 
+    file: File, 
+    customName?: string
+  ): Promise<CourseMediaResponse> => {
+    return uploadFile<CourseMediaResponse>(
+      `/questions/${questionId}/upload-description-image`,
+      file,
+      customName ? { custom_name: customName } : undefined
+    );
+  },
+
+  // Delete description image
+  deleteDescriptionImage: async (questionId: number, mediaId: string): Promise<void> => {
+    return apiCall<void>(`/questions/${questionId}/description-image/${mediaId}`, {
+      method: 'DELETE',
+    });
+  },
 };
 
 // Option API
@@ -170,9 +240,19 @@ export const optionApi = {
     return apiCall<QuestionOption[]>(`/options/question/${questionId}`);
   },
 
+  // Get options by question with media
+  getOptionsByQuestionWithMedia: async (questionId: number): Promise<QuestionOptionWithMedia[]> => {
+    return apiCall<QuestionOptionWithMedia[]>(`/options/question/${questionId}/with-media`);
+  },
+
   // Get option by ID
   getOption: async (optionId: number): Promise<QuestionOption> => {
     return apiCall<QuestionOption>(`/options/${optionId}`);
+  },
+
+  // Get option with media
+  getOptionWithMedia: async (optionId: number): Promise<QuestionOptionWithMedia> => {
+    return apiCall<QuestionOptionWithMedia>(`/options/${optionId}/with-media`);
   },
 
   // Create option
@@ -194,6 +274,26 @@ export const optionApi = {
   // Delete option
   deleteOption: async (optionId: number): Promise<void> => {
     return apiCall<void>(`/options/${optionId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // Upload description image for option
+  uploadDescriptionImage: async (
+    optionId: number, 
+    file: File, 
+    customName?: string
+  ): Promise<CourseMediaResponse> => {
+    return uploadFile<CourseMediaResponse>(
+      `/options/${optionId}/upload-description-image`,
+      file,
+      customName ? { custom_name: customName } : undefined
+    );
+  },
+
+  // Delete description image
+  deleteDescriptionImage: async (optionId: number, mediaId: string): Promise<void> => {
+    return apiCall<void>(`/options/${optionId}/description-image/${mediaId}`, {
       method: 'DELETE',
     });
   },

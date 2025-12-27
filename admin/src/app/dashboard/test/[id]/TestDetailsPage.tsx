@@ -15,7 +15,8 @@ import {
   CheckCircle,
   XCircle,
   Target,
-  Calendar
+  Calendar,
+  Image as ImageIcon
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
@@ -272,6 +273,14 @@ const TestDetailsPage = ({ testId }: TestDetailsPageProps) => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
+                  <p className="text-sm text-gray-500">Test Type</p>
+                  <Badge className="mt-1">
+                    {test.test_type === 'weekly' && 'Weekly Test'}
+                    {test.test_type === 'course_test' && 'Course Test'}
+                    {test.test_type === 'for_combined' && 'For Combined'}
+                  </Badge>
+                </div>
+                <div>
                   <p className="text-sm text-gray-500">Created At</p>
                   <p className="font-medium">{formatDate(test.created_at)}</p>
                 </div>
@@ -324,32 +333,82 @@ const TestDetailsPage = ({ testId }: TestDetailsPageProps) => {
                                 {question.points} {question.points === 1 ? 'point' : 'points'}
                               </Badge>
                             </div>
-                            <p className="text-lg font-medium mb-4">{question.question_text}</p>
+                            <p className="text-lg font-medium mb-2">{question.question_text}</p>
+                            
+                            {/* Question Description */}
+                            {question.description && (
+                              <p className="text-sm text-gray-600 mb-2 italic">
+                                {question.description}
+                              </p>
+                            )}
+
+                            {/* Question Images */}
+                            {question.description_media && question.description_media.length > 0 && (
+                              <div className="mb-4 flex flex-wrap gap-2">
+                                {question.description_media.map((media) => (
+                                  <div key={media.id} className="relative group">
+                                    <img 
+                                      src={media.download_url || ''} 
+                                      alt="Question" 
+                                      className="w-40 h-40 object-cover rounded-lg border-2 border-gray-200 cursor-pointer hover:border-blue-500 transition-colors"
+                                      onClick={() => window.open(media.download_url || '', '_blank')}
+                                    />
+                                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 rounded-lg transition-opacity flex items-center justify-center">
+                                      <ImageIcon className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
 
                             {/* Options */}
                             {(question.question_type === 'single_choice' || 
                               question.question_type === 'multiple_choice') && (
-                              <div className="space-y-2 ml-6">
+                              <div className="space-y-3 ml-6">
                                 {question.options.map((option) => (
                                   <div 
                                     key={option.id} 
-                                    className={`flex items-center space-x-2 p-3 rounded-lg ${
+                                    className={`p-3 rounded-lg ${
                                       option.is_correct 
-                                        ? 'bg-green-50 border border-green-200' 
-                                        : 'bg-gray-50'
+                                        ? 'bg-green-50 border-2 border-green-200' 
+                                        : 'bg-gray-50 border border-gray-200'
                                     }`}
                                   >
-                                    {option.is_correct ? (
-                                      <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-                                    ) : (
-                                      <XCircle className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                                    )}
-                                    <span className={option.is_correct ? 'font-medium text-green-900' : ''}>
-                                      {option.option_text}
-                                      <div className="text-sm font-bold text-gray-500">description:
-                                        <span className="ml-1 italic">{option.description || 'No description'}</span>
+                                    <div className="flex items-start space-x-2">
+                                      {option.is_correct ? (
+                                        <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                                      ) : (
+                                        <XCircle className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                                      )}
+                                      <div className="flex-1">
+                                        <span className={option.is_correct ? 'font-medium text-green-900' : ''}>
+                                          {option.option_text}
+                                        </span>
+                                        {option.description && (
+                                          <div className="text-sm text-gray-600 mt-1 italic">
+                                            {option.description}
+                                          </div>
+                                        )}
+                                        {/* Option Images */}
+                                        {option.description_media && option.description_media.length > 0 && (
+                                          <div className="mt-2 flex flex-wrap gap-2">
+                                            {option.description_media.map((media) => (
+                                              <div key={media.id} className="relative group">
+                                                <img 
+                                                  src={media.download_url || ''} 
+                                                  alt="Option" 
+                                                  className="w-24 h-24 object-cover rounded border cursor-pointer hover:border-blue-500 transition-colors"
+                                                  onClick={() => window.open(media.download_url || '', '_blank')}
+                                                />
+                                                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 rounded transition-opacity flex items-center justify-center">
+                                                  <ImageIcon className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
                                       </div>
-                                    </span>
+                                    </div>
                                   </div>
                                 ))}
                               </div>

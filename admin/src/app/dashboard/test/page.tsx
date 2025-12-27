@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   ClipboardList, 
   Plus, 
@@ -23,13 +24,14 @@ import {
 } from 'lucide-react';
 
 import { testApi } from '@/lib/api/test-api';
-import { Test } from '@/lib/types/test-types';
+import { Test, TestType } from '@/lib/types/test-types';
 
 const TestsListPage = () => {
   const router = useRouter();
   const [tests, setTests] = useState<Test[]>([]);
   const [filteredTests, setFilteredTests] = useState<Test[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<TestType | 'all'>('all');
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 20,
@@ -74,6 +76,10 @@ const TestsListPage = () => {
   useEffect(() => {
     let filtered = tests;
 
+    if (typeFilter !== 'all') {
+      filtered = filtered.filter(test => test.test_type === typeFilter);
+    }
+
     if (searchQuery) {
       filtered = filtered.filter(test =>
         test.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -82,7 +88,8 @@ const TestsListPage = () => {
     }
 
     setFilteredTests(filtered);
-  }, [tests, searchQuery]);
+    setPagination(prev => ({ ...prev, page: 1, total: filtered.length }));
+  }, [tests, searchQuery, typeFilter]);
 
   useEffect(() => {
     fetchTests();
@@ -119,10 +126,26 @@ const TestsListPage = () => {
     });
   };
 
+  const getTestTypeBadge = (type: TestType) => {
+    const badges = {
+      weekly: { color: 'bg-purple-100 text-purple-800', label: 'Weekly' },
+      course_test: { color: 'bg-blue-100 text-blue-800', label: 'Course Test' },
+      for_combined: { color: 'bg-green-100 text-green-800', label: 'For Combined' }
+    };
+    const badge = badges[type];
+    return <Badge className={badge.color}>{badge.label}</Badge>;
+  };
+
   const paginatedTests = filteredTests.slice(
     (pagination.page - 1) * pagination.limit,
     pagination.page * pagination.limit
   );
+
+  const testsByType = {
+    weekly: tests.filter(t => t.test_type === 'weekly').length,
+    course_test: tests.filter(t => t.test_type === 'course_test').length,
+    for_combined: tests.filter(t => t.test_type === 'for_combined').length
+  };
 
   return (
     <div className="w-full min-h-full bg-gray-50">
@@ -169,8 +192,8 @@ const TestsListPage = () => {
                     <FileQuestion className="w-8 h-8" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-blue-100">Total Questions</p>
-                    <p className="text-3xl font-bold">-</p>
+                    <p className="text-sm font-medium text-blue-100">Weekly Tests</p>
+                    <p className="text-3xl font-bold">{testsByType.weekly}</p>
                   </div>
                 </div>
               </CardContent>
@@ -183,12 +206,8 @@ const TestsListPage = () => {
                     <Target className="w-8 h-8" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-green-100">Avg Passing Score</p>
-                    <p className="text-3xl font-bold">
-                      {tests.length > 0 
-                        ? Math.round(tests.reduce((sum, t) => sum + t.passing_score, 0) / tests.length)
-                        : 0}
-                    </p>
+                    <p className="text-sm font-medium text-green-100">Course Tests</p>
+                    <p className="text-3xl font-bold">{testsByType.course_test}</p>
                   </div>
                 </div>
               </CardContent>
@@ -201,15 +220,15 @@ const TestsListPage = () => {
                     <BarChart3 className="w-8 h-8" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-orange-100">Total Attempts</p>
-                    <p className="text-3xl font-bold">-</p>
+                    <p className="text-sm font-medium text-orange-100">For Combined</p>
+                    <p className="text-3xl font-bold">{testsByType.for_combined}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Search */}
+          {/* Filters */}
           <Card>
             <CardContent className="p-6">
               <div className="flex flex-wrap gap-4 items-center">
@@ -225,11 +244,26 @@ const TestsListPage = () => {
                   </div>
                 </div>
 
+                <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as TestType | 'all')}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Filter by type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="course_test">Course Test</SelectItem>
+                    <SelectItem value="for_combined">For Combined</SelectItem>
+                  </SelectContent>
+                </Select>
+
                 <Button
                   variant="outline"
-                  onClick={() => setSearchQuery('')}
+                  onClick={() => {
+                    setSearchQuery('');
+                    setTypeFilter('all');
+                  }}
                 >
-                  Clear Search
+                  Clear Filters
                 </Button>
               </div>
             </CardContent>
@@ -253,6 +287,7 @@ const TestsListPage = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Title</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Type</th>
                       <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Description</th>
                       <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 w-32">Passing Score</th>
                       <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 w-40">Created</th>
@@ -262,7 +297,7 @@ const TestsListPage = () => {
                   <tbody className="divide-y divide-gray-200">
                     {loading.tests ? (
                       <tr>
-                        <td colSpan={5} className="text-center py-12">
+                        <td colSpan={6} className="text-center py-12">
                           <div className="flex flex-col items-center">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mb-2"></div>
                             <p className="text-gray-500">Loading tests...</p>
@@ -271,7 +306,7 @@ const TestsListPage = () => {
                       </tr>
                     ) : paginatedTests.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="text-center py-12">
+                        <td colSpan={6} className="text-center py-12">
                           <div className="flex flex-col items-center">
                             <ClipboardList className="h-12 w-12 text-gray-400 mb-2" />
                             <p className="text-gray-500">No tests found</p>
@@ -282,6 +317,9 @@ const TestsListPage = () => {
                       paginatedTests.map((test) => (
                         <tr key={test.id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-6 py-4 font-medium">{test.title}</td>
+                          <td className="px-6 py-4">
+                            {getTestTypeBadge(test.test_type)}
+                          </td>
                           <td className="px-6 py-4 text-gray-600 max-w-xs truncate">
                             {test.description || 'No description'}
                           </td>

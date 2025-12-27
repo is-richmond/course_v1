@@ -8,10 +8,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/text-area';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 
 import { testApi } from '@/lib/api/test-api';
-import { Test, TestUpdate } from '@/lib/types/test-types';
+import { Test, TestUpdate, TestType } from '@/lib/types/test-types';
 
 interface EditTestPageProps {
   testId: number;
@@ -23,7 +24,8 @@ const EditTestPage = ({ testId }: EditTestPageProps) => {
   const [formData, setFormData] = useState<TestUpdate>({
     title: '',
     description: '',
-    passing_score: 0
+    passing_score: 0,
+    test_type: undefined
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState({
@@ -50,7 +52,8 @@ const EditTestPage = ({ testId }: EditTestPageProps) => {
       setFormData({
         title: test.title,
         description: test.description,
-        passing_score: test.passing_score
+        passing_score: test.passing_score,
+        test_type: test.test_type
       });
     } catch (error) {
       console.error('Error fetching test:', error);
@@ -127,6 +130,16 @@ const EditTestPage = ({ testId }: EditTestPageProps) => {
         return newErrors;
       });
     }
+  };
+
+  const getTestTypeDescription = (type?: TestType | null) => {
+    if (!type) return '';
+    const descriptions = {
+      weekly: 'Tests that are given on a weekly basis',
+      course_test: 'Tests associated with specific courses',
+      for_combined: 'Tests that can be used in combined test generation'
+    };
+    return descriptions[type];
   };
 
   if (loading.fetch) {
@@ -217,24 +230,49 @@ const EditTestPage = ({ testId }: EditTestPageProps) => {
                     )}
                   </div>
 
-                  {/* Passing Score */}
-                  <div className="space-y-2">
-                    <Label htmlFor="passing_score">Passing Score</Label>
-                    <Input
-                      id="passing_score"
-                      type="number"
-                      min="0"
-                      value={formData.passing_score ?? ''}
-                      onChange={(e) => handleChange('passing_score', parseInt(e.target.value) || 0)}
-                      placeholder="Enter minimum passing score"
-                      className={errors.passing_score ? 'border-red-500' : ''}
-                    />
-                    {errors.passing_score && (
-                      <p className="text-sm text-red-600">{errors.passing_score}</p>
-                    )}
-                    <p className="text-sm text-gray-500">
-                      The minimum score required to pass this test
-                    </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Test Type */}
+                    <div className="space-y-2">
+                      <Label htmlFor="test_type">Test Type</Label>
+                      <Select
+                        value={formData.test_type || ''}
+                        onValueChange={(value) => handleChange('test_type', value as TestType)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="weekly">Weekly</SelectItem>
+                          <SelectItem value="course_test">Course Test</SelectItem>
+                          <SelectItem value="for_combined">For Combined</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {formData.test_type && (
+                        <p className="text-sm text-gray-500">
+                          {getTestTypeDescription(formData.test_type)}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Passing Score */}
+                    <div className="space-y-2">
+                      <Label htmlFor="passing_score">Passing Score</Label>
+                      <Input
+                        id="passing_score"
+                        type="number"
+                        min="0"
+                        value={formData.passing_score ?? ''}
+                        onChange={(e) => handleChange('passing_score', parseInt(e.target.value) || 0)}
+                        placeholder="Enter minimum passing score"
+                        className={errors.passing_score ? 'border-red-500' : ''}
+                      />
+                      {errors.passing_score && (
+                        <p className="text-sm text-red-600">{errors.passing_score}</p>
+                      )}
+                      <p className="text-sm text-gray-500">
+                        The minimum score required to pass this test
+                      </p>
+                    </div>
                   </div>
 
                   {/* Metadata */}

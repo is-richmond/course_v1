@@ -1,7 +1,7 @@
-// admin/src/app/dashboard/test/[id]/question/create/CreateQuestionPage.tsx
+// admin/src/app/dashboard/test/[id]/question/[questionId]/edit/EditQuestionPage.tsx
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,28 +10,38 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Save, Plus, Trash2, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
 
 import { questionApi, optionApi } from '@/lib/api/test-api';
-import { TestQuestionCreate, QuestionType, QuestionOptionCreate } from '@/lib/types/test-types';
+import { 
+  TestQuestionUpdate, 
+  QuestionType, 
+  QuestionOptionCreate, 
+  QuestionOptionUpdate,
+  QuestionOptionWithMedia,
+  TestQuestionWithMedia
+} from '@/lib/types/test-types';
 
-interface CreateQuestionPageProps {
+interface EditQuestionPageProps {
   testId: number;
+  questionId: number;
 }
 
 interface OptionData {
+  id?: number;
   tempId: string;
   option_text: string;
   description?: string;
   is_correct: boolean;
   imageFile?: File | null;
   imagePreview?: string | null;
+  existingImages?: Array<{ id: string; url: string }>;
 }
 
-const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
+const EditQuestionPage = ({ testId, questionId }: EditQuestionPageProps) => {
   const router = useRouter();
-  const [formData, setFormData] = useState<TestQuestionCreate>({
-    test_id: testId,
+  const [originalQuestion, setOriginalQuestion] = useState<TestQuestionWithMedia | null>(null);
+  const [formData, setFormData] = useState<TestQuestionUpdate>({
     question_text: '',
     description: '',
     question_type: 'single_choice',
@@ -40,17 +50,18 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
   });
   const [questionImageFile, setQuestionImageFile] = useState<File | null>(null);
   const [questionImagePreview, setQuestionImagePreview] = useState<string | null>(null);
+  const [existingQuestionImages, setExistingQuestionImages] = useState<Array<{ id: string; url: string }>>([]);
   const questionImageInputRef = useRef<HTMLInputElement>(null);
   
-  const [options, setOptions] = useState<OptionData[]>([
-    { tempId: '1', option_text: '', description: '', is_correct: false, imageFile: null, imagePreview: null },
-    { tempId: '2', option_text: '', description: '', is_correct: false, imageFile: null, imagePreview: null }
-  ]);
+  const [options, setOptions] = useState<OptionData[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState({
+    fetch: true,
+    save: false
+  });
   const [toasts, setToasts] = useState<any[]>([]);
 
-  const addToast = (toast: any) => {
+  const addToast = useCallback((toast: any) => {
     const id = Math.random().toString(36).substr(2, 9);
     const newToast = { ...toast, id };
     setToasts(prev => [...prev, newToast]);
@@ -58,7 +69,66 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
     }, toast.duration || 5000);
-  };
+  }, []);
+
+  const fetchQuestion = useCallback(async () => {
+    setLoading(prev => ({ ...prev, fetch: true }));
+    try {
+      const question = await questionApi.getQuestionWithMedia(questionId);
+      const optionsData = await optionApi.getOptionsByQuestionWithMedia(questionId);
+      
+      setOriginalQuestion(question);
+      setFormData({
+        question_text: question.question_text,
+        description: question.description,
+        question_type: question.question_type,
+        points: question.points,
+        order_index: question.order_index
+      });
+
+      // Set existing question images
+      if (question.description_media) {
+        setExistingQuestionImages(
+          question.description_media.map(media => ({
+            id: media.id,
+            url: media.download_url || ''
+          }))
+        );
+      }
+
+      // Set options
+      if (question.question_type === 'single_choice' || question.question_type === 'multiple_choice') {
+        setOptions(
+          optionsData.map((opt: QuestionOptionWithMedia) => ({
+            id: opt.id,
+            tempId: `existing-${opt.id}`,
+            option_text: opt.option_text,
+            description: opt.description || '',
+            is_correct: opt.is_correct,
+            imageFile: null,
+            imagePreview: null,
+            existingImages: opt.description_media?.map(media => ({
+              id: media.id,
+              url: media.download_url || ''
+            })) || []
+          }))
+        );
+      }
+    } catch (error) {
+      console.error('Error fetching question:', error);
+      addToast({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to fetch question details'
+      });
+    } finally {
+      setLoading(prev => ({ ...prev, fetch: false }));
+    }
+  }, [questionId, addToast]);
+
+  useEffect(() => {
+    fetchQuestion();
+  }, [fetchQuestion]);
 
   const handleQuestionImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -95,6 +165,25 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
     setQuestionImagePreview(null);
     if (questionImageInputRef.current) {
       questionImageInputRef.current.value = '';
+    }
+  };
+
+  const removeExistingQuestionImage = async (mediaId: string) => {
+    try {
+      await questionApi.deleteDescriptionImage(questionId, mediaId);
+      setExistingQuestionImages(prev => prev.filter(img => img.id !== mediaId));
+      addToast({
+        type: 'success',
+        title: 'Image Deleted',
+        message: 'Question image deleted successfully'
+      });
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      addToast({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to delete image'
+      });
     }
   };
 
@@ -139,19 +228,38 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
     ));
   };
 
+  const removeExistingOptionImage = async (optionId: number, mediaId: string, tempId: string) => {
+    try {
+      await optionApi.deleteDescriptionImage(optionId, mediaId);
+      setOptions(prev => prev.map(opt => 
+        opt.tempId === tempId
+          ? { ...opt, existingImages: opt.existingImages?.filter(img => img.id !== mediaId) }
+          : opt
+      ));
+      addToast({
+        type: 'success',
+        title: 'Image Deleted',
+        message: 'Option image deleted successfully'
+      });
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      addToast({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to delete image'
+      });
+    }
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.question_text.trim()) {
+    if (formData.question_text !== null && formData.question_text !== undefined && !formData.question_text.trim()) {
       newErrors.question_text = 'Question text is required';
     }
 
-    if (formData.points !== undefined && formData.points < 0) {
+    if (formData.points !== null && formData.points !== undefined && formData.points < 0) {
       newErrors.points = 'Points must be positive';
-    }
-
-    if (formData.order_index !== undefined && formData.order_index < 0) {
-      newErrors.order_index = 'Order index must be positive';
     }
 
     if (formData.question_type === 'single_choice' || formData.question_type === 'multiple_choice') {
@@ -188,53 +296,71 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
       return;
     }
 
-    setLoading(true);
+    setLoading(prev => ({ ...prev, save: true }));
     try {
-      // Create question
-      const question = await questionApi.createQuestion(formData);
+      // Update question
+      await questionApi.updateQuestion(questionId, formData);
 
-      // Upload question description image if exists
+      // Upload new question image if exists
       if (questionImageFile) {
         try {
           await questionApi.uploadDescriptionImage(
-            question.id, 
+            questionId, 
             questionImageFile,
             'Question description image'
           );
         } catch (error) {
           console.error('Error uploading question image:', error);
-          addToast({
-            type: 'warning',
-            title: 'Image Upload Failed',
-            message: 'Question created but image upload failed'
-          });
         }
       }
 
-      // Create options with images
+      // Update options
       if (formData.question_type === 'single_choice' || formData.question_type === 'multiple_choice') {
         const validOptions = options.filter(opt => opt.option_text.trim());
         
         for (const option of validOptions) {
-          const optionData: QuestionOptionCreate = {
-            question_id: question.id,
-            description: option.description,
-            option_text: option.option_text,
-            is_correct: option.is_correct
-          };
-          
-          const createdOption = await optionApi.createOption(optionData);
-          
-          // Upload option description image if exists
-          if (option.imageFile) {
-            try {
-              await optionApi.uploadDescriptionImage(
-                createdOption.id,
-                option.imageFile,
-                `Option ${option.option_text} image`
-              );
-            } catch (error) {
-              console.error('Error uploading option image:', error);
+          if (option.id) {
+            // Update existing option
+            const updateData: QuestionOptionUpdate = {
+              option_text: option.option_text,
+              description: option.description,
+              is_correct: option.is_correct
+            };
+            await optionApi.updateOption(option.id, updateData);
+            
+            // Upload new image if exists
+            if (option.imageFile) {
+              try {
+                await optionApi.uploadDescriptionImage(
+                  option.id,
+                  option.imageFile,
+                  `Option ${option.option_text} image`
+                );
+              } catch (error) {
+                console.error('Error uploading option image:', error);
+              }
+            }
+          } else {
+            // Create new option
+            const createData: QuestionOptionCreate = {
+              question_id: questionId,
+              option_text: option.option_text,
+              description: option.description,
+              is_correct: option.is_correct
+            };
+            const createdOption = await optionApi.createOption(createData);
+            
+            // Upload image if exists
+            if (option.imageFile) {
+              try {
+                await optionApi.uploadDescriptionImage(
+                  createdOption.id,
+                  option.imageFile,
+                  `Option ${option.option_text} image`
+                );
+              } catch (error) {
+                console.error('Error uploading option image:', error);
+              }
             }
           }
         }
@@ -242,25 +368,25 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
 
       addToast({
         type: 'success',
-        title: 'Question Created',
-        message: 'Question created successfully'
+        title: 'Question Updated',
+        message: 'Question updated successfully'
       });
       
       setTimeout(() => {
         router.push(`/dashboard/test/${testId}`);
       }, 1000);
     } catch (error) {
-      console.error('Error creating question:', error);
+      console.error('Error updating question:', error);
       addToast({
         type: 'error',
         title: 'Error',
-        message: 'Failed to create question'
+        message: 'Failed to update question'
       });
-      setLoading(false);
+      setLoading(prev => ({ ...prev, save: false }));
     }
   };
 
-  const handleChange = (field: keyof TestQuestionCreate, value: any) => {
+  const handleChange = (field: keyof TestQuestionUpdate, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => {
@@ -268,19 +394,6 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
         delete newErrors[field];
         return newErrors;
       });
-    }
-  };
-
-  const handleQuestionTypeChange = (type: QuestionType) => {
-    handleChange('question_type', type);
-    
-    if (type === 'text') {
-      setOptions([]);
-    } else if (options.length === 0) {
-      setOptions([
-        { tempId: '1', option_text: '', description: '', is_correct: false, imageFile: null, imagePreview: null },
-        { tempId: '2', option_text: '', description: '', is_correct: false, imageFile: null, imagePreview: null }
-      ]);
     }
   };
 
@@ -293,12 +406,31 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
         description: '',
         is_correct: false,
         imageFile: null,
-        imagePreview: null
+        imagePreview: null,
+        existingImages: []
       }
     ]);
   };
 
-  const removeOption = (tempId: string) => {
+  const removeOption = async (tempId: string, optionId?: number) => {
+    if (optionId) {
+      try {
+        await optionApi.deleteOption(optionId);
+        addToast({
+          type: 'success',
+          title: 'Option Deleted',
+          message: 'Option deleted successfully'
+        });
+      } catch (error) {
+        console.error('Error deleting option:', error);
+        addToast({
+          type: 'error',
+          title: 'Error',
+          message: 'Failed to delete option'
+        });
+        return;
+      }
+    }
     setOptions(prev => prev.filter(opt => opt.tempId !== tempId));
   };
 
@@ -324,6 +456,33 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
 
   const showOptions = formData.question_type === 'single_choice' || formData.question_type === 'multiple_choice';
 
+  if (loading.fetch) {
+    return (
+      <div className="w-full min-h-full bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <Loader2 className="h-12 w-12 animate-spin text-gray-900 mb-4" />
+          <p className="text-gray-500">Loading question...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!originalQuestion) {
+    return (
+      <div className="w-full min-h-full bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-500 text-lg">Question not found</p>
+          <Button 
+            onClick={() => router.push(`/dashboard/test/${testId}`)}
+            className="mt-4"
+          >
+            Back to Test
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full min-h-full bg-gray-50">
       <div className="w-full h-full">
@@ -337,8 +496,8 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Create Question</h1>
-              <p className="text-gray-600">Add a new question to the test</p>
+              <h1 className="text-3xl font-bold text-gray-900">Edit Question</h1>
+              <p className="text-gray-600">Update question details and options</p>
             </div>
           </div>
         </div>
@@ -360,7 +519,7 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
                     </Label>
                     <Textarea
                       id="question_text"
-                      value={formData.question_text}
+                      value={formData.question_text || ''}
                       onChange={(e) => handleChange('question_text', e.target.value)}
                       placeholder="Enter your question"
                       rows={3}
@@ -383,9 +542,35 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
                     />
                   </div>
 
-                  {/* Question Image Upload */}
+                  {/* Question Images */}
                   <div className="space-y-2">
-                    <Label>Question Image (Optional)</Label>
+                    <Label>Question Images</Label>
+                    
+                    {/* Existing Images */}
+                    {existingQuestionImages.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {existingQuestionImages.map((img) => (
+                          <div key={img.id} className="relative">
+                            <img 
+                              src={img.url} 
+                              alt="Question" 
+                              className="w-40 h-40 object-cover rounded-lg border"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              className="absolute -top-2 -right-2"
+                              onClick={() => removeExistingQuestionImage(img.id)}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* New Image Upload */}
                     <div className="flex items-start space-x-4">
                       {questionImagePreview ? (
                         <div className="relative">
@@ -418,7 +603,7 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
                             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-500 cursor-pointer transition-colors">
                               <div className="flex flex-col items-center space-y-2">
                                 <ImageIcon className="w-8 h-8 text-gray-400" />
-                                <p className="text-sm text-gray-600">Click to upload question image</p>
+                                <p className="text-sm text-gray-600">Click to upload new image</p>
                                 <p className="text-xs text-gray-400">PNG, JPG up to 10MB</p>
                               </div>
                             </div>
@@ -433,8 +618,8 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
                     <div className="space-y-2">
                       <Label htmlFor="question_type">Question Type</Label>
                       <Select
-                        value={formData.question_type}
-                        onValueChange={(value) => handleQuestionTypeChange(value as QuestionType)}
+                        value={formData.question_type ?? ''}
+                        onValueChange={(value) => handleChange('question_type', value as QuestionType)}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -454,7 +639,7 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
                         id="points"
                         type="number"
                         min="0"
-                        value={formData.points}
+                        value={formData.points ?? ''}
                         onChange={(e) => handleChange('points', parseInt(e.target.value) || 0)}
                         className={errors.points ? 'border-red-500' : ''}
                       />
@@ -470,13 +655,9 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
                         id="order_index"
                         type="number"
                         min="0"
-                        value={formData.order_index}
+                        value={formData.order_index ?? ''}
                         onChange={(e) => handleChange('order_index', parseInt(e.target.value) || 0)}
-                        className={errors.order_index ? 'border-red-500' : ''}
                       />
-                      {errors.order_index && (
-                        <p className="text-sm text-red-600">{errors.order_index}</p>
-                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -537,7 +718,7 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
                               type="button"
                               variant="ghost"
                               size="sm"
-                              onClick={() => removeOption(option.tempId)}
+                              onClick={() => removeOption(option.tempId, option.id)}
                               className="text-red-600 hover:text-red-700"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -545,8 +726,33 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
                           )}
                         </div>
 
-                        {/* Option Image */}
+                        {/* Option Images */}
                         <div className="ml-9">
+                          {/* Existing Images */}
+                          {option.existingImages && option.existingImages.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {option.existingImages.map((img) => (
+                                <div key={img.id} className="relative">
+                                  <img 
+                                    src={img.url} 
+                                    alt={`Option ${index + 1}`}
+                                    className="w-24 h-24 object-cover rounded border"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="sm"
+                                    className="absolute -top-2 -right-2"
+                                    onClick={() => option.id && removeExistingOptionImage(option.id, img.id, option.tempId)}
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {/* New Image */}
                           {option.imagePreview ? (
                             <div className="relative inline-block">
                               <img 
@@ -596,24 +802,24 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
                       type="button"
                       variant="outline"
                       onClick={() => router.push(`/dashboard/test/${testId}`)}
-                      disabled={loading}
+                      disabled={loading.save}
                     >
                       Cancel
                     </Button>
                     <Button
                       type="submit"
-                      disabled={loading}
+                      disabled={loading.save}
                       className="bg-blue-600 hover:bg-blue-700"
                     >
-                      {loading ? (
+                      {loading.save ? (
                         <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Creating...
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Saving...
                         </>
                       ) : (
                         <>
                           <Save className="w-4 h-4 mr-2" />
-                          Create Question
+                          Save Changes
                         </>
                       )}
                     </Button>
@@ -646,4 +852,5 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
   );
 };
 
-export default CreateQuestionPage;
+export default EditQuestionPage;
+                

@@ -8,17 +8,19 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/text-area';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Save } from 'lucide-react';
 
 import { testApi } from '@/lib/api/test-api';
-import { TestCreate } from '@/lib/types/test-types';
+import { TestCreate, TestType } from '@/lib/types/test-types';
 
 const CreateTestPage = () => {
   const router = useRouter();
   const [formData, setFormData] = useState<TestCreate>({
     title: '',
     description: '',
-    passing_score: 70
+    passing_score: 70,
+    test_type: 'for_combined'
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -95,6 +97,15 @@ const CreateTestPage = () => {
     }
   };
 
+  const getTestTypeDescription = (type: TestType) => {
+    const descriptions = {
+      weekly: 'Tests that are given on a weekly basis',
+      course_test: 'Tests associated with specific courses',
+      for_combined: 'Tests that can be used in combined test generation'
+    };
+    return descriptions[type];
+  };
+
   return (
     <div className="w-full min-h-full bg-gray-50">
       <div className="w-full h-full">
@@ -156,24 +167,49 @@ const CreateTestPage = () => {
                     )}
                   </div>
 
-                  {/* Passing Score */}
-                  <div className="space-y-2">
-                    <Label htmlFor="passing_score">Passing Score</Label>
-                    <Input
-                      id="passing_score"
-                      type="number"
-                      min="0"
-                      value={formData.passing_score}
-                      onChange={(e) => handleChange('passing_score', parseInt(e.target.value) || 0)}
-                      placeholder="Enter minimum passing score"
-                      className={errors.passing_score ? 'border-red-500' : ''}
-                    />
-                    {errors.passing_score && (
-                      <p className="text-sm text-red-600">{errors.passing_score}</p>
-                    )}
-                    <p className="text-sm text-gray-500">
-                      The minimum score required to pass this test
-                    </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Test Type */}
+                    <div className="space-y-2">
+                      <Label htmlFor="test_type">Test Type</Label>
+                      <Select
+                        value={formData.test_type}
+                        onValueChange={(value) => handleChange('test_type', value as TestType)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="weekly">Weekly</SelectItem>
+                          <SelectItem value="course_test">Course Test</SelectItem>
+                          <SelectItem value="for_combined">For Combined</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {formData.test_type && (
+                        <p className="text-sm text-gray-500">
+                          {getTestTypeDescription(formData.test_type)}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Passing Score */}
+                    <div className="space-y-2">
+                      <Label htmlFor="passing_score">Passing Score</Label>
+                      <Input
+                        id="passing_score"
+                        type="number"
+                        min="0"
+                        value={formData.passing_score}
+                        onChange={(e) => handleChange('passing_score', parseInt(e.target.value) || 0)}
+                        placeholder="Enter minimum passing score"
+                        className={errors.passing_score ? 'border-red-500' : ''}
+                      />
+                      {errors.passing_score && (
+                        <p className="text-sm text-red-600">{errors.passing_score}</p>
+                      )}
+                      <p className="text-sm text-gray-500">
+                        The minimum score required to pass this test
+                      </p>
+                    </div>
                   </div>
 
                   {/* Info Box */}
