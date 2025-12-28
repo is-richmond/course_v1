@@ -5,14 +5,14 @@ import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/text-area';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Save, Plus, Trash2, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Upload, X } from 'lucide-react';
 
 import { questionApi, optionApi } from '@/lib/api/test-api';
+import ContentEditor from '@/components/ContentEditor';
 import { TestQuestionCreate, QuestionType, QuestionOptionCreate } from '@/lib/types/test-types';
 
 interface CreateQuestionPageProps {
@@ -190,10 +190,8 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
 
     setLoading(true);
     try {
-      // Create question
       const question = await questionApi.createQuestion(formData);
 
-      // Upload question description image if exists
       if (questionImageFile) {
         try {
           await questionApi.uploadDescriptionImage(
@@ -211,7 +209,6 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
         }
       }
 
-      // Create options with images
       if (formData.question_type === 'single_choice' || formData.question_type === 'multiple_choice') {
         const validOptions = options.filter(opt => opt.option_text.trim());
         
@@ -225,7 +222,6 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
           
           const createdOption = await optionApi.createOption(optionData);
           
-          // Upload option description image if exists
           if (option.imageFile) {
             try {
               await optionApi.uploadDescriptionImage(
@@ -327,7 +323,6 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
   return (
     <div className="w-full min-h-full bg-gray-50">
       <div className="w-full h-full">
-        {/* Header */}
         <div className="bg-white border-b px-6 py-4">
           <div className="flex items-center space-x-4">
             <Button
@@ -343,45 +338,32 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
           </div>
         </div>
 
-        {/* Content */}
         <div className="p-6">
           <div className="max-w-3xl mx-auto">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Question Details */}
               <Card>
                 <CardHeader>
                   <CardTitle>Question Details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* Question Text */}
-                  <div className="space-y-2">
-                    <Label htmlFor="question_text" className="required">
-                      Question Text
-                    </Label>
-                    <Textarea
-                      id="question_text"
-                      value={formData.question_text}
-                      onChange={(e) => handleChange('question_text', e.target.value)}
-                      placeholder="Enter your question"
-                      rows={3}
-                      className={errors.question_text ? 'border-red-500' : ''}
-                    />
-                    {errors.question_text && (
-                      <p className="text-sm text-red-600">{errors.question_text}</p>
-                    )}
-                  </div>
+                  <ContentEditor
+                    value={formData.question_text}
+                    onChange={(value) => handleChange('question_text', value)}
+                    placeholder="Enter your question with formatting..."
+                    label="Question Text"
+                    rows={4}
+                  />
+                  {errors.question_text && (
+                    <p className="text-sm text-red-600">{errors.question_text}</p>
+                  )}
 
-                  {/* Question Description */}
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Description (Optional)</Label>
-                    <Textarea
-                      id="description"
-                      value={formData.description || ''}
-                      onChange={(e) => handleChange('description', e.target.value)}
-                      placeholder="Add additional context or explanation"
-                      rows={2}
-                    />
-                  </div>
+                  <ContentEditor
+                    value={formData.description || ''}
+                    onChange={(value) => handleChange('description', value)}
+                    placeholder="Add additional context or explanation..."
+                    label="Description (Optional)"
+                    rows={6}
+                  />
 
                   {/* Question Image Upload */}
                   <div className="space-y-2">
@@ -415,13 +397,15 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
                             id="question-image-upload"
                           />
                           <label htmlFor="question-image-upload">
-                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-500 cursor-pointer transition-colors">
-                              <div className="flex flex-col items-center space-y-2">
-                                <ImageIcon className="w-8 h-8 text-gray-400" />
-                                <p className="text-sm text-gray-600">Click to upload question image</p>
-                                <p className="text-xs text-gray-400">PNG, JPG up to 10MB</p>
-                              </div>
-                            </div>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="w-full"
+                              onClick={() => questionImageInputRef.current?.click()}
+                            >
+                              <Upload className="w-4 h-4 mr-2" />
+                              Upload Question Image
+                            </Button>
                           </label>
                         </div>
                       )}
@@ -429,7 +413,6 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
                   </div>
 
                   <div className="grid grid-cols-3 gap-4">
-                    {/* Question Type */}
                     <div className="space-y-2">
                       <Label htmlFor="question_type">Question Type</Label>
                       <Select
@@ -447,7 +430,6 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
                       </Select>
                     </div>
 
-                    {/* Points */}
                     <div className="space-y-2">
                       <Label htmlFor="points">Points</Label>
                       <Input
@@ -463,7 +445,6 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
                       )}
                     </div>
 
-                    {/* Order Index */}
                     <div className="space-y-2">
                       <Label htmlFor="order_index">Order</Label>
                       <Input
@@ -482,7 +463,6 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
                 </CardContent>
               </Card>
 
-              {/* Options */}
               {showOptions && (
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between">
@@ -526,10 +506,12 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
                               onChange={(e) => updateOption(option.tempId, 'option_text', e.target.value)}
                               placeholder={`Option ${index + 1}`}
                             />
-                            <Input
+                            <ContentEditor
                               value={option.description || ''}
-                              onChange={(e) => updateOption(option.tempId, 'description', e.target.value)}
+                              onChange={(value) => updateOption(option.tempId, 'description', value)}
                               placeholder={`Description for Option ${index + 1} (optional)`}
+                              label=""
+                              rows={4}
                             />
                           </div>
                           {options.length > 2 && (
@@ -588,7 +570,6 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
                 </Card>
               )}
 
-              {/* Actions */}
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex justify-end space-x-3">
@@ -624,7 +605,6 @@ const CreateQuestionPage = ({ testId }: CreateQuestionPageProps) => {
           </div>
         </div>
 
-        {/* Toasts */}
         <div className="fixed bottom-4 right-4 space-y-2 z-50">
           {toasts.map((toast) => (
             <div

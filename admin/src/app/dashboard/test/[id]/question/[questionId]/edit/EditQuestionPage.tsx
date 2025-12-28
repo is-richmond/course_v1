@@ -5,14 +5,14 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/text-area';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Save, Plus, Trash2, Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Upload, X, Loader2 } from 'lucide-react';
 
 import { questionApi, optionApi } from '@/lib/api/test-api';
+import ContentEditor from '@/components/ContentEditor';
 import { 
   TestQuestionUpdate, 
   QuestionType, 
@@ -86,7 +86,6 @@ const EditQuestionPage = ({ testId, questionId }: EditQuestionPageProps) => {
         order_index: question.order_index
       });
 
-      // Set existing question images
       if (question.description_media) {
         setExistingQuestionImages(
           question.description_media.map(media => ({
@@ -96,7 +95,6 @@ const EditQuestionPage = ({ testId, questionId }: EditQuestionPageProps) => {
         );
       }
 
-      // Set options
       if (question.question_type === 'single_choice' || question.question_type === 'multiple_choice') {
         setOptions(
           optionsData.map((opt: QuestionOptionWithMedia) => ({
@@ -298,10 +296,8 @@ const EditQuestionPage = ({ testId, questionId }: EditQuestionPageProps) => {
 
     setLoading(prev => ({ ...prev, save: true }));
     try {
-      // Update question
       await questionApi.updateQuestion(questionId, formData);
 
-      // Upload new question image if exists
       if (questionImageFile) {
         try {
           await questionApi.uploadDescriptionImage(
@@ -314,13 +310,11 @@ const EditQuestionPage = ({ testId, questionId }: EditQuestionPageProps) => {
         }
       }
 
-      // Update options
       if (formData.question_type === 'single_choice' || formData.question_type === 'multiple_choice') {
         const validOptions = options.filter(opt => opt.option_text.trim());
         
         for (const option of validOptions) {
           if (option.id) {
-            // Update existing option
             const updateData: QuestionOptionUpdate = {
               option_text: option.option_text,
               description: option.description,
@@ -328,7 +322,6 @@ const EditQuestionPage = ({ testId, questionId }: EditQuestionPageProps) => {
             };
             await optionApi.updateOption(option.id, updateData);
             
-            // Upload new image if exists
             if (option.imageFile) {
               try {
                 await optionApi.uploadDescriptionImage(
@@ -341,7 +334,6 @@ const EditQuestionPage = ({ testId, questionId }: EditQuestionPageProps) => {
               }
             }
           } else {
-            // Create new option
             const createData: QuestionOptionCreate = {
               question_id: questionId,
               option_text: option.option_text,
@@ -350,7 +342,6 @@ const EditQuestionPage = ({ testId, questionId }: EditQuestionPageProps) => {
             };
             const createdOption = await optionApi.createOption(createData);
             
-            // Upload image if exists
             if (option.imageFile) {
               try {
                 await optionApi.uploadDescriptionImage(
@@ -486,7 +477,6 @@ const EditQuestionPage = ({ testId, questionId }: EditQuestionPageProps) => {
   return (
     <div className="w-full min-h-full bg-gray-50">
       <div className="w-full h-full">
-        {/* Header */}
         <div className="bg-white border-b px-6 py-4">
           <div className="flex items-center space-x-4">
             <Button
@@ -502,51 +492,37 @@ const EditQuestionPage = ({ testId, questionId }: EditQuestionPageProps) => {
           </div>
         </div>
 
-        {/* Content */}
         <div className="p-6">
           <div className="max-w-3xl mx-auto">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Question Details */}
               <Card>
                 <CardHeader>
                   <CardTitle>Question Details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* Question Text */}
-                  <div className="space-y-2">
-                    <Label htmlFor="question_text" className="required">
-                      Question Text
-                    </Label>
-                    <Textarea
-                      id="question_text"
-                      value={formData.question_text || ''}
-                      onChange={(e) => handleChange('question_text', e.target.value)}
-                      placeholder="Enter your question"
-                      rows={3}
-                      className={errors.question_text ? 'border-red-500' : ''}
-                    />
-                    {errors.question_text && (
-                      <p className="text-sm text-red-600">{errors.question_text}</p>
-                    )}
-                  </div>
+                  <ContentEditor
+                    value={formData.question_text || ''}
+                    onChange={(value) => handleChange('question_text', value)}
+                    placeholder="Enter your question with formatting..."
+                    label="Question Text"
+                    rows={4}
+                  />
+                  {errors.question_text && (
+                    <p className="text-sm text-red-600">{errors.question_text}</p>
+                  )}
 
-                  {/* Question Description */}
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Description (Optional)</Label>
-                    <Textarea
-                      id="description"
-                      value={formData.description || ''}
-                      onChange={(e) => handleChange('description', e.target.value)}
-                      placeholder="Add additional context or explanation"
-                      rows={2}
-                    />
-                  </div>
+                  <ContentEditor
+                    value={formData.description || ''}
+                    onChange={(value) => handleChange('description', value)}
+                    placeholder="Add additional context or explanation..."
+                    label="Description (Optional)"
+                    rows={6}
+                  />
 
                   {/* Question Images */}
                   <div className="space-y-2">
                     <Label>Question Images</Label>
                     
-                    {/* Existing Images */}
                     {existingQuestionImages.length > 0 && (
                       <div className="flex flex-wrap gap-2 mb-2">
                         {existingQuestionImages.map((img) => (
@@ -570,7 +546,6 @@ const EditQuestionPage = ({ testId, questionId }: EditQuestionPageProps) => {
                       </div>
                     )}
                     
-                    {/* New Image Upload */}
                     <div className="flex items-start space-x-4">
                       {questionImagePreview ? (
                         <div className="relative">
@@ -600,13 +575,15 @@ const EditQuestionPage = ({ testId, questionId }: EditQuestionPageProps) => {
                             id="question-image-upload"
                           />
                           <label htmlFor="question-image-upload">
-                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-500 cursor-pointer transition-colors">
-                              <div className="flex flex-col items-center space-y-2">
-                                <ImageIcon className="w-8 h-8 text-gray-400" />
-                                <p className="text-sm text-gray-600">Click to upload new image</p>
-                                <p className="text-xs text-gray-400">PNG, JPG up to 10MB</p>
-                              </div>
-                            </div>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="w-full"
+                              onClick={() => questionImageInputRef.current?.click()}
+                            >
+                              <Upload className="w-4 h-4 mr-2" />
+                              Upload New Image
+                            </Button>
                           </label>
                         </div>
                       )}
@@ -614,7 +591,6 @@ const EditQuestionPage = ({ testId, questionId }: EditQuestionPageProps) => {
                   </div>
 
                   <div className="grid grid-cols-3 gap-4">
-                    {/* Question Type */}
                     <div className="space-y-2">
                       <Label htmlFor="question_type">Question Type</Label>
                       <Select
@@ -632,7 +608,6 @@ const EditQuestionPage = ({ testId, questionId }: EditQuestionPageProps) => {
                       </Select>
                     </div>
 
-                    {/* Points */}
                     <div className="space-y-2">
                       <Label htmlFor="points">Points</Label>
                       <Input
@@ -648,7 +623,6 @@ const EditQuestionPage = ({ testId, questionId }: EditQuestionPageProps) => {
                       )}
                     </div>
 
-                    {/* Order Index */}
                     <div className="space-y-2">
                       <Label htmlFor="order_index">Order</Label>
                       <Input
@@ -663,7 +637,6 @@ const EditQuestionPage = ({ testId, questionId }: EditQuestionPageProps) => {
                 </CardContent>
               </Card>
 
-              {/* Options */}
               {showOptions && (
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between">
@@ -707,10 +680,12 @@ const EditQuestionPage = ({ testId, questionId }: EditQuestionPageProps) => {
                               onChange={(e) => updateOption(option.tempId, 'option_text', e.target.value)}
                               placeholder={`Option ${index + 1}`}
                             />
-                            <Input
+                            <ContentEditor
                               value={option.description || ''}
-                              onChange={(e) => updateOption(option.tempId, 'description', e.target.value)}
+                              onChange={(value) => updateOption(option.tempId, 'description', value)}
                               placeholder={`Description for Option ${index + 1} (optional)`}
+                              label=""
+                              rows={4}
                             />
                           </div>
                           {options.length > 2 && (
@@ -728,7 +703,6 @@ const EditQuestionPage = ({ testId, questionId }: EditQuestionPageProps) => {
 
                         {/* Option Images */}
                         <div className="ml-9">
-                          {/* Existing Images */}
                           {option.existingImages && option.existingImages.length > 0 && (
                             <div className="flex flex-wrap gap-2 mb-2">
                               {option.existingImages.map((img) => (
@@ -752,7 +726,6 @@ const EditQuestionPage = ({ testId, questionId }: EditQuestionPageProps) => {
                             </div>
                           )}
                           
-                          {/* New Image */}
                           {option.imagePreview ? (
                             <div className="relative inline-block">
                               <img 
@@ -794,7 +767,6 @@ const EditQuestionPage = ({ testId, questionId }: EditQuestionPageProps) => {
                 </Card>
               )}
 
-              {/* Actions */}
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex justify-end space-x-3">
@@ -830,7 +802,6 @@ const EditQuestionPage = ({ testId, questionId }: EditQuestionPageProps) => {
           </div>
         </div>
 
-        {/* Toasts */}
         <div className="fixed bottom-4 right-4 space-y-2 z-50">
           {toasts.map((toast) => (
             <div
@@ -853,4 +824,3 @@ const EditQuestionPage = ({ testId, questionId }: EditQuestionPageProps) => {
 };
 
 export default EditQuestionPage;
-                
