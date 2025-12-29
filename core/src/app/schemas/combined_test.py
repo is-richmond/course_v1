@@ -81,12 +81,15 @@ class CombinedTestAnswerResult(BaseModel):
     """Result for a single answer."""
     question_id: int
     question_text: str
+    description: Optional[str] = None  # ДОБАВЛЕНО
     source_test_title: str
     selected_option_ids: Optional[List[int]] = None
     text_answer: Optional[str] = None
     is_correct: bool
     points_earned: int
     points_possible: int
+    description_media: List[CourseMediaResponse] = []  # ДОБАВЛЕНО
+    options: List[QuestionOptionResponse] = []  # ДОБАВЛЕНО - полная информация о вариантах
     
     model_config = ConfigDict(from_attributes=True)
 

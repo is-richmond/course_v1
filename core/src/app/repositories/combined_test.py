@@ -101,13 +101,28 @@ class CombinedTestAttemptRepository(BaseRepository[CombinedTestAttempt]):
         return list(result.unique().scalars().all())
     
     async def get_with_answers(self, attempt_id: int):
-        """Get attempt with all answers and related data."""
+        """Get attempt with all answers and related data including media."""
         from core.src.app.models.combined_test import CombinedTestAttempt, CombinedTestAnswer
+        from core.src.app.models.course import QuestionOption
+        
         stmt = (
             select(CombinedTestAttempt)
             .options(
-                joinedload(CombinedTestAttempt.combined_test).selectinload(CombinedTest.source_tests).joinedload(CombinedTestSource.source_test),
-                selectinload(CombinedTestAttempt.answers).joinedload(CombinedTestAnswer.question).joinedload(TestQuestion.test)
+                # Load combined test with sources
+                joinedload(CombinedTestAttempt.combined_test)
+                    .selectinload(CombinedTest.source_tests)
+                    .joinedload(CombinedTestSource.source_test),
+                # Load answers with questions, options and all media
+                selectinload(CombinedTestAttempt.answers)
+                    .joinedload(CombinedTestAnswer.question)
+                    .selectinload(TestQuestion.options)
+                    .selectinload(QuestionOption.description_media),  # Media for options
+                selectinload(CombinedTestAttempt.answers)
+                    .joinedload(CombinedTestAnswer.question)
+                    .selectinload(TestQuestion.description_media),  # Media for questions
+                selectinload(CombinedTestAttempt.answers)
+                    .joinedload(CombinedTestAnswer.question)
+                    .joinedload(TestQuestion.test)
             )
             .where(CombinedTestAttempt.id == attempt_id)
         )

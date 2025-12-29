@@ -466,7 +466,7 @@ async def get_attempt_details(
             detail="You don't have access to this attempt"
         )
     
-    # Build answer results
+    # Build answer results with full question and option data
     answers = []
     for answer in attempt.answers:
         selected_ids = None
@@ -476,16 +476,38 @@ async def get_attempt_details(
             except json.JSONDecodeError:
                 pass
         
+        # Build options with media
+        options = [
+            QuestionOptionResponse(
+                id=opt.id,
+                question_id=opt.question_id,
+                option_text=opt.option_text,
+                description=opt.description,
+                is_correct=opt.is_correct,
+                description_media=[
+                    CourseMediaResponse.model_validate(media) 
+                    for media in opt.description_media
+                ] if hasattr(opt, 'description_media') else []
+            )
+            for opt in answer.question.options
+        ]
+        
         answers.append(
             CombinedTestAnswerResult(
                 question_id=answer.question_id,
                 question_text=answer.question.question_text,
+                description=answer.question.description,  # ДОБАВЛЕНО
                 source_test_title=answer.question.test.title,
                 selected_option_ids=selected_ids,
                 text_answer=answer.text_answer,
                 is_correct=answer.is_correct,
                 points_earned=answer.points_earned,
-                points_possible=answer.question.points
+                points_possible=answer.question.points,
+                description_media=[  # ДОБАВЛЕНО
+                    CourseMediaResponse.model_validate(media)
+                    for media in answer.question.description_media
+                ] if hasattr(answer.question, 'description_media') else [],
+                options=options  # ДОБАВЛЕНО
             )
         )
     
