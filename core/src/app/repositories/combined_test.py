@@ -14,7 +14,7 @@ from core.src.app.models.combined_test import (
 )
 from core.src.app.models.course import Test, TestQuestion
 from core.src.app.repositories.base import BaseRepository
-
+from core.src.app.models.course import QuestionOption
 
 class CombinedTestRepository(BaseRepository[CombinedTest]):
     """Repository for CombinedTest operations."""
@@ -36,12 +36,22 @@ class CombinedTestRepository(BaseRepository[CombinedTest]):
         return list(result.unique().scalars().all())
     
     async def get_with_questions(self, test_id: int) -> Optional[CombinedTest]:
-        """Get combined test with all questions."""
+        """Get combined test with all questions, options and media."""
         stmt = (
             select(CombinedTest)
             .options(
-                selectinload(CombinedTest.questions).joinedload(CombinedTestQuestion.question).joinedload(TestQuestion.options),
-                selectinload(CombinedTest.source_tests).joinedload(CombinedTestSource.source_test)
+                # Load questions
+                selectinload(CombinedTest.questions)
+                    .joinedload(CombinedTestQuestion.question)
+                    .selectinload(TestQuestion.options)
+                    .selectinload(QuestionOption.description_media),
+                # Load question description media
+                selectinload(CombinedTest.questions)
+                    .joinedload(CombinedTestQuestion.question)
+                    .selectinload(TestQuestion.description_media),
+                # Load source tests
+                selectinload(CombinedTest.source_tests)
+                    .joinedload(CombinedTestSource.source_test)
             )
             .where(CombinedTest.id == test_id)
         )

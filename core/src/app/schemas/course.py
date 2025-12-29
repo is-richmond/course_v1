@@ -227,7 +227,7 @@ class QuestionOptionResponse(QuestionOptionBase):
     """Schema for question option response."""
     id: int
     question_id: int
-    
+    description_media: List["CourseMediaResponse"] = []
     model_config = ConfigDict(from_attributes=True)
 
 class QuestionOptionWithMedia(QuestionOptionResponse):

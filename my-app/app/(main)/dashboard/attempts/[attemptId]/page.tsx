@@ -74,7 +74,7 @@ export default function AttemptDetailPage() {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => router.push("/combined-tests/dashboard")}
+            onClick={() => router.push("/dashboard")}
             className="mb-6"
           >
             <svg

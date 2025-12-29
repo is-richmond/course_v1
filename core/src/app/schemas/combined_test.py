@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel, Field, ConfigDict
 from core.src.app.schemas.course import QuestionOptionResponse
+from core.src.app.schemas.media_schema import CourseMediaResponse
 
 
 # Base Schemas
@@ -42,7 +43,9 @@ class CombinedTestQuestionResponse(BaseModel):
     question_text: str
     question_type: str
     points: int
+    description: Optional[str] = None
     source_test_title: str
+    description_media: List[CourseMediaResponse] = []
     options: List["QuestionOptionResponse"] = []
     
     model_config = ConfigDict(from_attributes=True)

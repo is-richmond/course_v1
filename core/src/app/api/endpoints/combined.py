@@ -34,6 +34,7 @@ from core.src.app.repositories.combined_test import (
     CombinedTestAttemptRepository,
     CombinedTestAnswerRepository,
 )
+from core.src.app.schemas.media_schema import CourseMediaResponse
 from core.src.app.repositories.course import (
     TestRepository,
     TestQuestionRepository,
@@ -254,18 +255,23 @@ async def get_combined_test(
     # Build question responses
     questions = []
     for ctq in sorted(test.questions, key=lambda x: x.order_index):
-        # Build options list
+        # Build options with media
         options = [
             QuestionOptionResponse(
                 id=opt.id,
                 question_id=opt.question_id,
                 option_text=opt.option_text,
                 description=opt.description,
-                is_correct=opt.is_correct
+                is_correct=opt.is_correct,
+                description_media=[
+                    CourseMediaResponse.model_validate(media) 
+                    for media in opt.description_media
+                ] if hasattr(opt, 'description_media') else []
             )
             for opt in ctq.question.options
         ]
         
+        # Build question with media
         questions.append(
             CombinedTestQuestionResponse(
                 id=ctq.id,
@@ -274,7 +280,12 @@ async def get_combined_test(
                 question_text=ctq.question.question_text,
                 question_type=ctq.question.question_type.value,
                 points=ctq.question.points,
+                description=ctq.question.description,
                 source_test_title=ctq.question.test.title,
+                description_media=[
+                    CourseMediaResponse.model_validate(media)
+                    for media in ctq.question.description_media
+                ] if hasattr(ctq.question, 'description_media') else [],
                 options=options
             )
         )
