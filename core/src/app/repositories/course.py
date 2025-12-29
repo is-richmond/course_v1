@@ -172,16 +172,24 @@ class TestRepository(BaseRepository[Test]):
         return await self.get_by_type(TestType.COURSE_TEST)
     
     async def get_with_questions(self, test_id: int) -> Optional[Test]:
-        """Get test with questions and their options loaded."""
+        """Get test with questions, their options and all media loaded."""
+        from core.src.app.models.course import QuestionOption
+        
         stmt = (
             select(Test)
             .options(
-                selectinload(Test.questions).selectinload(TestQuestion.options)
+                # Load questions with options and their media
+                selectinload(Test.questions)
+                    .selectinload(TestQuestion.options)
+                    .selectinload(QuestionOption.description_media),
+                # Load question description media
+                selectinload(Test.questions)
+                    .selectinload(TestQuestion.description_media)
             )
             .where(Test.id == test_id)
         )
         result = await self.session.execute(stmt)
-        return result.scalar_one_or_none()
+        return result.unique().scalar_one_or_none()
 
 
 # Import TestQuestion to avoid circular imports
