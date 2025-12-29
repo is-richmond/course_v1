@@ -358,7 +358,7 @@ export default function CombinedTestsDashboardPage() {
                     {attempts.map((attempt) => (
                       <Link
                         key={attempt.id}
-                        href={`/combined-tests/attempts/${attempt.id}`}
+                        href={`/dashboard/attempts/${attempt.id}`}
                       >
                         <Card className="h-full hover:shadow-lg transition cursor-pointer group">
                           <div
