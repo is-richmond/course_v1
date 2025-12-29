@@ -35,25 +35,22 @@ class CombinedTestRepository(BaseRepository[CombinedTest]):
         result = await self.session.execute(stmt)
         return list(result.unique().scalars().all())
     
-    async def get_with_questions(self, test_id: int) -> Optional[CombinedTest]:
-        """Get combined test with all questions, options and media."""
+    async def get_with_questions(self, test_id: int) -> Optional[Test]:
+        """Get test with questions, their options and all media loaded."""
+        from core.src.app.models.course import QuestionOption
+        
         stmt = (
-            select(CombinedTest)
+            select(Test)
             .options(
-                # Load questions
-                selectinload(CombinedTest.questions)
-                    .joinedload(CombinedTestQuestion.question)
+                # Load questions with options and their media
+                selectinload(Test.questions)
                     .selectinload(TestQuestion.options)
                     .selectinload(QuestionOption.description_media),
                 # Load question description media
-                selectinload(CombinedTest.questions)
-                    .joinedload(CombinedTestQuestion.question)
-                    .selectinload(TestQuestion.description_media),
-                # Load source tests
-                selectinload(CombinedTest.source_tests)
-                    .joinedload(CombinedTestSource.source_test)
+                selectinload(Test.questions)
+                    .selectinload(TestQuestion.description_media)
             )
-            .where(CombinedTest.id == test_id)
+            .where(Test.id == test_id)
         )
         result = await self.session.execute(stmt)
         return result.unique().scalar_one_or_none()

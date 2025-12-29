@@ -66,6 +66,33 @@ export default function AttemptDetailPage() {
     return "bg-red-100";
   };
 
+  const isOptionSelected = (optionId: number, selectedIds?: number[] | null) => {
+    return selectedIds?.includes(optionId) ?? false;
+  };
+
+  const getOptionStyle = (
+    option: any,
+    selectedIds?: number[] | null
+  ) => {
+    const isSelected = isOptionSelected(option.id, selectedIds);
+    const isCorrect = option.is_correct;
+
+    if (isSelected && isCorrect) {
+      return "border-green-500 bg-green-50";
+    }
+    if (isSelected && !isCorrect) {
+      return "border-red-500 bg-red-50";
+    }
+    if (!isSelected && isCorrect) {
+      return "border-green-300 bg-green-50";
+    }
+    return "border-gray-200 bg-white";
+  };
+
+  const getMediaUrl = (media: any) => {
+    return media.download_url || `/api/media/${media.id}`;
+  };
+
   return (
     <div className="bg-white min-h-screen flex flex-col">
       <main className="flex-1 pt-20">
@@ -74,7 +101,7 @@ export default function AttemptDetailPage() {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => router.push("/dashboard")}
+            onClick={() => router.push("/combined-tests/dashboard")}
             className="mb-6"
           >
             <svg
@@ -305,14 +332,14 @@ export default function AttemptDetailPage() {
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">
                   Разбор ответов
                 </h2>
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {attempt.answers.map((answer, index) => (
                     <Card
                       key={answer.question_id}
                       className={`border-l-4 ${
                         answer.is_correct
-                          ? "border-green-500 bg-green-50"
-                          : "border-red-500 bg-red-50"
+                          ? "border-green-500"
+                          : "border-red-500"
                       }`}
                     >
                       <CardContent className="pt-6">
@@ -326,13 +353,49 @@ export default function AttemptDetailPage() {
                               <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">
                                 {answer.source_test_title}
                               </span>
+                              <span className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded">
+                                {answer.points_earned}/{answer.points_possible} баллов
+                              </span>
                             </div>
-                            <h3 className="text-lg font-semibold text-gray-900">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-3">
                               {answer.question_text}
                             </h3>
+
+                            {/* Question Description */}
+                            {answer.description && (
+                              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                                <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                                  {answer.description}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Question Media */}
+                            {answer.description_media && answer.description_media.length > 0 && (
+                              <div className="mb-4 grid grid-cols-2 gap-4">
+                                {answer.description_media.map((media) => (
+                                  <div key={media.id} className="rounded-lg overflow-hidden border border-gray-200">
+                                    {media.media_type === "image" ? (
+                                      <img
+                                        src={getMediaUrl(media)}
+                                        alt={media.custom_name || media.original_filename}
+                                        className="w-full h-auto"
+                                      />
+                                    ) : (
+                                      <video
+                                        src={getMediaUrl(media)}
+                                        controls
+                                        className="w-full h-auto"
+                                      />
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
+
                           <div
-                            className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+                            className={`flex items-center gap-2 px-3 py-1 rounded-full ml-4 ${
                               answer.is_correct
                                 ? "bg-green-100 text-green-700"
                                 : "bg-red-100 text-red-700"
@@ -369,43 +432,134 @@ export default function AttemptDetailPage() {
                           </div>
                         </div>
 
-                        {/* Score */}
-                        <div className="mb-4 text-sm text-gray-600">
-                          Баллы: {answer.points_earned} из {answer.points_possible}
-                        </div>
+                        {/* Answer Options */}
+                        {answer.options && answer.options.length > 0 && (
+                          <div className="space-y-3">
+                            <p className="text-sm font-medium text-gray-700 mb-3">
+                              Варианты ответа:
+                            </p>
+                            {answer.options.map((option) => {
+                              const isSelected = isOptionSelected(option.id, answer.selected_option_ids);
+                              const isCorrect = option.is_correct;
 
-                        {/* Answer Details */}
-                        <div className="bg-white rounded-lg p-4 border border-gray-200">
-                          {answer.text_answer ? (
-                            <div>
-                              <p className="text-sm font-medium text-gray-700 mb-2">
-                                Ваш ответ:
-                              </p>
+                              return (
+                                <div
+                                  key={option.id}
+                                  className={`border-2 rounded-lg p-4 ${getOptionStyle(
+                                    option,
+                                    answer.selected_option_ids
+                                  )}`}
+                                >
+                                  <div className="flex items-start gap-3">
+                                    {/* Checkbox/Radio indicator */}
+                                    <div className="flex-shrink-0 mt-0.5">
+                                      {isSelected && isCorrect && (
+                                        <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                                          <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="14"
+                                            height="14"
+                                            viewBox="0 0 256 256"
+                                            className="text-white"
+                                          >
+                                            <path
+                                              fill="currentColor"
+                                              d="M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34Z"
+                                            />
+                                          </svg>
+                                        </div>
+                                      )}
+                                      {isSelected && !isCorrect && (
+                                        <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                                          <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="14"
+                                            height="14"
+                                            viewBox="0 0 256 256"
+                                            className="text-white"
+                                          >
+                                            <path
+                                              fill="currentColor"
+                                              d="M165.66,101.66,139.31,128l26.35,26.34a8,8,0,0,1-11.32,11.32L128,139.31l-26.34,26.35a8,8,0,0,1-11.32-11.32L116.69,128,90.34,101.66a8,8,0,0,1,11.32-11.32L128,116.69l26.34-26.35a8,8,0,0,1,11.32,11.32Z"
+                                            />
+                                          </svg>
+                                        </div>
+                                      )}
+                                      {!isSelected && isCorrect && (
+                                        <div className="w-5 h-5 border-2 border-green-500 rounded-full" />
+                                      )}
+                                      {!isSelected && !isCorrect && (
+                                        <div className="w-5 h-5 border-2 border-gray-300 rounded-full" />
+                                      )}
+                                    </div>
+
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <p className="text-gray-900 font-medium">
+                                          {option.option_text}
+                                        </p>
+                                        {isSelected && (
+                                          <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+                                            Ваш выбор
+                                          </span>
+                                        )}
+                                        {isCorrect && (
+                                          <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded">
+                                            Правильный ответ
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      {/* Option Description */}
+                                      {option.description && (
+                                        <div className="mt-2 p-3 bg-gray-50 rounded border border-gray-200">
+                                          <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                                            {option.description}
+                                          </p>
+                                        </div>
+                                      )}
+
+                                      {/* Option Media */}
+                                      {option.description_media && option.description_media.length > 0 && (
+                                        <div className="mt-3 grid grid-cols-2 gap-2">
+                                          {option.description_media.map((media) => (
+                                            <div key={media.id} className="rounded overflow-hidden border border-gray-200">
+                                              {media.media_type === "image" ? (
+                                                <img
+                                                  src={getMediaUrl(media)}
+                                                  alt={media.custom_name || media.original_filename}
+                                                  className="w-full h-auto"
+                                                />
+                                              ) : (
+                                                <video
+                                                  src={getMediaUrl(media)}
+                                                  controls
+                                                  className="w-full h-auto"
+                                                />
+                                              )}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* Text Answer */}
+                        {answer.text_answer && (
+                          <div className="mt-4">
+                            <p className="text-sm font-medium text-gray-700 mb-2">
+                              Ваш текстовый ответ:
+                            </p>
+                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                               <p className="text-gray-900">{answer.text_answer}</p>
                             </div>
-                          ) : (
-                            <div>
-                              <p className="text-sm font-medium text-gray-700 mb-2">
-                                Выбранные варианты:
-                              </p>
-                              {answer.selected_option_ids && answer.selected_option_ids.length > 0 ? (
-                                <ul className="space-y-1">
-                                  {answer.selected_option_ids.map((optionId) => (
-                                    <li
-                                      key={optionId}
-                                      className="text-gray-900 flex items-center gap-2"
-                                    >
-                                      <span className="w-1.5 h-1.5 bg-blue-600 rounded-full" />
-                                      Вариант #{optionId}
-                                    </li>
-                                  ))}
-                                </ul>
-                              ) : (
-                                <p className="text-gray-500 italic">Ответ не выбран</p>
-                              )}
-                            </div>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   ))}

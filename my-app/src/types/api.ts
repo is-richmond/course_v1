@@ -233,6 +233,7 @@ export interface QuestionOptionResponse {
   id: number;
   option_text: string;
   description?: string | null;
+  description_media?: CourseMediaResponse[];
   is_correct: boolean;
   question_id: number;
 }
@@ -401,6 +402,9 @@ export interface CombinedTestAnswerResult {
   question_text: string;
   source_test_title: string;
   selected_option_ids?: number[] | null;
+  description?: string | null;
+  description_media?: CourseMediaResponse[];
+  options: QuestionOptionResponse[];
   text_answer?: string | null;
   is_correct: boolean;
   points_earned: number;
