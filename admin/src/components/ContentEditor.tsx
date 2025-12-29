@@ -1,7 +1,7 @@
 // admin/src/components/ContentEditor.tsx
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { 
@@ -18,7 +18,9 @@ import {
   Heading1,
   Heading2,
   Heading3,
-  Quote
+  Quote,
+  Image as ImageIcon,
+  Palette
 } from 'lucide-react';
 
 interface ContentEditorProps {
@@ -38,16 +40,10 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
 }) => {
   const [isVisualMode, setIsVisualMode] = useState(true);
   const editorRef = useRef<HTMLDivElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
-  // Синхронизация HTML с внешним значением
-  useEffect(() => {
-    if (editorRef.current && isVisualMode && editorRef.current.innerHTML !== value) {
-      editorRef.current.innerHTML = value || '';
-    }
-  }, [value, isVisualMode]);
-
-  const execCommand = (command: string, value: string | null = null) => {
-    document.execCommand(command, false, value || undefined);
+  const execCommand = (command: string, val: string | null = null) => {
+    document.execCommand(command, false, val || undefined);
     updateContent();
   };
 
@@ -68,6 +64,42 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
     const url = prompt('Enter URL:');
     if (url) {
       execCommand('createLink', url);
+    }
+  };
+
+  const changeTextColor = () => {
+    const color = prompt('Enter color (hex, rgb, or name):');
+    if (color) {
+      execCommand('foreColor', color);
+    }
+  };
+
+  const changeBackgroundColor = () => {
+    const color = prompt('Enter background color (hex, rgb, or name):');
+    if (color) {
+      execCommand('backColor', color);
+    }
+  };
+
+  const insertImage = () => {
+    imageInputRef.current?.click();
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = `<img src="${event.target?.result}" style="max-width: 100%; height: auto;" />`;
+        document.execCommand('insertHTML', false, img);
+        updateContent();
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -196,18 +228,63 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
               ))}
             </div>
 
-            {/* Link */}
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              title="Insert Link"
-              onClick={insertLink}
-              className="h-8 w-8 p-0"
-            >
-              <Link className="h-4 w-4" />
-            </Button>
+            {/* Colors */}
+            <div className="flex gap-1 border-r pr-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                title="Text Color"
+                onClick={changeTextColor}
+                className="h-8 w-8 p-0"
+              >
+                <Palette className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                title="Background Color"
+                onClick={changeBackgroundColor}
+                className="h-8 w-8 p-0"
+              >
+                <div className="h-4 w-4 border border-gray-400 rounded" style={{background: 'linear-gradient(to bottom, transparent 50%, yellow 50%)'}}></div>
+              </Button>
+            </div>
+
+            {/* Media */}
+            <div className="flex gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                title="Insert Link"
+                onClick={insertLink}
+                className="h-8 w-8 p-0"
+              >
+                <Link className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                title="Insert Image"
+                onClick={insertImage}
+                className="h-8 w-8 p-0"
+              >
+                <ImageIcon className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
+
+          {/* Hidden Image Input */}
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageSelect}
+            className="hidden"
+          />
 
           {/* Editor Area */}
           <div
@@ -288,9 +365,15 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
         .prose u {
           text-decoration: underline;
         }
+        .prose img {
+          max-width: 100%;
+          height: auto;
+          border-radius: 0.5rem;
+          margin: 0.5rem 0;
+        }
       `}</style>
     </div>
   );
 };
 
-export default ContentEditor;
+export default ContentEditor
