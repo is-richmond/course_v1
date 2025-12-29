@@ -1,0 +1,418 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { Footer } from "@/src/components/layout/Footer";
+import { Button } from "@/src/components/ui/Button";
+import { Card, CardContent } from "@/src/components/ui/Card";
+import { combinedTestsAPI } from "@/src/lib/api";
+import type {
+  CombinedTestAttemptResponse,
+  OverallStatistics,
+  AttemptTopicStatistics,
+} from "@/src/types/api";
+
+export default function CombinedTestsDashboardPage() {
+  const [attempts, setAttempts] = useState<CombinedTestAttemptResponse[]>([]);
+  const [overallStats, setOverallStats] = useState<OverallStatistics | null>(
+    null
+  );
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [attemptsData, statsData] = await Promise.all([
+          combinedTestsAPI.getAttemptsHistory(0, 100),
+          combinedTestsAPI.getOverallStatistics(),
+        ]);
+
+        setAttempts(attemptsData);
+        setOverallStats(statsData);
+        setError(null);
+      } catch (err) {
+        console.error("Failed to load dashboard data:", err);
+        setError("Не удалось загрузить данные");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("ru-RU", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const getScoreColor = (percentage: number) => {
+    if (percentage >= 80) return "text-green-600";
+    if (percentage >= 60) return "text-yellow-600";
+    return "text-red-600";
+  };
+
+  const getScoreBgColor = (percentage: number) => {
+    if (percentage >= 80) return "bg-green-100";
+    if (percentage >= 60) return "bg-yellow-100";
+    return "bg-red-100";
+  };
+
+  return (
+    <div className="bg-white min-h-screen flex flex-col">
+      <main className="flex-1 pt-20">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          {/* Page Header */}
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              Дашборд тестов
+            </h1>
+            <p className="text-gray-600">
+              Статистика и история прохождения комбинированных тестов
+            </p>
+          </div>
+
+          {/* Loading State */}
+          {isLoading && (
+            <>
+              {/* Stats Cards Skeleton */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="bg-white rounded-xl border border-gray-200 p-6 animate-pulse"
+                  >
+                    <div className="h-4 w-24 bg-gray-200 rounded mb-2" />
+                    <div className="h-8 w-16 bg-gray-200 rounded" />
+                  </div>
+                ))}
+              </div>
+
+              {/* Attempts Skeleton */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="bg-white rounded-xl border border-gray-200 p-6 animate-pulse"
+                  >
+                    <div className="h-6 w-3/4 bg-gray-200 rounded mb-4" />
+                    <div className="h-4 w-full bg-gray-200 rounded mb-2" />
+                    <div className="h-4 w-2/3 bg-gray-200 rounded mb-4" />
+                    <div className="h-10 w-full bg-gray-200 rounded" />
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Error State */}
+          {error && !isLoading && (
+            <div className="text-center py-12">
+              <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="40"
+                  height="40"
+                  viewBox="0 0 256 256"
+                  className="text-red-500"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm-8-80V80a8,8,0,0,1,16,0v56a8,8,0,0,1-16,0Zm20,36a12,12,0,1,1-12-12A12,12,0,0,1,140,172Z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Ошибка загрузки
+              </h3>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <Button
+                variant="primary"
+                onClick={() => window.location.reload()}
+              >
+                Попробовать снова
+              </Button>
+            </div>
+          )}
+
+          {/* Content */}
+          {!isLoading && !error && (
+            <>
+              {/* Overall Statistics Cards */}
+              {overallStats && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                  {/* Total Attempts */}
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm text-gray-600">Всего попыток</p>
+                        <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 256 256"
+                            className="text-blue-600"
+                          >
+                            <path
+                              fill="currentColor"
+                              d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,160H40V56H216V200ZM184,96a8,8,0,0,1-8,8H80a8,8,0,0,1,0-16h96A8,8,0,0,1,184,96Zm0,32a8,8,0,0,1-8,8H80a8,8,0,0,1,0-16h96A8,8,0,0,1,184,128Zm0,32a8,8,0,0,1-8,8H80a8,8,0,0,1,0-16h96A8,8,0,0,1,184,160Z"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                      <p className="text-3xl font-bold text-gray-900">
+                        {overallStats.total_attempts}
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  {/* Average Score */}
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm text-gray-600">Средний балл</p>
+                        <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 256 256"
+                            className="text-purple-600"
+                          >
+                            <path
+                              fill="currentColor"
+                              d="M234.5,114.38l-45.1,39.36,13.51,58.6a16,16,0,0,1-23.84,17.34l-51.11-31-51,31a16,16,0,0,1-23.84-17.34l13.49-58.54L21.5,114.38a16,16,0,0,1,9.11-28.06l59.46-5.15,23.21-55.36a15.95,15.95,0,0,1,29.44,0h0L166,81.17l59.44,5.15a16,16,0,0,1,9.11,28.06Z"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                      <p className="text-3xl font-bold text-gray-900">
+                        {overallStats.average_score.toFixed(1)}%
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  {/* Best Score */}
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm text-gray-600">Лучший результат</p>
+                        <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 256 256"
+                            className="text-green-600"
+                          >
+                            <path
+                              fill="currentColor"
+                              d="M232,64H208V56a16,16,0,0,0-16-16H64A16,16,0,0,0,48,56v8H24A8,8,0,0,0,16,72V96a40,40,0,0,0,40,40h3.65A80.13,80.13,0,0,0,120,191.61V216H96a8,8,0,0,0,0,16h64a8,8,0,0,0,0-16H136V191.58c31.94-3.23,58.44-25.64,68.08-55.58H208a40,40,0,0,0,40-40V72A8,8,0,0,0,232,64Z"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                      <p className="text-3xl font-bold text-green-600">
+                        {overallStats.best_attempt_score?.toFixed(1) ?? 0}%
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  {/* Total Questions */}
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm text-gray-600">Всего вопросов</p>
+                        <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 256 256"
+                            className="text-orange-600"
+                          >
+                            <path
+                              fill="currentColor"
+                              d="M140,180a12,12,0,1,1-12-12A12,12,0,0,1,140,180ZM128,72c-22.06,0-40,16.15-40,36v4a8,8,0,0,0,16,0v-4c0-11,10.77-20,24-20s24,9,24,20-10.77,20-24,20a8,8,0,0,0-8,8v8a8,8,0,0,0,16,0v-.72c18.24-3.35,32-17.9,32-35.28C168,88.15,150.06,72,128,72Zm104,56A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                      <p className="text-3xl font-bold text-gray-900">
+                        {overallStats.total_questions_answered}
+                      </p>
+                      <p className="text-sm text-green-600 mt-1">
+                        {overallStats.total_correct_answers} правильных
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Topics Statistics */}
+              {overallStats && overallStats.topics.length > 0 && (
+                <div className="mb-8">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                    Статистика по темам
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {overallStats.topics.map((topic) => (
+                      <Card key={topic.test_id}>
+                        <CardContent className="pt-6">
+                          <h3 className="font-semibold text-gray-900 mb-3">
+                            {topic.test_title}
+                          </h3>
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Вопросов:</span>
+                              <span className="font-medium">
+                                {topic.total_questions_answered}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Правильных:</span>
+                              <span className="font-medium text-green-600">
+                                {topic.correct_answers}
+                              </span>
+                            </div>
+                            <div className="pt-2 border-t">
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-sm text-gray-600">
+                                  Точность:
+                                </span>
+                                <span
+                                  className={`text-lg font-bold ${getScoreColor(
+                                    topic.percentage
+                                  )}`}
+                                >
+                                  {topic.percentage.toFixed(1)}%
+                                </span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div
+                                  className={`h-2 rounded-full ${
+                                    topic.percentage >= 80
+                                      ? "bg-green-600"
+                                      : topic.percentage >= 60
+                                      ? "bg-yellow-600"
+                                      : "bg-red-600"
+                                  }`}
+                                  style={{ width: `${topic.percentage}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Recent Attempts */}
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  История попыток
+                </h2>
+
+                {/* Empty State */}
+                {attempts.length === 0 && (
+                  <div className="text-center py-12">
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="40"
+                        height="40"
+                        viewBox="0 0 256 256"
+                        className="text-gray-400"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,160H40V56H216V200ZM184,96a8,8,0,0,1-8,8H80a8,8,0,0,1,0-16h96A8,8,0,0,1,184,96Z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      Нет попыток
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      Вы еще не проходили комбинированные тесты
+                    </p>
+                    <Link href="/combined-tests/generate">
+                      <Button variant="primary">Создать тест</Button>
+                    </Link>
+                  </div>
+                )}
+
+                {/* Attempts Grid */}
+                {attempts.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {attempts.map((attempt) => (
+                      <Link
+                        key={attempt.id}
+                        href={`/combined-tests/attempts/${attempt.id}`}
+                      >
+                        <Card className="h-full hover:shadow-lg transition cursor-pointer group">
+                          <div
+                            className={`h-2 ${getScoreBgColor(
+                              attempt.percentage
+                            )} rounded-t-xl`}
+                          />
+                          <CardContent className="pt-4">
+                            <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
+                              {attempt.combined_test_title}
+                            </h3>
+
+                            <div className="space-y-2 mb-4">
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-600">Результат:</span>
+                                <span
+                                  className={`font-bold ${getScoreColor(
+                                    attempt.percentage
+                                  )}`}
+                                >
+                                  {attempt.score}/{attempt.total_questions} (
+                                  {attempt.percentage.toFixed(1)}%)
+                                </span>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-600">Дата:</span>
+                                <span className="font-medium">
+                                  {formatDate(attempt.started_at)}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="pt-4 border-t border-gray-200">
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                className="w-full"
+                              >
+                                Посмотреть детали
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </main>
+
+      <Footer />
+    </div>
+  );
+}
