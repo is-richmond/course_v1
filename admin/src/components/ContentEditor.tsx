@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -55,7 +55,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
 }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [previewMode, setPreviewMode] = useState(false);
+  const [codeMode, setCodeMode] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<Map<string, UploadedMedia>>(new Map());
   
   const [showMediaLibrary, setShowMediaLibrary] = useState(false);
@@ -68,6 +68,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
   const [showSpacingModal, setShowSpacingModal] = useState(false);
   const [spacingValue, setSpacingValue] = useState("1");
 
+  const editableRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -79,120 +80,204 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
     "#800080", "#FF00FF", "#8B4513", "#FFFFFF"
   ];
 
-  const wrapSelection = useCallback((openTag: string, closeTag: string) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = value.substring(start, end);
-
-    const newValue =
-      value.substring(0, start) +
-      openTag +
-      selectedText +
-      closeTag +
-      value.substring(end);
-
-    onChange(newValue);
-
-    requestAnimationFrame(() => {
-      if (textarea) {
-        textarea.focus();
-        const newCursorPos = start + openTag.length + selectedText.length + closeTag.length;
-        textarea.setSelectionRange(newCursorPos, newCursorPos);
+  // Синхронизация contentEditable с value
+  useEffect(() => {
+    if (editableRef.current && !codeMode) {
+      const currentHTML = editableRef.current.innerHTML;
+      const renderedValue = renderEditableContent(value);
+      
+      // Обновляем только если содержимое действительно изменилось
+      if (currentHTML !== renderedValue) {
+        const selection = window.getSelection();
+        const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+        const startOffset = range?.startOffset;
+        const endOffset = range?.endOffset;
+        
+        editableRef.current.innerHTML = renderedValue;
+        
+        // Восстанавливаем курсор если возможно
+        if (range && selection) {
+          try {
+            selection.removeAllRanges();
+            selection.addRange(range);
+          } catch (e) {
+            // Игнорируем ошибки восстановления курсора
+          }
+        }
       }
-    });
-  }, [value, onChange]);
+    }
+  }, [value, codeMode]);
 
-  const wrapLine = useCallback((openTag: string, closeTag: string) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const cursorPos = textarea.selectionStart;
-    let lineStart = value.lastIndexOf("\n", cursorPos - 1) + 1;
-    let lineEnd = value.indexOf("\n", cursorPos);
-    if (lineEnd === -1) lineEnd = value.length;
-
-    const lineText = value.substring(lineStart, lineEnd);
-    const newValue =
-      value.substring(0, lineStart) +
-      openTag +
-      lineText +
-      closeTag +
-      value.substring(lineEnd);
-
-    onChange(newValue);
-
-    requestAnimationFrame(() => {
-      if (textarea) {
-        textarea.focus();
-        const newCursorPos = lineStart + openTag.length + lineText.length + closeTag.length;
-        textarea.setSelectionRange(newCursorPos, newCursorPos);
-      }
-    });
-  }, [value, onChange]);
-
-  const makeBulletList = useCallback(() => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-
-    let lineStart = value.lastIndexOf("\n", start - 1) + 1;
-    let lineEnd = value.indexOf("\n", end);
-    if (lineEnd === -1) lineEnd = value.length;
-
-    const selectedLines = value.substring(lineStart, lineEnd);
-    const lines = selectedLines.split("\n");
-    const listItems = lines
-      .map((line) => (line.trim() ? `<li>${line.trim()}</li>` : ""))
-      .join("\n");
-    const bulletList = `<ul>\n${listItems}\n</ul>`;
-
-    const newValue =
-      value.substring(0, lineStart) + bulletList + value.substring(lineEnd);
-
-    onChange(newValue);
+  const renderEditableContent = (content: string) => {
+    if (!content) return "";
     
-    requestAnimationFrame(() => {
-      if (textarea) {
-        textarea.focus();
-        const newCursorPos = lineStart + bulletList.length;
-        textarea.setSelectionRange(newCursorPos, newCursorPos);
+    let rendered = content;
+    
+    // Заменяем плейсхолдеры изображений на превью
+    rendered = rendered.replace(
+      /\[IMAGE:([^\]]+)\]/g,
+      (match, mediaId) => {
+        const imageInfo = uploadedImages.get(mediaId) || libraryMedia.find(m => m.id === mediaId);
+        if (imageInfo?.download_url) {
+          return `<img src="${imageInfo.download_url}" alt="${imageInfo.filename}" style="max-width: 100%; height: auto; border-radius: 0.5rem; margin: 1rem 0; display: block;" data-media-id="${mediaId}" data-media-type="image" />`;
+        }
+        return `<div style="padding: 1rem; background: #f3f4f6; border-radius: 0.5rem; text-align: center; color: #6b7280; margin: 1rem 0;" data-media-id="${mediaId}" data-media-type="image">Изображение: ${mediaId.substring(0, 8)}...</div>`;
       }
-    });
-  }, [value, onChange]);
+    );
 
-  const insertAtCursor = (text: string) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const newValue =
-      value.substring(0, start) + text + value.substring(end);
-
-    onChange(newValue);
-
-    requestAnimationFrame(() => {
-      if (textarea) {
-        textarea.focus();
-        textarea.setSelectionRange(start + text.length, start + text.length);
+    // Заменяем плейсхолдеры видео на превью
+    rendered = rendered.replace(
+      /\[VIDEO:([^\]]+)\]/g,
+      (match, mediaId) => {
+        const videoInfo = uploadedImages.get(mediaId) || libraryMedia.find(m => m.id === mediaId);
+        if (videoInfo?.download_url) {
+          return `<video controls style="max-width: 100%; height: auto; border-radius: 0.5rem; margin: 1rem 0; display: block;" data-media-id="${mediaId}" data-media-type="video">
+            <source src="${videoInfo.download_url}" type="video/mp4">
+            Ваш браузер не поддерживает видео.
+          </video>`;
+        }
+        return `<div style="padding: 1rem; background: #f3f4f6; border-radius: 0.5rem; text-align: center; color: #6b7280; margin: 1rem 0;" data-media-id="${mediaId}" data-media-type="video">Видео: ${mediaId.substring(0, 8)}...</div>`;
       }
-    });
+    );
+
+    return rendered;
+  };
+
+  const convertHTMLToPlaceholders = (html: string) => {
+    let content = html;
+    
+    // Конвертируем изображения обратно в плейсхолдеры
+    content = content.replace(
+      /<img[^>]+data-media-id="([^"]+)"[^>]*>/g,
+      (match, mediaId) => `[IMAGE:${mediaId}]`
+    );
+    
+    content = content.replace(
+      /<div[^>]+data-media-id="([^"]+)"[^>]+data-media-type="image"[^>]*>.*?<\/div>/g,
+      (match, mediaId) => `[IMAGE:${mediaId}]`
+    );
+    
+    // Конвертируем видео обратно в плейсхолдеры
+    content = content.replace(
+      /<video[^>]+data-media-id="([^"]+)"[^>]*>.*?<\/video>/g,
+      (match, mediaId) => `[VIDEO:${mediaId}]`
+    );
+    
+    content = content.replace(
+      /<div[^>]+data-media-id="([^"]+)"[^>]+data-media-type="video"[^>]*>.*?<\/div>/g,
+      (match, mediaId) => `[VIDEO:${mediaId}]`
+    );
+    
+    return content;
+  };
+
+  const handleEditableInput = () => {
+    if (editableRef.current) {
+      const html = editableRef.current.innerHTML;
+      const converted = convertHTMLToPlaceholders(html);
+      onChange(converted);
+    }
+  };
+
+  const execCommand = (command: string, value?: string) => {
+    document.execCommand(command, false, value);
+    handleEditableInput();
+  };
+
+  const wrapSelectionEditable = (tag: string, style?: string) => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    const selectedText = range.toString();
+
+    if (!selectedText) return;
+
+    const wrapper = document.createElement(tag);
+    if (style) {
+      wrapper.setAttribute('style', style);
+    }
+
+    try {
+      range.surroundContents(wrapper);
+      handleEditableInput();
+    } catch (e) {
+      // Если не удалось обернуть (например, выбран частично элемент),
+      // используем execCommand
+      if (tag === 'strong') {
+        execCommand('bold');
+      } else if (tag === 'em') {
+        execCommand('italic');
+      }
+    }
+  };
+
+  const formatBlock = (tag: string) => {
+    execCommand('formatBlock', `<${tag}>`);
+  };
+
+  const insertList = () => {
+    execCommand('insertUnorderedList');
   };
 
   const applyColor = (color: string) => {
-    wrapSelection(`<span style="color: ${color}">`, `</span>`);
+    execCommand('foreColor', color);
     setShowColorPicker(false);
   };
 
-  const applySpacing = () => {
-    insertAtCursor(`<div style="margin-bottom: ${spacingValue}rem"></div>`);
+  const insertSpacing = () => {
+    const div = document.createElement('div');
+    div.style.marginBottom = `${spacingValue}rem`;
+    div.innerHTML = '<br>';
+    
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      range.insertNode(div);
+      
+      // Перемещаем курсор после вставленного элемента
+      range.setStartAfter(div);
+      range.setEndAfter(div);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+    
+    handleEditableInput();
     setShowSpacingModal(false);
     setSpacingValue("1");
+  };
+
+  const insertAtCursor = (text: string) => {
+    if (codeMode && textareaRef.current) {
+      // Режим кода
+      const textarea = textareaRef.current;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const newValue = value.substring(0, start) + text + value.substring(end);
+      onChange(newValue);
+
+      requestAnimationFrame(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + text.length, start + text.length);
+      });
+    } else if (editableRef.current) {
+      // Визуальный режим
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        range.deleteContents();
+        
+        const textNode = document.createTextNode(text);
+        range.insertNode(textNode);
+        
+        range.setStartAfter(textNode);
+        range.setEndAfter(textNode);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        
+        handleEditableInput();
+      }
+    }
   };
 
   const handleMediaUpload = async (file: File, mediaType: "image" | "video") => {
@@ -286,46 +371,6 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
     }
   };
 
-  const renderPreview = () => {
-    if (!value) {
-      return <p className="text-gray-400 italic">Нет контента для превью</p>;
-    }
-
-    let previewContent = value;
-    
-    previewContent = previewContent.replace(
-      /\[IMAGE:([^\]]+)\]/g,
-      (match, mediaId) => {
-        const imageInfo = uploadedImages.get(mediaId) || libraryMedia.find(m => m.id === mediaId);
-        if (imageInfo?.download_url) {
-          return `<img src="${imageInfo.download_url}" alt="${imageInfo.filename}" style="max-width: 100%; height: auto; border-radius: 0.5rem; margin: 1rem 0;" />`;
-        }
-        return `<div style="padding: 1rem; background: #f3f4f6; border-radius: 0.5rem; text-align: center; color: #6b7280;">Изображение: ${mediaId.substring(0, 8)}...</div>`;
-      }
-    );
-
-    previewContent = previewContent.replace(
-      /\[VIDEO:([^\]]+)\]/g,
-      (match, mediaId) => {
-        const videoInfo = uploadedImages.get(mediaId) || libraryMedia.find(m => m.id === mediaId);
-        if (videoInfo?.download_url) {
-          return `<video controls style="max-width: 100%; height: auto; border-radius: 0.5rem; margin: 1rem 0;">
-            <source src="${videoInfo.download_url}" type="video/mp4">
-            Ваш браузер не поддерживает видео.
-          </video>`;
-        }
-        return `<div style="padding: 1rem; background: #f3f4f6; border-radius: 0.5rem; text-align: center; color: #6b7280;">Видео: ${mediaId.substring(0, 8)}...</div>`;
-      }
-    );
-
-    return (
-      <div
-        className="prose prose-sm sm:prose-base max-w-none lesson-content"
-        dangerouslySetInnerHTML={{ __html: previewContent }}
-      />
-    );
-  };
-
   const countMedia = () => {
     const images = (value.match(/\[IMAGE:[^\]]+\]/g) || []).length;
     const videos = (value.match(/\[VIDEO:[^\]]+\]/g) || []).length;
@@ -352,7 +397,8 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => wrapSelection("<strong>", "</strong>")}
+              onClick={() => codeMode ? null : execCommand('bold')}
+              disabled={codeMode}
               title="Жирный"
               className="h-8 w-8 p-0"
             >
@@ -363,7 +409,8 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => wrapSelection("<em>", "</em>")}
+              onClick={() => codeMode ? null : execCommand('italic')}
+              disabled={codeMode}
               title="Курсив"
               className="h-8 w-8 p-0"
             >
@@ -377,7 +424,8 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => wrapLine("<h1>", "</h1>")}
+                onClick={() => codeMode ? null : formatBlock('h1')}
+                disabled={codeMode}
                 title="Заголовок 1"
                 className="h-8 w-8 p-0"
               >
@@ -388,7 +436,8 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => wrapLine("<h2>", "</h2>")}
+                onClick={() => codeMode ? null : formatBlock('h2')}
+                disabled={codeMode}
                 title="Заголовок 2"
                 className="h-8 w-8 p-0"
               >
@@ -399,7 +448,8 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => wrapLine("<h3>", "</h3>")}
+                onClick={() => codeMode ? null : formatBlock('h3')}
+                disabled={codeMode}
                 title="Заголовок 3"
                 className="h-8 w-8 p-0"
               >
@@ -413,7 +463,8 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
               type="button"
               variant="outline"
               size="sm"
-              onClick={makeBulletList}
+              onClick={() => codeMode ? null : insertList()}
+              disabled={codeMode}
               title="Список"
               className="h-8 w-8 p-0"
             >
@@ -427,14 +478,15 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setShowColorPicker(!showColorPicker)}
+                onClick={() => codeMode ? null : setShowColorPicker(!showColorPicker)}
+                disabled={codeMode}
                 title="Цвет текста"
                 className="h-8 w-8 p-0"
               >
                 <Palette className="w-4 h-4" />
               </Button>
 
-              {showColorPicker && (
+              {showColorPicker && !codeMode && (
                 <div className="absolute top-10 left-0 z-50 bg-white border-2 rounded-lg shadow-lg p-3">
                   <div className="grid grid-cols-4 gap-2 mb-2">
                     {predefinedColors.map((color) => (
@@ -470,7 +522,8 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => setShowSpacingModal(true)}
+              onClick={() => codeMode ? null : setShowSpacingModal(true)}
+              disabled={codeMode}
               title="Отступ"
               className="h-8 w-8 p-0"
             >
@@ -552,20 +605,20 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
 
             <Button
               type="button"
-              variant={previewMode ? "default" : "outline"}
+              variant={codeMode ? "default" : "outline"}
               size="sm"
-              onClick={() => setPreviewMode(!previewMode)}
+              onClick={() => setCodeMode(!codeMode)}
               className="h-8 px-2 sm:px-3"
             >
-              {previewMode ? (
+              {codeMode ? (
                 <>
-                  <Code className="w-4 h-4" />
-                  <span className="hidden sm:inline ml-1 text-xs">Код</span>
+                  <Eye className="w-4 h-4" />
+                  <span className="hidden sm:inline ml-1 text-xs">Визуал</span>
                 </>
               ) : (
                 <>
-                  <Eye className="w-4 h-4" />
-                  <span className="hidden sm:inline ml-1 text-xs">Превью</span>
+                  <Code className="w-4 h-4" />
+                  <span className="hidden sm:inline ml-1 text-xs">Код</span>
                 </>
               )}
             </Button>
@@ -589,13 +642,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
         </div>
       )}
 
-      {previewMode ? (
-        <Card className="border-2">
-          <CardContent className="p-3 sm:p-4 min-h-[200px] sm:min-h-[300px]">
-            {renderPreview()}
-          </CardContent>
-        </Card>
-      ) : (
+      {codeMode ? (
         <textarea
           ref={textareaRef}
           value={value}
@@ -604,6 +651,28 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
           rows={rows}
           className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg font-mono text-xs sm:text-sm focus:outline-none focus:border-blue-500 resize-y min-h-[200px] sm:min-h-[300px]"
         />
+      ) : (
+        <Card className="border-2">
+          <CardContent className="p-3 sm:p-4">
+            <div
+              ref={editableRef}
+              contentEditable
+              onInput={handleEditableInput}
+              onBlur={handleEditableInput}
+              className="w-full min-h-[200px] sm:min-h-[300px] focus:outline-none prose prose-sm sm:prose-base max-w-none"
+              style={{
+                minHeight: `${rows * 1.5}rem`,
+              }}
+              suppressContentEditableWarning
+            >
+              {!value && (
+                <p className="text-gray-400 italic pointer-events-none">
+                  {placeholder}
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {showSpacingModal && (
@@ -624,7 +693,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
                 <div className="flex gap-2">
                   <Button
                     type="button"
-                    onClick={applySpacing}
+                    onClick={insertSpacing}
                     className="flex-1"
                   >
                     Применить
@@ -718,16 +787,13 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
 
       <div className="text-[10px] sm:text-xs text-gray-500 space-y-1">
         <p>
-          <strong>Форматирование:</strong> B/I = стиль, H1/H2/H3 = заголовки, List = список
+          <strong>Режимы:</strong> Визуальный режим - форматирование в реальном времени, Код - HTML редактирование
         </p>
         <p>
-          <strong>Медиа:</strong> [IMAGE:id] для изображений, [VIDEO:id] для видео
+          <strong>Форматирование:</strong> Выделите текст и используйте кнопки форматирования
         </p>
         <p>
-          <strong>Цвет:</strong> Выделите текст и выберите цвет
-        </p>
-        <p>
-          <strong>Отступы:</strong> Используйте кнопку "Отступ" для настройки расстояния
+          <strong>Медиа:</strong> Вставка изображений и видео с автоматическим превью
         </p>
       </div>
     </div>
