@@ -1,5 +1,6 @@
 """Security utilities for authentication and authorization."""
 
+import hashlib
 import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
@@ -157,17 +158,54 @@ def verify_refresh_token(token: str) -> Dict[str, Any]:
         raise
 
 
+def _prepare_password(password: str) -> str:
+    """
+    Prepare password for bcrypt hashing.
+    Bcrypt has a 72 byte limit, so we hash long passwords with SHA256 first.
+    
+    Args:
+        password: Plain text password
+        
+    Returns:
+        str: Prepared password (original if <=72 bytes, SHA256 hex if longer)
+    """
+    password_bytes = password.encode('utf-8')
+    
+    # If password is longer than 72 bytes, hash it with SHA256 first
+    if len(password_bytes) > 72:
+        return hashlib.sha256(password_bytes).hexdigest()
+    
+    return password
+
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against a hash."""
-    # Bcrypt has a 72 byte limit
-    if len(plain_password.encode('utf-8')) > 72:
-        plain_password = plain_password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
-    return pwd_context.verify(plain_password, hashed_password)
+    """
+    Verify a password against a hash.
+    
+    Args:
+        plain_password: Plain text password to verify
+        hashed_password: Bcrypt hash to verify against
+        
+    Returns:
+        bool: True if password matches, False otherwise
+    """
+    try:
+        prepared_password = _prepare_password(plain_password)
+        return pwd_context.verify(prepared_password, hashed_password)
+    except Exception as e:
+        logger.error(f"Password verification error: {e}")
+        return False
 
 
 def get_password_hash(password: str) -> str:
-    """Hash a password."""
-    # Bcrypt has a 72 byte limit
-    if len(password.encode('utf-8')) > 72:
-        password = password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
-    return pwd_context.hash(password)
+    """
+    Hash a password using bcrypt.
+    
+    Args:
+        password: Plain text password to hash
+        
+    Returns:
+        str: Bcrypt hash of the password
+    """
+    prepared_password = _prepare_password(password)
+    return pwd_context.hash(prepared_password)
