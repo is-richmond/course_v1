@@ -72,6 +72,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const isUpdatingRef = useRef(false);
 
   const predefinedColors = [
     "#000000", "#333333", "#666666", "#999999",
@@ -79,34 +80,6 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
     "#00FF00", "#00CC66", "#0000FF", "#6B8EFF",
     "#800080", "#FF00FF", "#8B4513", "#FFFFFF"
   ];
-
-  // Синхронизация contentEditable с value
-  useEffect(() => {
-    if (editableRef.current && !codeMode) {
-      const currentHTML = editableRef.current.innerHTML;
-      const renderedValue = renderEditableContent(value);
-      
-      // Обновляем только если содержимое действительно изменилось
-      if (currentHTML !== renderedValue) {
-        const selection = window.getSelection();
-        const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-        const startOffset = range?.startOffset;
-        const endOffset = range?.endOffset;
-        
-        editableRef.current.innerHTML = renderedValue;
-        
-        // Восстанавливаем курсор если возможно
-        if (range && selection) {
-          try {
-            selection.removeAllRanges();
-            selection.addRange(range);
-          } catch (e) {
-            // Игнорируем ошибки восстановления курсора
-          }
-        }
-      }
-    }
-  }, [value, codeMode]);
 
   const renderEditableContent = (content: string) => {
     if (!content) return "";
@@ -171,45 +144,56 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
     return content;
   };
 
-  const handleEditableInput = () => {
-    if (editableRef.current) {
+  const saveSelection = () => {
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      return selection.getRangeAt(0);
+    }
+    return null;
+  };
+
+  const restoreSelection = (range: Range | null) => {
+    if (range) {
+      try {
+        const selection = window.getSelection();
+        if (selection) {
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+      } catch (e) {
+        // Игнорируем ошибки восстановления
+      }
+    }
+  };
+
+  const handleEditableInput = useCallback(() => {
+    if (editableRef.current && !isUpdatingRef.current) {
       const html = editableRef.current.innerHTML;
       const converted = convertHTMLToPlaceholders(html);
       onChange(converted);
     }
-  };
+  }, [onChange]);
+
+  // Синхронизация contentEditable с value только при изменении извне
+  useEffect(() => {
+    if (editableRef.current && !codeMode) {
+      const renderedValue = renderEditableContent(value);
+      const currentHTML = editableRef.current.innerHTML;
+      
+      // Проверяем, отличается ли рендер от текущего содержимого
+      if (currentHTML !== renderedValue) {
+        isUpdatingRef.current = true;
+        const savedRange = saveSelection();
+        editableRef.current.innerHTML = renderedValue;
+        restoreSelection(savedRange);
+        isUpdatingRef.current = false;
+      }
+    }
+  }, [value, codeMode, uploadedImages, libraryMedia]);
 
   const execCommand = (command: string, value?: string) => {
     document.execCommand(command, false, value);
     handleEditableInput();
-  };
-
-  const wrapSelectionEditable = (tag: string, style?: string) => {
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
-
-    const range = selection.getRangeAt(0);
-    const selectedText = range.toString();
-
-    if (!selectedText) return;
-
-    const wrapper = document.createElement(tag);
-    if (style) {
-      wrapper.setAttribute('style', style);
-    }
-
-    try {
-      range.surroundContents(wrapper);
-      handleEditableInput();
-    } catch (e) {
-      // Если не удалось обернуть (например, выбран частично элемент),
-      // используем execCommand
-      if (tag === 'strong') {
-        execCommand('bold');
-      } else if (tag === 'em') {
-        execCommand('italic');
-      }
-    }
   };
 
   const formatBlock = (tag: string) => {
@@ -226,23 +210,29 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
   };
 
   const insertSpacing = () => {
-    const div = document.createElement('div');
-    div.style.marginBottom = `${spacingValue}rem`;
-    div.innerHTML = '<br>';
+    if (!editableRef.current) return;
     
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
+      
+      const div = document.createElement('div');
+      div.style.marginBottom = `${spacingValue}rem`;
+      div.innerHTML = '&nbsp;';
+      
+      range.deleteContents();
       range.insertNode(div);
       
       // Перемещаем курсор после вставленного элемента
-      range.setStartAfter(div);
-      range.setEndAfter(div);
+      const newRange = document.createRange();
+      newRange.setStartAfter(div);
+      newRange.collapse(true);
       selection.removeAllRanges();
-      selection.addRange(range);
+      selection.addRange(newRange);
+      
+      handleEditableInput();
     }
     
-    handleEditableInput();
     setShowSpacingModal(false);
     setSpacingValue("1");
   };
@@ -262,6 +252,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
       });
     } else if (editableRef.current) {
       // Визуальный режим
+      editableRef.current.focus();
       const selection = window.getSelection();
       if (selection && selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
@@ -658,19 +649,13 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
               ref={editableRef}
               contentEditable
               onInput={handleEditableInput}
-              onBlur={handleEditableInput}
               className="w-full min-h-[200px] sm:min-h-[300px] focus:outline-none prose prose-sm sm:prose-base max-w-none"
               style={{
                 minHeight: `${rows * 1.5}rem`,
               }}
               suppressContentEditableWarning
-            >
-              {!value && (
-                <p className="text-gray-400 italic pointer-events-none">
-                  {placeholder}
-                </p>
-              )}
-            </div>
+              dangerouslySetInnerHTML={{ __html: renderEditableContent(value) || `<p class="text-gray-400 italic">${placeholder}</p>` }}
+            />
           </CardContent>
         </Card>
       )}
