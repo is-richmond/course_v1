@@ -158,27 +158,16 @@ def verify_refresh_token(token: str) -> Dict[str, Any]:
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """
-    Verify a password against a hash.
-    
-    Args:
-        plain_password: Plain text password
-        hashed_password: Hashed password
-        
-    Returns:
-        bool: True if password matches, False otherwise
-    """
+    """Verify a password against a hash."""
+    # Bcrypt has a 72 byte limit
+    if len(plain_password.encode('utf-8')) > 72:
+        plain_password = plain_password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
     return pwd_context.verify(plain_password, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
-    """
-    Hash a password.
-    
-    Args:
-        password: Plain text password
-        
-    Returns:
-        str: Hashed password
-    """
+    """Hash a password."""
+    # Bcrypt has a 72 byte limit
+    if len(password.encode('utf-8')) > 72:
+        password = password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
     return pwd_context.hash(password)
