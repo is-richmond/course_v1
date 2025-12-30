@@ -4,17 +4,13 @@ import hashlib
 import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
-from uuid import UUID
 
+import bcrypt
 import jwt
-from passlib.context import CryptContext
 
 from auth.src.app.core.config import settings
 
 logger = logging.getLogger(__name__)
-
-# Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # JWT settings
 ALGORITHM = "HS256"
@@ -158,7 +154,7 @@ def verify_refresh_token(token: str) -> Dict[str, Any]:
         raise
 
 
-def _prepare_password(password: str) -> str:
+def _prepare_password(password: str) -> bytes:
     """
     Prepare password for bcrypt hashing.
     Bcrypt has a 72 byte limit, so we hash long passwords with SHA256 first.
@@ -167,20 +163,21 @@ def _prepare_password(password: str) -> str:
         password: Plain text password
         
     Returns:
-        str: Prepared password (original if <=72 bytes, SHA256 hex if longer)
+        bytes: Prepared password bytes (original if <=72 bytes, SHA256 if longer)
     """
     password_bytes = password.encode('utf-8')
     
     # If password is longer than 72 bytes, hash it with SHA256 first
     if len(password_bytes) > 72:
-        return hashlib.sha256(password_bytes).hexdigest()
+        # Return SHA256 hash as bytes
+        return hashlib.sha256(password_bytes).digest()
     
-    return password
+    return password_bytes
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
-    Verify a password against a hash.
+    Verify a password against a bcrypt hash.
     
     Args:
         plain_password: Plain text password to verify
@@ -191,7 +188,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
     try:
         prepared_password = _prepare_password(plain_password)
-        return pwd_context.verify(prepared_password, hashed_password)
+        return bcrypt.checkpw(prepared_password, hashed_password.encode('utf-8'))
     except Exception as e:
         logger.error(f"Password verification error: {e}")
         return False
@@ -207,5 +204,12 @@ def get_password_hash(password: str) -> str:
     Returns:
         str: Bcrypt hash of the password
     """
-    prepared_password = _prepare_password(password)
-    return pwd_context.hash(prepared_password)
+    try:
+        prepared_password = _prepare_password(password)
+        # Generate salt and hash password
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(prepared_password, salt)
+        return hashed.decode('utf-8')
+    except Exception as e:
+        logger.error(f"Password hashing error: {e}")
+        raise
