@@ -693,13 +693,62 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
       ) : (
         <Card key="visual-mode" className="border-2">
           <CardContent className="p-3 sm:p-4">
+            <style dangerouslySetInnerHTML={{
+              __html: `
+                [contenteditable] h1 {
+                  font-size: 2em;
+                  font-weight: bold;
+                  margin-top: 0.67em;
+                  margin-bottom: 0.67em;
+                }
+                [contenteditable] h2 {
+                  font-size: 1.5em;
+                  font-weight: bold;
+                  margin-top: 0.83em;
+                  margin-bottom: 0.83em;
+                }
+                [contenteditable] h3 {
+                  font-size: 1.17em;
+                  font-weight: bold;
+                  margin-top: 1em;
+                  margin-bottom: 1em;
+                }
+                [contenteditable] ul {
+                  list-style-type: disc;
+                  margin-top: 1em;
+                  margin-bottom: 1em;
+                  padding-left: 40px;
+                }
+                [contenteditable] ol {
+                  list-style-type: decimal;
+                  margin-top: 1em;
+                  margin-bottom: 1em;
+                  padding-left: 40px;
+                }
+                [contenteditable] li {
+                  display: list-item;
+                  margin-bottom: 0.5em;
+                }
+                [contenteditable] p {
+                  margin-top: 0.5em;
+                  margin-bottom: 0.5em;
+                }
+                [contenteditable] strong {
+                  font-weight: bold;
+                }
+                [contenteditable] em {
+                  font-style: italic;
+                }
+              `
+            }} />
             <div
               ref={editableRef}
               contentEditable
               onInput={handleEditableInput}
-              className="w-full min-h-[200px] sm:min-h-[300px] focus:outline-none prose prose-sm sm:prose-base max-w-none"
+              className="w-full min-h-[200px] sm:min-h-[300px] focus:outline-none"
               style={{
                 minHeight: `${rows * 1.5}rem`,
+                lineHeight: '1.6',
               }}
               suppressContentEditableWarning
             />
