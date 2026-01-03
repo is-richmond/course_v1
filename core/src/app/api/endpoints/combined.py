@@ -181,14 +181,18 @@ async def generate_combined_test(
     # Build response
     combined_test_repo = CombinedTestRepository(session)
     test_with_sources = await combined_test_repo.get_with_questions(combined_test.id)
-    
+
+    # Get source tests from DB
+    source_repo = CombinedTestSourceRepository(session)
+    sources = await source_repo.get_by_combined_test_id(combined_test.id)
+
     source_responses = [
         CombinedTestSourceResponse(
             source_test_id=source.source_test_id,
             source_test_title=source.source_test.title,
-            questions_count=source.questions_count
+            questions_count=source. questions_count
         )
-        for source in test_with_sources.source_tests
+        for source in sources
     ]
     
     return CombinedTestResponse(

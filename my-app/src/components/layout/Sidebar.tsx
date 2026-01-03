@@ -46,7 +46,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   // Navigation items for authenticated users
   const authNavItems: NavItem[] = [
     {
-      label: "Главная",
+      label: "Мои курсы",
       href: "/",
       icon: (
         <svg
@@ -58,23 +58,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <path
             fill="currentColor"
             d="M224,115.55V208a16,16,0,0,1-16,16H168a16,16,0,0,1-16-16V168a8,8,0,0,0-8-8H112a8,8,0,0,0-8,8v40a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V115.55a16,16,0,0,1,5.17-11.78l80-75.48a16,16,0,0,1,21.66,0l80,75.48A16,16,0,0,1,224,115.55Z"
-          />
-        </svg>
-      ),
-    },
-    {
-      label: "Все курсы",
-      href: "/my-courses",
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="15"
-          height="15"
-          viewBox="0 0 256 256"
-        >
-          <path
-            fill="currentColor"
-            d="M232,64H176V48a24,24,0,0,0-24-24H104A24,24,0,0,0,80,48V64H24A8,8,0,0,0,16,72V200a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V72A8,8,0,0,0,232,64ZM96,48a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8V64H96ZM224,200H32V80H224Z"
           />
         </svg>
       ),
@@ -97,7 +80,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       ),
     },
     {
-      label: "Дашборд",
+      label: "Дэшборд",
       href: "/dashboard",
       icon: (
         <svg
@@ -108,7 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         >
           <path
             fill="currentColor"
-            d="M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"
+            d="M232,208H24a8,8,0,0,1,0-16H32V48a8,8,0,0,1,16,0V192h32V80a8,8,0,0,1,16,0V192h32V112a8,8,0,0,1,16,0V192h32V64a8,8,0,0,1,16,0V192h32a8,8,0,0,1,0,16Z"
           />
         </svg>
       ),
