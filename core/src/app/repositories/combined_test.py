@@ -29,30 +29,33 @@ class CombinedTestRepository(BaseRepository[CombinedTest]):
             .options(
                 selectinload(CombinedTest.source_tests).joinedload(CombinedTestSource.source_test)
             )
-            .where(CombinedTest.user_id == user_id)
+            .where(CombinedTest. user_id == user_id)
             .order_by(CombinedTest.created_at.desc())
         )
         result = await self.session.execute(stmt)
         return list(result.unique().scalars().all())
     
-    async def get_with_questions(self, test_id: int) -> Optional[Test]:
-        """Get test with questions, their options and all media loaded."""
-        from core.src.app.models.course import QuestionOption
-        
+    async def get_with_questions(self, test_id: int) -> Optional[CombinedTest]: 
+        """Get combined test with all questions, options and media loaded."""
         stmt = (
-            select(Test)
+            select(CombinedTest)
             .options(
-                # Load questions with options and their media
-                selectinload(Test.questions)
+                # Load questions
+                selectinload(CombinedTest.questions)
+                    .joinedload(CombinedTestQuestion.question)
                     .selectinload(TestQuestion.options)
                     .selectinload(QuestionOption.description_media),
                 # Load question description media
-                selectinload(Test.questions)
-                    .selectinload(TestQuestion.description_media)
+                selectinload(CombinedTest.questions)
+                    .joinedload(CombinedTestQuestion.question)
+                    . selectinload(TestQuestion.description_media),
+                # Load source tests
+                selectinload(CombinedTest.source_tests)
+                    .joinedload(CombinedTestSource.source_test)
             )
-            .where(Test.id == test_id)
+            .where(CombinedTest.id == test_id)
         )
-        result = await self.session.execute(stmt)
+        result = await self. session.execute(stmt)
         return result.unique().scalar_one_or_none()
 
 
@@ -61,6 +64,16 @@ class CombinedTestSourceRepository(BaseRepository[CombinedTestSource]):
     
     def __init__(self, session: AsyncSession):
         super().__init__(CombinedTestSource, session)
+    
+    async def get_by_combined_test_id(self, combined_test_id: int) -> List[CombinedTestSource]:
+        """Get all sources for a combined test."""
+        stmt = (
+            select(CombinedTestSource)
+            .options(joinedload(CombinedTestSource.source_test))
+            .where(CombinedTestSource.combined_test_id == combined_test_id)
+        )
+        result = await self. session.execute(stmt)
+        return list(result.unique().scalars().all())
 
 
 class CombinedTestQuestionRepository(BaseRepository[CombinedTestQuestion]):
@@ -78,29 +91,29 @@ class CombinedTestAttemptRepository(BaseRepository[CombinedTestAttempt]):
     
     async def get_user_attempts(
         self, 
-        user_id: int,  # Changed to str
+        user_id: str,
         skip: int = 0,
         limit: int = 100
     ) -> List:
         """Get all attempts for a user."""
-        from core.src.app.models.combined_test import CombinedTestAttempt
+        from core.src.app.models. combined_test import CombinedTestAttempt
         stmt = (
             select(CombinedTestAttempt)
             .options(
                 joinedload(CombinedTestAttempt.combined_test)
             )
-            .where(CombinedTestAttempt.user_id == user_id)
-            .order_by(CombinedTestAttempt.started_at.desc())
+            .where(CombinedTestAttempt. user_id == user_id)
+            .order_by(CombinedTestAttempt. started_at.desc())
             .offset(skip)
             .limit(limit)
         )
         result = await self.session.execute(stmt)
         return list(result.unique().scalars().all())
     
-    async def get_with_answers(self, attempt_id: int):
+    async def get_with_answers(self, attempt_id:  int):
         """Get attempt with all answers and related data including media."""
         from core.src.app.models.combined_test import CombinedTestAttempt, CombinedTestAnswer
-        from core.src.app.models.course import QuestionOption
+        from core.src.app.models. course import QuestionOption
         
         stmt = (
             select(CombinedTestAttempt)
@@ -110,7 +123,7 @@ class CombinedTestAttemptRepository(BaseRepository[CombinedTestAttempt]):
                     .selectinload(CombinedTest.source_tests)
                     .joinedload(CombinedTestSource.source_test),
                 # Load answers with questions, options and all media
-                selectinload(CombinedTestAttempt.answers)
+                selectinload(CombinedTestAttempt. answers)
                     .joinedload(CombinedTestAnswer.question)
                     .selectinload(TestQuestion.options)
                     .selectinload(QuestionOption.description_media),  # Media for options
@@ -126,7 +139,7 @@ class CombinedTestAttemptRepository(BaseRepository[CombinedTestAttempt]):
         result = await self.session.execute(stmt)
         return result.unique().scalar_one_or_none()
     
-    async def get_user_statistics(self, user_id: int) -> dict:  # Changed to str
+    async def get_user_statistics(self, user_id: str) -> dict:
         """Get overall statistics for a user."""
         # Get all completed attempts
         stmt = (
@@ -137,11 +150,11 @@ class CombinedTestAttemptRepository(BaseRepository[CombinedTestAttempt]):
             .where(
                 and_(
                     CombinedTestAttempt.user_id == user_id,
-                    CombinedTestAttempt.completed_at.isnot(None)
+                    CombinedTestAttempt.completed_at. isnot(None)
                 )
             )
         )
-        result = await self.session.execute(stmt)
+        result = await self. session.execute(stmt)
         attempts = list(result.unique().scalars().all())
         
         if not attempts:
@@ -151,9 +164,9 @@ class CombinedTestAttemptRepository(BaseRepository[CombinedTestAttempt]):
                 "correct_answers": 0,
                 "overall_percentage": 0.0,
                 "best_score": None,
-                "worst_score": None,
+                "worst_score":  None,
                 "average_score": 0.0,
-                "topics": []
+                "topics":  []
             }
         
         # Calculate statistics
@@ -167,13 +180,13 @@ class CombinedTestAttemptRepository(BaseRepository[CombinedTestAttempt]):
         for attempt in attempts:
             for answer in attempt.answers:
                 test_id = answer.question.test_id
-                test_title = answer.question.test.title
+                test_title = answer.question.test. title
                 
                 if test_id not in topic_stats:
                     topic_stats[test_id] = {
                         "test_id": test_id,
                         "test_title": test_title,
-                        "total": 0,
+                        "total":  0,
                         "correct": 0
                     }
                 
@@ -196,7 +209,7 @@ class CombinedTestAttemptRepository(BaseRepository[CombinedTestAttempt]):
             "total_attempts": total_attempts,
             "total_questions": total_questions,
             "correct_answers": correct_answers,
-            "overall_percentage": (correct_answers / total_questions * 100) if total_questions > 0 else 0.0,
+            "overall_percentage":  (correct_answers / total_questions * 100) if total_questions > 0 else 0.0,
             "best_score": max(scores),
             "worst_score": min(scores),
             "average_score": sum(scores) / len(scores),
