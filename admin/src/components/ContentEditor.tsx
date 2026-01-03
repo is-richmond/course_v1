@@ -166,7 +166,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
     }
   };
 
-  const handleEditableInput = useCallback(() => {
+  const handleEditableInput = useCallback((eventOrImmediate?: React.FormEvent<HTMLDivElement> | boolean) => {
     if (editableRef.current && !isUpdatingRef.current) {
       const html = editableRef.current.innerHTML;
       const converted = convertHTMLToPlaceholders(html);
@@ -206,26 +206,55 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
   }, [value, uploadedImages, libraryMedia]);
 
   const execCommand = (command: string, value?: string) => {
+    if (!editableRef.current) return;
+    
+    editableRef.current.focus();
     document.execCommand(command, false, value);
-    handleEditableInput();
+    
+    // Принудительно обновляем состояние после команды
+    setTimeout(() => {
+      handleEditableInput();
+    }, 10);
   };
 
   const formatBlock = (tag: string) => {
-    execCommand('formatBlock', `<${tag}>`);
+    if (!editableRef.current) return;
+    
+    editableRef.current.focus();
+    document.execCommand('formatBlock', false, `<${tag}>`);
+    
+    setTimeout(() => {
+      handleEditableInput();
+    }, 10);
   };
 
   const insertList = () => {
-    execCommand('insertUnorderedList');
+    if (!editableRef.current) return;
+    
+    editableRef.current.focus();
+    document.execCommand('insertUnorderedList', false);
+    
+    setTimeout(() => {
+      handleEditableInput();
+    }, 10);
   };
 
   const applyColor = (color: string) => {
-    execCommand('foreColor', color);
+    if (!editableRef.current) return;
+    
+    editableRef.current.focus();
+    document.execCommand('foreColor', false, color);
     setShowColorPicker(false);
+    
+    setTimeout(() => {
+      handleEditableInput();
+    }, 10);
   };
 
   const insertSpacing = () => {
     if (!editableRef.current) return;
     
+    editableRef.current.focus();
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
@@ -244,7 +273,9 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
       selection.removeAllRanges();
       selection.addRange(newRange);
       
-      handleEditableInput();
+      setTimeout(() => {
+        handleEditableInput();
+      }, 10);
     }
     
     setShowSpacingModal(false);
@@ -280,7 +311,9 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
         selection.removeAllRanges();
         selection.addRange(range);
         
-        handleEditableInput();
+        setTimeout(() => {
+          handleEditableInput();
+        }, 10);
       }
     }
   };
