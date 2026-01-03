@@ -141,12 +141,6 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
       (match, mediaId) => `[VIDEO:${mediaId}]`
     );
     
-    // Сохраняем spacer элементы
-    content = content.replace(
-      /<div[^>]+data-spacer="true"[^>]*style="[^"]*height:\s*([^;"]+)[^"]*"[^>]*>.*?<\/div>/g,
-      (match, height) => `<div style="height: ${height}"></div>`
-    );
-    
     return content;
   };
 
@@ -265,24 +259,21 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       
-      // Создаем пустой параграф с отступом
-      const spacer = document.createElement('div');
-      spacer.style.height = `${spacingValue}rem`;
-      spacer.style.lineHeight = '0';
-      spacer.innerHTML = '<br>';
-      spacer.setAttribute('data-spacer', 'true');
+      // Вычисляем количество переносов строк (1rem ≈ 1.5 строки)
+      const lineCount = Math.max(1, Math.round(parseFloat(spacingValue) * 1.5));
+      
+      // Создаем фрагмент с несколькими br
+      const fragment = document.createDocumentFragment();
+      for (let i = 0; i < lineCount; i++) {
+        fragment.appendChild(document.createElement('br'));
+      }
       
       range.deleteContents();
-      range.insertNode(spacer);
+      range.insertNode(fragment);
       
-      // Добавляем параграф после spacer для продолжения ввода
-      const afterPara = document.createElement('p');
-      afterPara.innerHTML = '<br>';
-      spacer.parentNode?.insertBefore(afterPara, spacer.nextSibling);
-      
-      // Перемещаем курсор в новый параграф
+      // Перемещаем курсор после вставленных br
       const newRange = document.createRange();
-      newRange.setStart(afterPara, 0);
+      newRange.setStartAfter(fragment.lastChild || fragment);
       newRange.collapse(true);
       selection.removeAllRanges();
       selection.addRange(newRange);
@@ -752,29 +743,6 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
                 }
                 [contenteditable] em {
                   font-style: italic;
-                }
-                [contenteditable] div[data-spacer="true"] {
-                  display: block;
-                  background: repeating-linear-gradient(
-                    0deg,
-                    transparent,
-                    transparent 10px,
-                    #e5e7eb 10px,
-                    #e5e7eb 11px
-                  );
-                  opacity: 0.3;
-                  pointer-events: none;
-                  user-select: none;
-                }
-                [contenteditable] div[data-spacer="true"]:hover {
-                  opacity: 0.5;
-                  background: repeating-linear-gradient(
-                    0deg,
-                    transparent,
-                    transparent 10px,
-                    #3b82f6 10px,
-                    #3b82f6 11px
-                  );
                 }
               `
             }} />
