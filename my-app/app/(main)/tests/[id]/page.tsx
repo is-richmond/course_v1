@@ -45,7 +45,7 @@ export default function TestPage() {
   useEffect(() => {
     const fetchTest = async () => {
       try {
-        const fetchedTest = await testsAPI.getWithQuestions(parseInt(testId));
+        const fetchedTest = await testsAPI. getWithQuestions(parseInt(testId));
         setTest(fetchedTest);
         setError(null);
       } catch (err) {
@@ -60,12 +60,12 @@ export default function TestPage() {
   }, [testId]);
 
   const handleAnswerSelect = (optionId: number) => {
-    if (!test) return;
+    if (! test) return;
     const question = test.questions[currentQuestion];
     const newAnswers = new Map(userAnswers);
 
     if (question.question_type === "single_choice") {
-      newAnswers.set(question.id, [optionId]);
+      newAnswers. set(question.id, [optionId]);
     } else {
       // multiple choice
       const current = newAnswers.get(question.id) || [];
@@ -109,7 +109,7 @@ export default function TestPage() {
       };
 
       // Submit to API
-      const apiResult: TestResult = await testsAPI.submit(
+      const apiResult:  TestResult = await testsAPI. submit(
         parseInt(testId),
         submission
       );
@@ -126,16 +126,16 @@ export default function TestPage() {
         totalPoints: apiResult.total_points,
         percentage,
         passed,
-        passingScore: apiResult.passing_score,
+        passingScore: apiResult. passing_score,
       });
 
       // Save to localStorage with proper structure
       // Load existing status to check if user has ever passed
       const existingStatus = loadTestStatusFromStorage(parseInt(testId));
-      const hasEverPassed = passed || (existingStatus?.hasEverPassed ?? false);
+      const hasEverPassed = passed || (existingStatus?. hasEverPassed ??  false);
       const bestPercentage = Math.max(
         percentage,
-        existingStatus?.bestPercentage ?? 0
+        existingStatus?.bestPercentage ??  0
       );
 
       saveTestStatusToStorage(parseInt(testId), {
@@ -146,14 +146,14 @@ export default function TestPage() {
         currentScore: apiResult.score,
         totalPoints: apiResult.total_points,
         bestPercentage,
-        attemptCount: (existingStatus?.attemptCount ?? 0) + 1,
+        attemptCount: (existingStatus?.attemptCount ??  0) + 1,
       });
 
       setIsFinished(true);
     } catch (err) {
       console.error("Failed to submit test:", err);
-      // Fallback: calculate locally
-      if (!test) return;
+      // Fallback:  calculate locally
+      if (! test) return;
 
       let correctCount = 0;
       let totalPoints = 0;
@@ -167,7 +167,7 @@ export default function TestPage() {
         totalPoints += question.points;
 
         if (
-          selected.length === correctOptions.length &&
+          selected.length === correctOptions. length &&
           selected.every((s) => correctOptions.includes(s))
         ) {
           correctCount += question.points;
@@ -175,7 +175,7 @@ export default function TestPage() {
       });
 
       const percentage = calculatePercentage(correctCount, totalPoints);
-      const passed = isTestPassed(percentage, test.passing_score);
+      const passed = isTestPassed(percentage, test. passing_score);
 
       setResult({
         score: correctCount,
@@ -262,7 +262,7 @@ export default function TestPage() {
   // RESULT SCREEN - Show pass/fail clearly
   // =========================================================================
   if (isFinished && result) {
-    const statusColors = getStatusColorClass(result.passed);
+    const statusColors = getStatusColorClass(result. passed);
 
     return (
       <div className="bg-white min-h-screen flex flex-col">
@@ -288,7 +288,7 @@ export default function TestPage() {
                     </svg>
                   </div>
                 ) : (
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 sm: mb-6">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="40"
@@ -323,7 +323,7 @@ export default function TestPage() {
                   </p>
                   <p
                     className={`text-4xl sm:text-5xl md:text-6xl font-bold ${
-                      result.passed ? "text-green-600" : "text-red-600"
+                      result.passed ?  "text-green-600" :  "text-red-600"
                     }`}
                   >
                     {formatPercentage(result.percentage)}
@@ -362,11 +362,11 @@ export default function TestPage() {
                 </div>
 
                 {/* Status message */}
-                {!result.passed && (
+                {! result.passed && (
                   <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 sm:p-4 mb-6 sm:mb-8">
                     <p className="text-orange-700 text-sm sm:text-base">
                       Для прохождения теста необходимо набрать минимум{" "}
-                      {result.passingScore}%. Попробуйте ещё раз!
+                      {result.passingScore}%.  Попробуйте ещё раз!
                     </p>
                   </div>
                 )}
@@ -403,7 +403,7 @@ export default function TestPage() {
   }
 
   // =========================================================================
-  // QUESTION SCREEN
+  // QUESTION SCREEN - TWO COLUMN LAYOUT
   // =========================================================================
   const question = test.questions[currentQuestion];
   const answeredQuestions = userAnswers.size;
@@ -411,18 +411,19 @@ export default function TestPage() {
     ((currentQuestion + 1) / test.questions.length) * 100
   );
   const selectedOptions = userAnswers.get(question.id) || [];
+  const hasAnswered = selectedOptions.length > 0;
 
   return (
     <div className="bg-white min-h-screen flex flex-col">
       <Header />
 
       <main className="flex-1 pt-12 sm:pt-16 md:pt-20">
-        <div className="max-w-3xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-12">
+        <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-12">
           {/* Progress */}
           <div className="mb-6 sm:mb-8">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs sm:text-sm font-medium text-gray-900">
-                Вопрос {currentQuestion + 1} из {test.questions.length}
+                Вопрос {currentQuestion + 1} из {test.questions. length}
               </p>
               <p className="text-xs sm:text-sm font-medium text-gray-600">
                 Отвечено: {answeredQuestions}
@@ -436,81 +437,67 @@ export default function TestPage() {
             </div>
           </div>
 
-          {/* Question Card */}
-          <Card className="mb-6 sm:mb-8">
-            <CardContent className="p-4 sm:pt-8">
-              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-6 sm:mb-8">
-                {question.question_text}
-              </h2>
+          {/* Two Column Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 mb-6 sm:mb-8">
+            {/* Left Column - Question (2/3 width) */}
+            <div className="lg:col-span-2">
+              <Card>
+                <CardContent className="p-4 sm:pt-8">
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-6 sm:mb-8">
+                    {question.question_text}
+                  </h2>
 
-              {/* Answers - touch-friendly */}
-              <div className="space-y-2 sm:space-y-3">
-                {question.options.map((option) => {
-                  const isSelected = selectedOptions.includes(option.id);
-                  const hasAnswered = selectedOptions.length > 0;
-                  const isLocked = hasAnswered; // Lock after any selection
+                  {/* Answers - touch-friendly */}
+                  <div className="space-y-2 sm:space-y-3">
+                    {question.options.map((option) => {
+                      const isSelected = selectedOptions.includes(option.id);
+                      const isLocked = hasAnswered;
 
-                  // Determine styling based on answer state
-                  let borderClass = "border-gray-200";
-                  let bgClass = "";
-                  let iconColor = "border-gray-300";
+                      // Determine styling based on answer state
+                      let borderClass = "border-gray-200";
+                      let bgClass = "";
+                      let iconColor = "border-gray-300";
 
-                  if (hasAnswered) {
-                    if (option.is_correct) {
-                      // Always highlight correct answer in green
-                      borderClass = "border-green-500";
-                      bgClass = "bg-green-50";
-                      iconColor = "border-green-500 bg-green-500";
-                    } else if (isSelected && !option.is_correct) {
-                      // User selected wrong answer - red
-                      borderClass = "border-red-500";
-                      bgClass = "bg-red-50";
-                      iconColor = "border-red-500 bg-red-500";
-                    } else {
-                      // Not selected, not correct - gray out
-                      borderClass = "border-gray-200";
-                      bgClass = "bg-gray-50";
-                    }
-                  } else if (isSelected) {
-                    borderClass = "border-blue-600";
-                    bgClass = "bg-blue-50";
-                    iconColor = "border-blue-600 bg-blue-600";
-                  }
-
-                  return (
-                    <div key={option.id} className="space-y-1">
-                      <button
-                        onClick={() =>
-                          !isLocked && handleAnswerSelect(option.id)
+                      if (hasAnswered) {
+                        if (option.is_correct) {
+                          // Always highlight correct answer in green
+                          borderClass = "border-green-500";
+                          bgClass = "bg-green-50";
+                          iconColor = "border-green-500 bg-green-500";
+                        } else if (isSelected && !option.is_correct) {
+                          // User selected wrong answer - red
+                          borderClass = "border-red-500";
+                          bgClass = "bg-red-50";
+                          iconColor = "border-red-500 bg-red-500";
+                        } else {
+                          // Not selected, not correct - gray out
+                          borderClass = "border-gray-200";
+                          bgClass = "bg-gray-50";
                         }
-                        disabled={isLocked}
-                        className={`w-full text-left p-3 sm:p-4 rounded-lg border-2 transition-all min-h-[48px] ${borderClass} ${bgClass} ${
-                          isLocked
-                            ? "cursor-default"
-                            : "hover:border-gray-300 active:border-gray-400"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <div
-                            className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${iconColor}`}
-                          >
-                            {hasAnswered && option.is_correct && (
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="14"
-                                height="14"
-                                viewBox="0 0 256 256"
-                                className="text-white"
-                              >
-                                <path
-                                  fill="currentColor"
-                                  d="M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34Z"
-                                />
-                              </svg>
-                            )}
-                            {hasAnswered &&
-                              isSelected &&
-                              !option.is_correct && (
+                      } else if (isSelected) {
+                        borderClass = "border-blue-600";
+                        bgClass = "bg-blue-50";
+                        iconColor = "border-blue-600 bg-blue-600";
+                      }
+
+                      return (
+                        <button
+                          key={option.id}
+                          onClick={() =>
+                            ! isLocked && handleAnswerSelect(option.id)
+                          }
+                          disabled={isLocked}
+                          className={`w-full text-left p-3 sm: p-4 rounded-lg border-2 transition-all min-h-[48px] ${borderClass} ${bgClass} ${
+                            isLocked
+                              ? "cursor-default"
+                              : "hover:border-gray-300 active:border-gray-400"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 sm:gap-3">
+                            <div
+                              className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${iconColor}`}
+                            >
+                              {hasAnswered && option.is_correct && (
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"
                                   width="14"
@@ -520,50 +507,142 @@ export default function TestPage() {
                                 >
                                   <path
                                     fill="currentColor"
-                                    d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"
+                                    d="M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34Z"
                                   />
                                 </svg>
                               )}
-                            {!hasAnswered && isSelected && (
-                              <span className="text-white text-xs sm:text-sm">
-                                ✓
-                              </span>
-                            )}
+                              {hasAnswered &&
+                                isSelected &&
+                                ! option.is_correct && (
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 256 256"
+                                    className="text-white"
+                                  >
+                                    <path
+                                      fill="currentColor"
+                                      d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"
+                                    />
+                                  </svg>
+                                )}
+                              {! hasAnswered && isSelected && (
+                                <span className="text-white text-xs sm:text-sm">
+                                  ✓
+                                </span>
+                              )}
+                            </div>
+                            <span
+                              className={`text-sm sm:text-base font-medium ${
+                                hasAnswered && option.is_correct
+                                  ? "text-green-800"
+                                  : hasAnswered &&
+                                    isSelected &&
+                                    !option.is_correct
+                                  ? "text-red-800"
+                                  : "text-gray-900"
+                              }`}
+                            >
+                              {option.option_text}
+                            </span>
                           </div>
-                          <span
-                            className={`text-sm sm:text-base font-medium ${
-                              hasAnswered && option.is_correct
-                                ? "text-green-800"
-                                : hasAnswered &&
-                                  isSelected &&
-                                  !option.is_correct
-                                ? "text-red-800"
-                                : "text-gray-900"
+                        </button>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Column - Descriptions Panel (1/3 width, appears only after answer) */}
+            {hasAnswered && (
+              <div className="lg:col-span-1">
+                <Card className="sticky top-32">
+                  <CardContent className="p-4 sm:p-6 max-h-[70vh] overflow-y-auto">
+                    <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-4">
+                      Описание
+                    </h3>
+
+                    {/* Question Description */}
+                    {question.description && (
+                      <div className="mb-6 pb-6 border-b border-gray-200">
+                        <p className="text-xs sm:text-sm text-gray-600 font-medium mb-2">
+                          Вопрос
+                        </p>
+                        <p className="text-sm sm:text-base text-gray-800 leading-relaxed">
+                          {question.description}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* All Options Descriptions */}
+                    <div className="space-y-4">
+                      <p className="text-xs sm:text-sm text-gray-600 font-medium">
+                        Варианты ответов
+                      </p>
+                      {question.options.map((option) => {
+                        const isSelected = selectedOptions.includes(option.id);
+                        const isCorrect = option.is_correct;
+
+                        return (
+                          <div
+                            key={option. id}
+                            className={`p-3 sm:p-4 rounded-lg border-l-4 ${
+                              isCorrect
+                                ? "bg-green-50 border-green-500"
+                                : isSelected
+                                ? "bg-red-50 border-red-500"
+                                : "bg-gray-50 border-gray-300"
                             }`}
                           >
-                            {option.option_text}
-                          </span>
-                        </div>
-                      </button>
-
-                      {/* Description in small line under answer */}
-                      {hasAnswered && option.description && (
-                        <p
-                          className={`text-xs sm:text-sm ml-8 sm:ml-9 pl-2 border-l-2 ${
-                            option.is_correct
-                              ? "border-green-400 text-green-700"
-                              : "border-gray-300 text-gray-600"
-                          }`}
-                        >
-                          {option.description}
-                        </p>
-                      )}
+                            <div className="flex items-start gap-2 mb-2">
+                              <div className="flex-shrink-0 mt-0.5">
+                                {isCorrect && (
+                                  <span className="text-green-600 font-bold">
+                                    ✓
+                                  </span>
+                                )}
+                                {isSelected && !isCorrect && (
+                                  <span className="text-red-600 font-bold">
+                                    ✗
+                                  </span>
+                                )}
+                              </div>
+                              <p
+                                className={`text-xs sm:text-sm font-medium ${
+                                  isCorrect
+                                    ? "text-green-900"
+                                    : isSelected
+                                    ? "text-red-900"
+                                    : "text-gray-900"
+                                }`}
+                              >
+                                {option. option_text}
+                              </p>
+                            </div>
+                            {option.description && (
+                              <p
+                                className={`text-xs sm:text-sm leading-relaxed ml-6 ${
+                                  isCorrect
+                                    ? "text-green-800"
+                                    : isSelected
+                                    ? "text-red-800"
+                                    : "text-gray-700"
+                                }`}
+                              >
+                                {option.description}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
 
           {/* Navigation - touch-friendly */}
           <div className="flex gap-3 sm:gap-4 justify-between">
@@ -581,7 +660,7 @@ export default function TestPage() {
               >
                 <path
                   fill="currentColor"
-                  d="M168.49,199.51a12,12,0,0,1-17,17l-80-80a12,12,0,0,1,0-17l80-80a12,12,0,0,1,17,17L97,128Z"
+                  d="M168. 49,199.51a12,12,0,0,1-17,17l-80-80a12,12,0,0,1,0-17l80-80a12,12,0,0,1,17,17L97,128Z"
                 />
               </svg>
               <span className="hidden sm:inline">Предыдущий</span>
@@ -605,7 +684,7 @@ export default function TestPage() {
                 >
                   <path
                     fill="currentColor"
-                    d="M184.49,136.49l-80,80a12,12,0,0,1-17-17L159,128,87.51,56.49a12,12,0,1,1,17-17l80,80A12,12,0,0,1,184.49,136.49Z"
+                    d="M184. 49,136.49l-80,80a12,12,0,0,1-17-17L159,128,87.51,56.49a12,12,0,1,1,17-17l80,80A12,12,0,0,1,184.49,136.49Z"
                   />
                 </svg>
               )}

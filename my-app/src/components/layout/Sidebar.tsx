@@ -97,7 +97,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       ),
     },
     {
-      label: "dashboard",
+      label: "Дашборд",
       href: "/dashboard",
       icon: (
         <svg
