@@ -170,37 +170,40 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
     if (editableRef.current && !isUpdatingRef.current) {
       const html = editableRef.current.innerHTML;
       const converted = convertHTMLToPlaceholders(html);
-      onChange(converted);
+      
+      // Только обновляем если контент действительно изменился
+      if (converted !== value) {
+        onChange(converted);
+      }
     }
-  }, [onChange]);
+  }, [onChange, value]);
 
-  // Синхронизация только при переключении режима или первой загрузке
+  // Инициализация контента только один раз при монтировании
   useEffect(() => {
-    if (editableRef.current && !codeMode && !isUpdatingRef.current) {
-      // Обновляем только если контент пустой (первая загрузка)
-      if (!editableRef.current.innerHTML || editableRef.current.innerHTML === `<p class="text-gray-400 italic">${placeholder}</p>`) {
-        const renderedValue = renderEditableContent(value);
-        if (renderedValue) {
+    if (editableRef.current && !isUpdatingRef.current) {
+      const rendered = renderEditableContent(value);
+      if (rendered) {
+        editableRef.current.innerHTML = rendered;
+      } else if (!value) {
+        editableRef.current.innerHTML = `<p class="text-gray-400 italic">${placeholder}</p>`;
+      }
+    }
+  }, []); // Только при монтировании
+
+  // Обновление при изменении value извне (например, из кода)
+  useEffect(() => {
+    if (editableRef.current && !isUpdatingRef.current && !document.activeElement?.isSameNode(editableRef.current)) {
+      const currentConverted = convertHTMLToPlaceholders(editableRef.current.innerHTML);
+      if (currentConverted !== value) {
+        const rendered = renderEditableContent(value);
+        if (rendered) {
           isUpdatingRef.current = true;
-          editableRef.current.innerHTML = renderedValue;
+          editableRef.current.innerHTML = rendered;
           isUpdatingRef.current = false;
         }
       }
     }
-  }, [codeMode]); // Зависим только от режима, не от value
-
-  // Рендерим контент при переключении из режима кода
-  useEffect(() => {
-    if (editableRef.current && !codeMode) {
-      const currentContent = convertHTMLToPlaceholders(editableRef.current.innerHTML);
-      // Если содержимое отличается от value (например, после редактирования в коде)
-      if (currentContent !== value) {
-        isUpdatingRef.current = true;
-        editableRef.current.innerHTML = renderEditableContent(value) || `<p class="text-gray-400 italic">${placeholder}</p>`;
-        isUpdatingRef.current = false;
-      }
-    }
-  }, [codeMode]);
+  }, [value, uploadedImages, libraryMedia]);
 
   const execCommand = (command: string, value?: string) => {
     document.execCommand(command, false, value);
@@ -646,6 +649,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
 
       {codeMode ? (
         <textarea
+          key="code-mode"
           ref={textareaRef}
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -654,7 +658,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
           className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg font-mono text-xs sm:text-sm focus:outline-none focus:border-blue-500 resize-y min-h-[200px] sm:min-h-[300px]"
         />
       ) : (
-        <Card className="border-2">
+        <Card key="visual-mode" className="border-2">
           <CardContent className="p-3 sm:p-4">
             <div
               ref={editableRef}
@@ -665,11 +669,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
                 minHeight: `${rows * 1.5}rem`,
               }}
               suppressContentEditableWarning
-            >
-              {!value && (
-                <p className="text-gray-400 italic">{placeholder}</p>
-              )}
-            </div>
+            />
           </CardContent>
         </Card>
       )}
