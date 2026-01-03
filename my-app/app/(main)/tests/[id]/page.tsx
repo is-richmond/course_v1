@@ -558,59 +558,51 @@ export default function TestPage() {
             {/* Right Column - Descriptions Panel (1/2 width, appears only after answer) */}
             {hasAnswered && (
               <div className="lg:col-span-1">
-                <div className="flex flex-col gap-6 sm:gap-8">
-                  {/* Question Description Card */}
-                  {question.description && (
-                    <Card className="sticky top-32">
-                      <CardContent className="p-4 sm:p-6">
-                        <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-4">
-                          Описание вопроса
-                        </h3>
+                <Card>
+                  <CardContent className="p-4 sm:p-6">
+                    <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-6">
+                      Описание
+                    </h3>
+
+                    {/* Question Description - FIRST */}
+                    {question. description && (
+                      <div className="mb-6 pb-6 border-b border-gray-200">
+                        <p className="text-xs sm:text-sm text-gray-600 font-medium mb-2">
+                          Вопрос
+                        </p>
                         <p className="text-sm sm:text-base text-gray-800 leading-relaxed">
                           {question.description}
                         </p>
-                      </CardContent>
-                    </Card>
-                  )}
+                      </div>
+                    )}
 
-                  {/* Options Descriptions Card */}
-                  <Card className="sticky top-64">
-                    <CardContent className="p-4 sm:p-6 max-h-[60vh] overflow-y-auto">
-                      <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-4">
-                        Описание ответов
-                      </h3>
-
-                      {/* All Options Descriptions */}
-                      <div className="space-y-4">
-                      <p className="text-xs sm:text-sm text-gray-600 font-medium">
+                    {/* All Options Descriptions - SECOND */}
+                    <div className="space-y-4">
+                      <p className="text-xs sm:text-sm text-gray-600 font-medium mb-4">
                         Варианты ответов
                       </p>
                       {question.options.map((option) => {
                         const isSelected = selectedOptions.includes(option.id);
-                        const isCorrect = option.is_correct;
+                        const isCorrect = option. is_correct;
 
                         return (
                           <div
-                            key={option. id}
+                            key={option.id}
                             className={`p-3 sm:p-4 rounded-lg border-l-4 ${
                               isCorrect
-                                ? "bg-green-50 border-green-500"
+                                ?  "bg-green-50 border-green-500"
                                 : isSelected
                                 ? "bg-red-50 border-red-500"
-                                : "bg-gray-50 border-gray-300"
+                                :  "bg-gray-50 border-gray-300"
                             }`}
                           >
                             <div className="flex items-start gap-2 mb-2">
                               <div className="flex-shrink-0 mt-0.5">
                                 {isCorrect && (
-                                  <span className="text-green-600 font-bold">
-                                    ✓
-                                  </span>
+                                  <span className="text-green-600 font-bold">✓</span>
                                 )}
                                 {isSelected && !isCorrect && (
-                                  <span className="text-red-600 font-bold">
-                                    ✗
-                                  </span>
+                                  <span className="text-red-600 font-bold">✗</span>
                                 )}
                               </div>
                               <p
@@ -619,10 +611,10 @@ export default function TestPage() {
                                     ? "text-green-900"
                                     : isSelected
                                     ? "text-red-900"
-                                    : "text-gray-900"
+                                    :  "text-gray-900"
                                 }`}
                               >
-                                {option. option_text}
+                                {option.option_text}
                               </p>
                             </div>
                             {option.description && (
@@ -632,7 +624,7 @@ export default function TestPage() {
                                     ? "text-green-800"
                                     : isSelected
                                     ? "text-red-800"
-                                    : "text-gray-700"
+                                    :  "text-gray-700"
                                 }`}
                               >
                                 {option.description}
@@ -644,7 +636,6 @@ export default function TestPage() {
                     </div>
                   </CardContent>
                 </Card>
-                </div>
               </div>
             )}
           </div>

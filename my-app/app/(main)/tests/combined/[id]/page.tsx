@@ -355,16 +355,16 @@ export default function CombinedTestPage() {
               </Card>
             </div>
 
-            {/* Right Column - Descriptions Panel (1/3 width, appears only after answer) */}
+            {/* Right Column - Descriptions Panel (1/2 width, appears only after answer) */}
             {hasAnswered && (
               <div className="lg:col-span-1">
-                <Card className="sticky top-32">
-                  <CardContent className="p-4 sm:p-6 max-h-[70vh] overflow-y-auto">
-                    <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-4">
+                <Card>
+                  <CardContent className="p-4 sm:p-6">
+                    <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-6">
                       Описание
                     </h3>
 
-                    {/* Question Description */}
+                    {/* Question Description - FIRST */}
                     {question.description && (
                       <div className="mb-6 pb-6 border-b border-gray-200">
                         <p className="text-xs sm:text-sm text-gray-600 font-medium mb-2">
@@ -376,9 +376,9 @@ export default function CombinedTestPage() {
                       </div>
                     )}
 
-                    {/* All Options Descriptions */}
+                    {/* All Options Descriptions - SECOND */}
                     <div className="space-y-4">
-                      <p className="text-xs sm:text-sm text-gray-600 font-medium">
+                      <p className="text-xs sm:text-sm text-gray-600 font-medium mb-4">
                         Варианты ответов
                       </p>
                       {question.options.map((option) => {
@@ -390,23 +390,19 @@ export default function CombinedTestPage() {
                             key={option.id}
                             className={`p-3 sm:p-4 rounded-lg border-l-4 ${
                               isCorrect
-                                ? "bg-green-50 border-green-500"
+                                ?  "bg-green-50 border-green-500"
                                 : isSelected
                                 ? "bg-red-50 border-red-500"
-                                : "bg-gray-50 border-gray-300"
+                                :  "bg-gray-50 border-gray-300"
                             }`}
                           >
                             <div className="flex items-start gap-2 mb-2">
                               <div className="flex-shrink-0 mt-0.5">
                                 {isCorrect && (
-                                  <span className="text-green-600 font-bold">
-                                    ✓
-                                  </span>
+                                  <span className="text-green-600 font-bold">✓</span>
                                 )}
                                 {isSelected && !isCorrect && (
-                                  <span className="text-red-600 font-bold">
-                                    ✗
-                                  </span>
+                                  <span className="text-red-600 font-bold">✗</span>
                                 )}
                               </div>
                               <p
@@ -415,7 +411,7 @@ export default function CombinedTestPage() {
                                     ? "text-green-900"
                                     : isSelected
                                     ? "text-red-900"
-                                    : "text-gray-900"
+                                    :  "text-gray-900"
                                 }`}
                               >
                                 {option.option_text}
