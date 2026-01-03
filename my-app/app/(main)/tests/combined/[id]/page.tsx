@@ -250,9 +250,9 @@ export default function CombinedTestPage() {
           </div>
 
           {/* Two Column Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {/* Left Column - Question (2/3 width) */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-1">
               <Card>
                 <CardContent className="p-6">
                   <h2 className="text-xl font-bold text-gray-900 mb-4">

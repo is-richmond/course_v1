@@ -438,9 +438,9 @@ export default function TestPage() {
           </div>
 
           {/* Two Column Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 mb-6 sm:mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mb-6 sm:mb-8">
             {/* Left Column - Question (2/3 width) */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-1">
               <Card>
                 <CardContent className="p-4 sm:pt-8">
                   <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-6 sm:mb-8">
