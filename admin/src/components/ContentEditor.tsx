@@ -141,6 +141,12 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
       (match, mediaId) => `[VIDEO:${mediaId}]`
     );
     
+    // Сохраняем spacer элементы
+    content = content.replace(
+      /<div[^>]+data-spacer="true"[^>]*style="[^"]*height:\s*([^;"]+)[^"]*"[^>]*>.*?<\/div>/g,
+      (match, height) => `<div style="height: ${height}"></div>`
+    );
+    
     return content;
   };
 
@@ -259,16 +265,24 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       
-      const div = document.createElement('div');
-      div.style.marginBottom = `${spacingValue}rem`;
-      div.innerHTML = '&nbsp;';
+      // Создаем пустой параграф с отступом
+      const spacer = document.createElement('div');
+      spacer.style.height = `${spacingValue}rem`;
+      spacer.style.lineHeight = '0';
+      spacer.innerHTML = '<br>';
+      spacer.setAttribute('data-spacer', 'true');
       
       range.deleteContents();
-      range.insertNode(div);
+      range.insertNode(spacer);
       
-      // Перемещаем курсор после вставленного элемента
+      // Добавляем параграф после spacer для продолжения ввода
+      const afterPara = document.createElement('p');
+      afterPara.innerHTML = '<br>';
+      spacer.parentNode?.insertBefore(afterPara, spacer.nextSibling);
+      
+      // Перемещаем курсор в новый параграф
       const newRange = document.createRange();
-      newRange.setStartAfter(div);
+      newRange.setStart(afterPara, 0);
       newRange.collapse(true);
       selection.removeAllRanges();
       selection.addRange(newRange);
@@ -738,6 +752,29 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
                 }
                 [contenteditable] em {
                   font-style: italic;
+                }
+                [contenteditable] div[data-spacer="true"] {
+                  display: block;
+                  background: repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 10px,
+                    #e5e7eb 10px,
+                    #e5e7eb 11px
+                  );
+                  opacity: 0.3;
+                  pointer-events: none;
+                  user-select: none;
+                }
+                [contenteditable] div[data-spacer="true"]:hover {
+                  opacity: 0.5;
+                  background: repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 10px,
+                    #3b82f6 10px,
+                    #3b82f6 11px
+                  );
                 }
               `
             }} />
