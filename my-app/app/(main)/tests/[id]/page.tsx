@@ -555,29 +555,33 @@ export default function TestPage() {
               </Card>
             </div>
 
-            {/* Right Column - Descriptions Panel (1/3 width, appears only after answer) */}
+            {/* Right Column - Descriptions Panel (1/2 width, appears only after answer) */}
             {hasAnswered && (
               <div className="lg:col-span-1">
-                <Card className="sticky top-32">
-                  <CardContent className="p-4 sm:p-6 max-h-[70vh] overflow-y-auto">
-                    <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-4">
-                      Описание
-                    </h3>
-
-                    {/* Question Description */}
-                    {question.description && (
-                      <div className="mb-6 pb-6 border-b border-gray-200">
-                        <p className="text-xs sm:text-sm text-gray-600 font-medium mb-2">
-                          Вопрос
-                        </p>
+                <div className="flex flex-col gap-6 sm:gap-8">
+                  {/* Question Description Card */}
+                  {question.description && (
+                    <Card className="sticky top-32">
+                      <CardContent className="p-4 sm:p-6">
+                        <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-4">
+                          Описание вопроса
+                        </h3>
                         <p className="text-sm sm:text-base text-gray-800 leading-relaxed">
                           {question.description}
                         </p>
-                      </div>
-                    )}
+                      </CardContent>
+                    </Card>
+                  )}
 
-                    {/* All Options Descriptions */}
-                    <div className="space-y-4">
+                  {/* Options Descriptions Card */}
+                  <Card className="sticky top-64">
+                    <CardContent className="p-4 sm:p-6 max-h-[60vh] overflow-y-auto">
+                      <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-4">
+                        Описание ответов
+                      </h3>
+
+                      {/* All Options Descriptions */}
+                      <div className="space-y-4">
                       <p className="text-xs sm:text-sm text-gray-600 font-medium">
                         Варианты ответов
                       </p>
@@ -640,6 +644,7 @@ export default function TestPage() {
                     </div>
                   </CardContent>
                 </Card>
+                </div>
               </div>
             )}
           </div>
