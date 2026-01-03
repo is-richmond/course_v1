@@ -259,24 +259,23 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       
+      // Перемещаем курсор в конец выделения (если есть выделение)
+      range.collapse(false);
+      
       // Вычисляем количество переносов строк (1rem ≈ 1.5 строки)
       const lineCount = Math.max(1, Math.round(parseFloat(spacingValue) * 1.5));
       
-      // Создаем фрагмент с несколькими br
-      const fragment = document.createDocumentFragment();
+      // Вставляем переносы строк
       for (let i = 0; i < lineCount; i++) {
-        fragment.appendChild(document.createElement('br'));
+        const br = document.createElement('br');
+        range.insertNode(br);
+        range.setStartAfter(br);
+        range.collapse(true);
       }
       
-      range.deleteContents();
-      range.insertNode(fragment);
-      
-      // Перемещаем курсор после вставленных br
-      const newRange = document.createRange();
-      newRange.setStartAfter(fragment.lastChild || fragment);
-      newRange.collapse(true);
+      // Курсор остается после вставленных переносов
       selection.removeAllRanges();
-      selection.addRange(newRange);
+      selection.addRange(range);
       
       setTimeout(() => {
         handleEditableInput();
