@@ -174,22 +174,33 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
     }
   }, [onChange]);
 
-  // Синхронизация contentEditable с value только при изменении извне
+  // Синхронизация только при переключении режима или первой загрузке
+  useEffect(() => {
+    if (editableRef.current && !codeMode && !isUpdatingRef.current) {
+      // Обновляем только если контент пустой (первая загрузка)
+      if (!editableRef.current.innerHTML || editableRef.current.innerHTML === `<p class="text-gray-400 italic">${placeholder}</p>`) {
+        const renderedValue = renderEditableContent(value);
+        if (renderedValue) {
+          isUpdatingRef.current = true;
+          editableRef.current.innerHTML = renderedValue;
+          isUpdatingRef.current = false;
+        }
+      }
+    }
+  }, [codeMode]); // Зависим только от режима, не от value
+
+  // Рендерим контент при переключении из режима кода
   useEffect(() => {
     if (editableRef.current && !codeMode) {
-      const renderedValue = renderEditableContent(value);
-      const currentHTML = editableRef.current.innerHTML;
-      
-      // Проверяем, отличается ли рендер от текущего содержимого
-      if (currentHTML !== renderedValue) {
+      const currentContent = convertHTMLToPlaceholders(editableRef.current.innerHTML);
+      // Если содержимое отличается от value (например, после редактирования в коде)
+      if (currentContent !== value) {
         isUpdatingRef.current = true;
-        const savedRange = saveSelection();
-        editableRef.current.innerHTML = renderedValue;
-        restoreSelection(savedRange);
+        editableRef.current.innerHTML = renderEditableContent(value) || `<p class="text-gray-400 italic">${placeholder}</p>`;
         isUpdatingRef.current = false;
       }
     }
-  }, [value, codeMode, uploadedImages, libraryMedia]);
+  }, [codeMode]);
 
   const execCommand = (command: string, value?: string) => {
     document.execCommand(command, false, value);
@@ -654,8 +665,11 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
                 minHeight: `${rows * 1.5}rem`,
               }}
               suppressContentEditableWarning
-              dangerouslySetInnerHTML={{ __html: renderEditableContent(value) || `<p class="text-gray-400 italic">${placeholder}</p>` }}
-            />
+            >
+              {!value && (
+                <p className="text-gray-400 italic">{placeholder}</p>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
