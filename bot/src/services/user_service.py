@@ -14,19 +14,19 @@ class UserService:
     
     async def get_or_create_user(
         self, 
-        telegram_id:  int, 
+        telegram_id: int, 
         username: str, 
-        first_name:  str
+        first_name: str
     ) -> dict:
         """Get existing user or create new one"""
         # Check if user exists
-        user = await self.api_service. check_user_by_telegram_id(telegram_id)
+        user = await self.api_service.check_user_by_telegram_id(telegram_id)
         
         if user:
             return {
                 "exists": True,
                 "user_id": user.id,
-                "user":  user
+                "user": user
             }
         
         # Create new user if doesn't exist

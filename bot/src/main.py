@@ -5,13 +5,13 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage
-from aiogram.client. default import DefaultBotProperties
+from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 import sys
 from pathlib import Path
 
 # Add parent directory to path
-sys.path. insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.config import settings
 from src.utils.logger import get_logger
@@ -35,8 +35,8 @@ async def main():
     """Main bot function"""
     try:
         logger.info("🤖 Starting Telegram Bot...")
-        logger.info(f"Bot token: {settings.BOT_TOKEN[: 10]}***")
-        logger.info(f"Core API:  {settings. CORE_API_URL}")
+        logger.info(f"Bot token: {settings.BOT_TOKEN[:10]}***")
+        logger.info(f"Core API: {settings.CORE_API_URL}")
         logger.info(f"S3 Bucket: {settings.S3_BUCKET}")
         
         # Initialize bot
@@ -57,7 +57,7 @@ async def main():
         dp.include_router(photo.router)
         
         # Register error handler
-        dp.error. register(errors.error_handler)
+        dp.errors.register(errors.error_handler)
         
         # Start polling
         logger.info("✅ Bot started successfully!")
@@ -69,7 +69,7 @@ async def main():
         )
         
     except Exception as e:
-        logger. error(f"❌ Failed to start bot: {e}")
+        logger.error(f"❌ Failed to start bot: {e}")
         sys.exit(1)
     finally:
         await bot.session.close()

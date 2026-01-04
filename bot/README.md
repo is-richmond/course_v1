@@ -31,10 +31,10 @@ python -m venv venv
 source venv/bin/activate  # На Windows: venv\Scripts\activate
 
 # Устанавливаем зависимости
-pip install -r requirements. txt
+pip install -r requirements.txt
 
-# Создаем . env файл
-cp .env. example .env
+# Создаем .env файл
+cp .env.example .env
 # Редактируем .env с вашими данными
 
 # Запускаем бота

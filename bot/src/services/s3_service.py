@@ -3,7 +3,7 @@
 import boto3
 import uuid
 from src.config import settings
-from src. utils.logger import get_logger
+from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -52,10 +52,10 @@ class S3Service:
                 "bucket": self.bucket
             }
         except Exception as e:
-            logger. error(f"S3 upload error: {e}")
+            logger.error(f"S3 upload error: {e}")
             return {
                 "success": False,
-                "error":  str(e)
+                "error": str(e)
             }
     
     async def get_photo_url(self, s3_key: str) -> str:
@@ -63,7 +63,7 @@ class S3Service:
         try: 
             url = f"{settings.S3_ENDPOINT}/{self.bucket}/{s3_key}"
             return url
-        except Exception as e: 
+        except Exception as e:
             logger.error(f"Get URL error: {e}")
             return ""
     

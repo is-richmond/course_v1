@@ -6,10 +6,10 @@ from src.config import settings
 
 def get_logger(name: str) -> logging.Logger:
     """Get configured logger"""
-    logger = logging. getLogger(name)
+    logger = logging.getLogger(name)
     
     if not logger.handlers:
-        logger. setLevel(settings.LOG_LEVEL)
+        logger.setLevel(settings.LOG_LEVEL)
         
         # Console handler
         console_handler = logging.StreamHandler(sys.stdout)

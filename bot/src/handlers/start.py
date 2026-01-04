@@ -4,7 +4,7 @@ from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.types import Message, FSInputFile
 from aiogram.fsm.context import FSMContext
-from src. services.api_service import APIService
+from src.services.api_service import APIService
 from src.services.user_service import UserService
 from src.utils.logger import get_logger
 
@@ -22,7 +22,7 @@ async def cmd_start(message: Message, state: FSMContext):
     username = message.from_user.username or "unknown"
     first_name = message.from_user.first_name or "User"
     
-    logger.info(f"🤖 User started bot:  {telegram_id} (@{username})")
+    logger.info(f"🤖 User started bot: {telegram_id} (@{username})")
     
     # Get or create user
     result = await user_service.get_or_create_user(
@@ -31,7 +31,7 @@ async def cmd_start(message: Message, state: FSMContext):
         first_name=first_name
     )
     
-    user_id = result. get("user_id")
+    user_id = result.get("user_id")
     
     if not user_id:
         await message.answer(
@@ -82,7 +82,7 @@ async def cmd_help(message: Message):
 async def cmd_profile(message: Message, state: FSMContext):
     """Handle /profile command"""
     data = await state.get_data()
-    user_id = data. get("user_id")
+    user_id = data.get("user_id")
     
     if not user_id: 
         await message.answer("❌ Сначала используйте /start")
@@ -97,17 +97,17 @@ async def cmd_profile(message: Message, state: FSMContext):
             f"Имя: {user.first_name}\n"
             f"Email: {user.email}\n"
             f"Статус: {'✅ Верифицирован' if user.is_verified else '⏳ На проверке'}\n"
-            f"Дата регистрации: {user.created_at. strftime('%d.%m.%Y')}"
+            f"Дата регистрации: {user.created_at.strftime('%d.%m.%Y')}"
         )
         await message.answer(profile_text)
     else:
-        await message. answer("❌ Профиль не найден")
+        await message.answer("❌ Профиль не найден")
 
 
 @router.message(Command("photos"))
 async def cmd_photos(message: Message, state: FSMContext):
     """Handle /photos command"""
-    data = await state. get_data()
+    data = await state.get_data()
     user_id = data.get("user_id")
     
     if not user_id:

@@ -5,7 +5,7 @@ from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 import io
 from src.services.api_service import APIService
-from src. services.s3_service import S3Service
+from src.services.s3_service import S3Service
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -35,11 +35,10 @@ async def handle_photo(message: Message, state: FSMContext):
         photo = message.photo[-1]
         file = await message.bot.get_file(photo.file_id)
         
-        # Download photo
-        photo_data = await message.bot.session.get(
-            f"https://api.telegram.org/file/bot{message.bot.token}/{file.file_path}"
-        )
-        file_bytes = photo_data.content
+        # Download photo using bot's download method
+        file_bytes = io.BytesIO()
+        await message.bot.download_file(file.file_path, file_bytes)
+        file_bytes = file_bytes.getvalue()
         
         logger.info(f"📥 Photo downloaded: {len(file_bytes)} bytes")
         
@@ -58,7 +57,7 @@ async def handle_photo(message: Message, state: FSMContext):
             await message.answer(
                 "✅ Фото успешно загружено!\n\n"
                 f"📁 Файл: {photo_response.s3_key}\n"
-                f"⏰ Время:  {photo_response.uploaded_at.strftime('%d. %m.%Y %H:%M')}\n\n"
+                f"⏰ Время: {photo_response.uploaded_at.strftime('%d.%m.%Y %H:%M')}\n\n"
                 "📸 Вы можете загружать еще фото или используйте /photos для просмотра всех"
             )
             logger.info(f"✅ Photo uploaded: {user_id}")
@@ -71,12 +70,12 @@ async def handle_photo(message: Message, state: FSMContext):
     except Exception as e: 
         logger.error(f"Photo handling error: {e}")
         await status_message.edit_text(
-            f"❌ Ошибка:  {str(e)}\n\n"
+            f"❌ Ошибка: {str(e)}\n\n"
             "Попробуйте еще раз или свяжитесь с поддержкой."
         )
 
 
-@router.message(F. document)
+@router.message(F.document)
 async def handle_document(message: Message):
     """Handle other file types"""
     await message.answer(
@@ -88,7 +87,7 @@ async def handle_document(message: Message):
 @router.message(F.text)
 async def handle_text(message: Message, state: FSMContext):
     """Handle unexpected text"""
-    text = message.text. lower()
+    text = message.text.lower()
     
     if text in ["привет", "hello", "hi", "ё", "привет"]:
         await message.answer("👋 Привет! Отправьте мне фото для загрузки.")

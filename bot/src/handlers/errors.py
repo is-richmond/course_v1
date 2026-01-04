@@ -14,8 +14,8 @@ async def error_handler(update: Update, exception: Exception):
     
     if update.message:
         try:
-            await update.message. answer(
-                "❌ Произошла ошибка.  Пожалуйста, попробуйте позже.\n\n"
+            await update.message.answer(
+                "❌ Произошла ошибка. Пожалуйста, попробуйте позже.\n\n"
                 "Если проблема повторяется, свяжитесь с поддержкой."
             )
         except Exception as e:
