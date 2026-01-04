@@ -142,6 +142,35 @@ services:
       uvicorn core.src.app.main:app --host 0.0.0.0 --port 8000 --reload
       "
 
+  bot:
+    build: 
+      context: ./bot
+      dockerfile: Dockerfile
+    container_name: plexus-bot
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - BOT_USERNAME=${BOT_USERNAME}
+      - CORE_API_URL=http://core:8000
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET=${S3_BUCKET}
+      - S3_REGION=${S3_REGION}
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      - LOG_LEVEL=INFO
+    depends_on:
+      - db
+      - core
+    restart: unless-stopped
+    networks:
+      - plexus-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+
   # Traefik reverse proxy
   traefik:
     image: traefik:v2.10
