@@ -29,7 +29,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       "ru-RU"
     )}`;
     const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/79999999999?text=${encodedMessage}`, "_blank");
+    window.open(`https://wa.me/77075934615?text=${encodedMessage}`, "_blank");
     setIsSubmitted(true);
   };
 
@@ -82,7 +82,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     <p className="font-medium text-green-800">
                       Связаться через WhatsApp
                     </p>
-                    <p className="text-sm text-green-600">+7 999 999-99-99</p>
+                    <p className="text-sm text-green-600">+7 707 593 46 15</p>
                   </div>
                 </div>
               </div>

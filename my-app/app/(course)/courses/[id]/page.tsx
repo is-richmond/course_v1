@@ -154,13 +154,13 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
     setIsLoadingLessons(true);
     try {
       const modulesData = await Promise.all(
-        moduleIds.map(async (moduleId) => {
+        moduleIds. map(async (moduleId) => {
           try {
             const moduleWithLessons = await modulesAPI.getWithLessons(moduleId);
             return { id: moduleId, data: moduleWithLessons };
           } catch (err) {
             console.error(
-              `Failed to fetch lessons for module ${moduleId}:`,
+              `Failed to fetch lessons for module ${moduleId}: `,
               err
             );
             return { id: moduleId, data: null };
@@ -170,10 +170,14 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
 
       const newMap = new Map<number, any>();
       modulesData.forEach(({ id, data }) => {
-        if (data) {
+        if (data?. lessons) {
+          console.log(`✅ Loaded module ${id} with ${data.lessons.length} lessons`, data);
           newMap.set(id, data);
+        } else {
+          console.warn(`⚠️ Module ${id} has no lessons`, data);
         }
       });
+      
       setModulesWithLessons(newMap);
       return newMap;
     } catch (err) {
@@ -405,20 +409,39 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
   // Use modules from API
   const modules = course.modules || [];
 
-  // Helper to get lessons for a module from loaded data - SORTED BY ID
-  const getModuleLessons = (moduleId: number) => {
+  // Helper to get lessons for a module from loaded data
+  const getModuleLessons = (moduleId:  number) => {
+    // Сначала проверяем Map
     const moduleData = modulesWithLessons.get(moduleId);
-    const lessons = moduleData?.lessons || [];
-    // Sort lessons by id ascending to ensure correct order
-    return [...lessons].sort((a: any, b: any) => a.id - b.id);
+    if (moduleData?. lessons) {
+      return [...moduleData.lessons]. sort(
+        (a:  any, b: any) => (a.order_index ??  a.id) - (b.order_index ?? b.id)
+      );
+    }
+    
+    // Если нет в Map, проверяем исходные данные из API
+    if (course?. modules) {
+      const moduleFromCourse = course.modules.find((m:  any) => m.id === moduleId);
+      if (moduleFromCourse?.lessons) {
+        return [...moduleFromCourse.lessons].sort(
+          (a: any, b: any) => (a.order_index ?? a. id) - (b.order_index ?? b.id)
+        );
+      }
+    }
+    
+    return [];
   };
 
   // Get total lessons count
   const getTotalLessons = () => {
     let total = 0;
-    modules.forEach((m: any) => {
-      total += getModuleLessons(m.id).length;
+    const modules = course?.modules || [];
+    modules. forEach((m: any) => {
+      const lessons = getModuleLessons(m. id);
+      console.log(`Module ${m.id} (${m.title}): ${lessons.length} lessons`);
+      total += lessons.length;
     });
+    console.log(`Total lessons: ${total}`);
     return total;
   };
 

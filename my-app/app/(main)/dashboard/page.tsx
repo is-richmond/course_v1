@@ -195,7 +195,7 @@ export default function CombinedTestsDashboardPage() {
                         </div>
                       </div>
                       <p className="text-3xl font-bold text-gray-900">
-                        {overallStats.average_score.toFixed(1)}%
+                        {overallStats.overall_percentage.toFixed(1)}%
                       </p>
                     </CardContent>
                   </Card>
