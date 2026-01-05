@@ -1,4 +1,4 @@
-# core/src/app/models/course_media.py - обновленная модель с test_question_id
+# core/src/app/models/course_media.py - обновленная модель с user_id для бота
 
 from sqlalchemy import Column, String, Integer, DateTime, BigInteger, ForeignKey
 from sqlalchemy.sql import func
@@ -29,6 +29,9 @@ class CourseMedia(Base):
     # НОВОЕ: Привязка к описанию вопроса
     test_question_id = Column(Integer, ForeignKey('test_questions.id'), nullable=True)
     
+    # НОВОЕ: Привязка к пользователю (для бота)
+    user_id = Column(Integer, nullable=True)
+    
     # Метаданные
     width = Column(Integer, nullable=True)
     height = Column(Integer, nullable=True)
@@ -48,6 +51,8 @@ class CourseMedia(Base):
     # НОВОЕ: Связь с вопросом теста
     test_question = relationship("TestQuestion", back_populates="description_media")
     
+    # НОВОЕ: Связь с пользователем
+    
     def to_dict(self):
         return {
             'id': self.id,
@@ -60,12 +65,13 @@ class CourseMedia(Base):
             's3_key': self.s3_key,
             'course_id': self.course_id,
             'lesson_id': self.lesson_id,
-            'question_option_id': self.question_option_id,
+            'question_option_id': self. question_option_id,
             'test_question_id': self.test_question_id,
+            'user_id': self.user_id,  # ← ДОБАВЬ
             'width': self.width,
             'height': self.height,
-            'duration': self.duration,
+            'duration': self. duration,
             'uploaded_by': self.uploaded_by,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'created_at': self. created_at.isoformat() if self.created_at else None,
+            'updated_at':  self.updated_at.isoformat() if self.updated_at else None,
         }

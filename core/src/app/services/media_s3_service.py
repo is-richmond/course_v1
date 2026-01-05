@@ -48,19 +48,19 @@ class MediaS3Service:
         Returns:
             tuple[bool, str]: (is_valid, error_message)
         """
-        if media_type == 'image':
+        if media_type == 'image': 
             # Проверка размера изображения
             if file_size > media_s3_settings.MAX_IMAGE_SIZE:
                 return False, f"Размер изображения превышает {media_s3_settings.MAX_IMAGE_SIZE / (1024*1024)}MB"
             
             # Проверка типа изображения
             if content_type not in media_s3_settings.ALLOWED_IMAGE_TYPES:
-                return False, f"Недопустимый тип изображения. Разрешены: {', '.join(media_s3_settings.ALLOWED_IMAGE_TYPES)}"
+                return False, f"Недопустимый тип изображения.  Разрешены: {', '.join(media_s3_settings.ALLOWED_IMAGE_TYPES)}"
             
             # Проверка расширения
             ext = filename.split('.')[-1].lower() if '.' in filename else ''
             if ext not in media_s3_settings.ALLOWED_IMAGE_EXTENSIONS:
-                return False, f"Недопустимое расширение файла. Разрешены: {', '.join(media_s3_settings.ALLOWED_IMAGE_EXTENSIONS)}"
+                return False, f"Недопустимое расширение файла. Разрешены: {', '.join(media_s3_settings. ALLOWED_IMAGE_EXTENSIONS)}"
         
         elif media_type == 'video':
             # Проверка размера видео
@@ -73,8 +73,8 @@ class MediaS3Service:
             
             # Проверка расширения
             ext = filename.split('.')[-1].lower() if '.' in filename else ''
-            if ext not in media_s3_settings.ALLOWED_VIDEO_EXTENSIONS:
-                return False, f"Недопустимое расширение файла. Разрешены: {', '.join(media_s3_settings.ALLOWED_VIDEO_EXTENSIONS)}"
+            if ext not in media_s3_settings.ALLOWED_VIDEO_EXTENSIONS: 
+                return False, f"Недопустимое расширение файла. Разрешены:  {', '.join(media_s3_settings.ALLOWED_VIDEO_EXTENSIONS)}"
         
         return True, ""
     
@@ -105,18 +105,20 @@ class MediaS3Service:
         media_type: Literal['image', 'video'],
         content_type: str = None,
         course_id: Optional[int] = None,
-        lesson_id: Optional[int] = None
+        lesson_id: Optional[int] = None,
+        user_id: Optional[int] = None  # ← ДОБАВЬ ЭТО
     ) -> tuple[str, dict]:
         """
         Загружает медиа-файл в S3
         
         Args:
-            file_obj: Поток байтов файла
-            filename: Имя файла
+            file_obj:  Поток байтов файла
+            filename:  Имя файла
             media_type: Тип медиа ('image' или 'video')
-            content_type: MIME-тип
+            content_type:  MIME-тип
             course_id: ID курса (опционально)
             lesson_id: ID урока (опционально)
+            user_id: ID пользователя (опционально, для фото от бота)  # ← ДОБАВЬ ОПИСАНИЕ
             
         Returns:
             tuple[str, dict]: (s3_key, metadata)
@@ -125,14 +127,18 @@ class MediaS3Service:
             # Определяем content_type
             if not content_type:
                 content_type, _ = mimetypes.guess_type(filename)
-                if not content_type:
+                if not content_type: 
                     content_type = 'application/octet-stream'
             
             # Генерируем путь в S3
-            file_extension = filename.split('.')[-1] if '.' in filename else ''
+            file_extension = filename. split('.')[-1] if '.' in filename else ''
             unique_id = str(uuid.uuid4())
             
-            if course_id and lesson_id:
+            # ← ОБНОВЛЕННАЯ ЛОГИКА: проверяем user_id в первую очередь
+            if user_id:
+                # Для фото от Telegram бота
+                s3_key = f"user-photos/{user_id}/{media_type}s/{unique_id}.{file_extension}"
+            elif course_id and lesson_id:
                 s3_key = f"courses/{course_id}/lessons/{lesson_id}/{media_type}s/{unique_id}.{file_extension}"
             elif course_id:
                 s3_key = f"courses/{course_id}/{media_type}s/{unique_id}.{file_extension}"
@@ -143,7 +149,7 @@ class MediaS3Service:
             metadata = {}
             
             # Для изображений получаем размеры
-            if media_type == 'image':
+            if media_type == 'image': 
                 width, height = self.get_image_dimensions(file_obj)
                 metadata['width'] = width
                 metadata['height'] = height
@@ -156,6 +162,12 @@ class MediaS3Service:
                 s3_key,
                 ExtraArgs={
                     'ContentType': content_type,
+                    'Metadata': {
+                        'media_type': media_type,
+                        'course_id': str(course_id) if course_id else '',
+                        'lesson_id':  str(lesson_id) if lesson_id else '',
+                        'user_id': str(user_id) if user_id else '',
+                    }
                 }
             )
             
@@ -171,7 +183,7 @@ class MediaS3Service:
         try:
             response = self.client.get_object(Bucket=self.bucket, Key=s3_key)
             return response['Body'].read()
-        except ClientError as e:
+        except ClientError as e: 
             if e.response['Error']['Code'] == 'NoSuchKey':
                 raise Exception("Media not found in S3")
             logger.error(f"Error downloading media from S3: {e}")
@@ -179,20 +191,20 @@ class MediaS3Service:
     
     def delete_media(self, s3_key: str) -> bool:
         """Удаляет медиа из S3"""
-        try:
+        try: 
             self.client.delete_object(Bucket=self.bucket, Key=s3_key)
             logger.info(f"Media deleted successfully from S3: {s3_key}")
             return True
-        except Exception as e:
+        except Exception as e: 
             logger.error(f"Error deleting media from S3: {e}")
             raise Exception(f"Failed to delete media: {e}")
     
     def generate_presigned_url(self, s3_key: str, expires_in: int = 3600) -> str:
         """Генерирует временную ссылку"""
         try:
-            url = self.client.generate_presigned_url(
+            url = self. client.generate_presigned_url(
                 'get_object',
-                Params={'Bucket': self.bucket, 'Key': s3_key},
+                Params={'Bucket': self.bucket, 'Key':  s3_key},
                 ExpiresIn=expires_in
             )
             return url
@@ -207,7 +219,7 @@ class MediaS3Service:
             logger.info(f"S3 connection successful for bucket: {self.bucket}")
             return True
         except Exception as e:
-            logger.error(f"S3 connection failed: {e}")
+            logger.error(f"S3 connection failed:  {e}")
             return False
 
 # Создаем экземпляр сервиса

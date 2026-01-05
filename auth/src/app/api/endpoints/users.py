@@ -3,6 +3,8 @@
 import logging
 from typing import List, Optional
 from uuid import UUID
+from sqlalchemy import select
+
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -234,6 +236,32 @@ async def delete_user_by_id(
     logger.info(f"Admin {current_user.email} deleted user: {user.email}")
 
 
+
+@router.get("/phone/{phone}")
+async def get_user_by_phone(
+    phone: str,
+    session: AsyncSession = Depends(get_async_session)
+):
+    """Get user by phone number"""
+    stmt = select(User).where(User.phone_number == phone)  # ← ИЗМЕНИ phone НА phone_number
+    result = await session.execute(stmt)
+    user = result.scalar_one_or_none()
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    return {
+        "id": user.id,
+        "phone": user.phone_number,  # ← ИЗМЕНИ ЗДЕСЬ ТОЖ
+        "email": user. email,
+        "first_name": user.first_name,
+        "last_name":  user.last_name,
+        "is_verified": user.is_verified,
+        "created_at":  user.created_at
+    }
 # # Include FastAPI Users router
 # router.include_router(
 #     fastapi_users.get_users_router(UserRead, UserUpdate),

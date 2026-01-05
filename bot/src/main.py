@@ -4,28 +4,24 @@ import asyncio
 import logging
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.fsm.storage.redis import RedisStorage
-from aiogram.client.default import DefaultBotProperties
+from aiogram.client. default import DefaultBotProperties
 from aiogram.enums import ParseMode
 import sys
 from pathlib import Path
 
-# Add parent directory to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.config import settings
 from src.utils.logger import get_logger
-from src.handlers import start, photo, errors
+from src.handlers import start, photo, commands, admin, errors
 
 logger = get_logger(__name__)
 
-# Configure logging
 logging.basicConfig(
     level=settings.LOG_LEVEL,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
-# Reduce verbosity for third-party libraries
 logging.getLogger('aiogram').setLevel(logging.INFO)
 logging.getLogger('httpx').setLevel(logging.WARNING)
 logging.getLogger('asyncio').setLevel(logging.WARNING)
@@ -35,31 +31,25 @@ async def main():
     """Main bot function"""
     try:
         logger.info("🤖 Starting Telegram Bot...")
-        logger.info(f"Bot token: {settings.BOT_TOKEN[:10]}***")
+        logger.info(f"Bot token: {settings.BOT_TOKEN[: 10]}***")
         logger.info(f"Core API: {settings.CORE_API_URL}")
         logger.info(f"S3 Bucket: {settings.S3_BUCKET}")
         
-        # Initialize bot
         bot = Bot(
             token=settings.BOT_TOKEN,
             default=DefaultBotProperties(parse_mode=ParseMode.HTML)
         )
         
-        # Initialize storage (Memory for dev, Redis for prod)
-        # storage = RedisStorage. from_url("redis://localhost:6379/0")
         storage = MemoryStorage()
-        
-        # Initialize dispatcher
         dp = Dispatcher(storage=storage)
         
-        # Register routers
+        # Регистрируем роутеры
         dp.include_router(start.router)
+        dp.include_router(commands.router)
+        dp.include_router(admin.router)
         dp.include_router(photo.router)
+        dp.include_router(errors.router)
         
-        # Register error handler
-        dp.errors.register(errors.error_handler)
-        
-        # Start polling
         logger.info("✅ Bot started successfully!")
         logger.info("🚀 Listening for messages...")
         
@@ -69,7 +59,7 @@ async def main():
         )
         
     except Exception as e:
-        logger.error(f"❌ Failed to start bot: {e}")
+        logger. error(f"❌ Failed to start bot: {e}")
         sys.exit(1)
     finally:
         await bot.session.close()

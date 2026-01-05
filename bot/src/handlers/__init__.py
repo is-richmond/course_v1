@@ -2,4 +2,4 @@
 
 from .  import start, photo, errors
 
-__all__ = ["start", "photo", "errors"]
+__all__ = ["start", "photo", "errors", "commands", "admin"]

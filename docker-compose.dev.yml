@@ -9,14 +9,14 @@ services:
       - POSTGRES_DB=${AUTH_POSTGRES_DB:-authdb}
     ports:
       - "5432:5432"
-    volumes: 
+    volumes:   
       - postgres-auth-data:/var/lib/postgresql/data
     networks:
       - auth-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${AUTH_POSTGRES_USER:-authuser} -d ${AUTH_POSTGRES_DB:-authdb}"]
-      interval: 10s
+      test:   ["CMD-SHELL", "pg_isready -U ${AUTH_POSTGRES_USER:-authuser} -d ${AUTH_POSTGRES_DB:-authdb}"]
+      interval:  10s
       timeout: 5s
       retries: 5
 
@@ -37,7 +37,28 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${CORE_POSTGRES_USER:-coreuser} -d ${CORE_POSTGRES_DB:-coredb}"]
-      interval:  10s
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ← BOT DATABASE (НОВАЯ!)
+  postgres-bot:
+    image: postgres:16-alpine
+    container_name:  course-postgres-bot
+    environment:
+      - POSTGRES_USER=${BOT_POSTGRES_USER:-botuser}
+      - POSTGRES_PASSWORD=${BOT_POSTGRES_PASSWORD:-botpass}
+      - POSTGRES_DB=${BOT_POSTGRES_DB:-botdb}
+    ports:
+      - "5434:5432"
+    volumes: 
+      - postgres-bot-data:/var/lib/postgresql/data
+    networks:
+      - bot-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${BOT_POSTGRES_USER:-botuser} -d ${BOT_POSTGRES_DB:-botdb}"]
+      interval: 10s
       timeout: 5s
       retries: 5
 
@@ -75,8 +96,8 @@ services:
       - "traefik.http.routers.auth-api.service=auth"
       - "traefik.http.routers.auth-api.priority=10"
       
-      # Docs routes - ИЗМЕНИТЬ правило и УБРАТЬ middleware
-      - "traefik.http.routers.auth-docs.rule=Host(`localhost`) && PathPrefix(`/auth`)"  # Изменено!
+      # Docs routes
+      - "traefik.http.routers.auth-docs.rule=Host(`localhost`) && PathPrefix(`/auth`)"
       - "traefik.http.routers.auth-docs.entrypoints=web"
       - "traefik.http.routers.auth-docs.service=auth"
       - "traefik.http.routers.auth-docs.priority=100"
@@ -122,18 +143,17 @@ services:
       - traefik-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.core-api.rule=Host(`localhost`) && (PathPrefix(`/v1/courses`) || PathPrefix(`/v1/media`) || PathPrefix(`/v1/s3`) || PathPrefix(`/v1/lessons`) || PathPrefix(`/v1/progress`) || PathPrefix(`/v1/modules`) || PathPrefix(`/v1/options`) || PathPrefix(`/v1/progress`) || PathPrefix(`/v1/questions`) || PathPrefix(`/v1/tests`) || PathPrefix(`/v1/combined`))"
+      - "traefik.http.routers.core-api.rule=Host(`localhost`) && (PathPrefix(`/v1/courses`) || PathPrefix(`/v1/media`) || PathPrefix(`/v1/s3`) || PathPrefix(`/v1/lessons`) || PathPrefix(`/v1/progress`) || PathPrefix(`/v1/modules`) || PathPrefix(`/v1/options`) || PathPrefix(`/v1/progress`) || PathPrefix(`/v1/questions`) || PathPrefix(`/v1/tests`) || PathPrefix(`/v1/combined`) || PathPrefix(`/v1/photos`))"
       - "traefik.http.routers.core-api.entrypoints=web"
       - "traefik.http.routers.core-api.service=core"
       - "traefik.http.routers.core-api.priority=5"
       
-      - "traefik.http.routers.core-docs.rule=Host(`localhost`) && PathPrefix(`/core`)"  # Изменено!
+      - "traefik.http.routers.core-docs.rule=Host(`localhost`) && PathPrefix(`/core`)"
       - "traefik.http.routers.core-docs.entrypoints=web"
       - "traefik.http.routers.core-docs.service=core"
       - "traefik.http.routers.core-docs.priority=100"
       
-      
-      - "traefik.http.services.core.loadbalancer.server.port=8000"
+      - "traefik. http.services.core.loadbalancer.server.port=8000"
     entrypoint: []
     command: >
       sh -c "
@@ -142,34 +162,42 @@ services:
       uvicorn core.src.app.main:app --host 0.0.0.0 --port 8000 --reload
       "
 
+  # ← TELEGRAM BOT
   bot:
-    build: 
+    build:  
       context: ./bot
       dockerfile: Dockerfile
     container_name: plexus-bot
-    environment:
+    environment: 
       - BOT_TOKEN=${BOT_TOKEN}
-      - BOT_USERNAME=${BOT_USERNAME}
+      - BOT_USERNAME=${BOT_USERNAME:-plexus_bot}
       - CORE_API_URL=http://core:8000
       - S3_ENDPOINT=${S3_ENDPOINT}
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_BUCKET=${S3_BUCKET}
       - S3_REGION=${S3_REGION}
-      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      - DATABASE_URL=postgresql://${BOT_POSTGRES_USER:-botuser}:${BOT_POSTGRES_PASSWORD:-botpass}@postgres-bot:5432/${BOT_POSTGRES_DB:-botdb}
       - LOG_LEVEL=INFO
+      - PYTHONPATH=/app
+    volumes:
+      - ./bot/src:/app/src:rw
     depends_on:
-      - db
-      - core
+      postgres-bot:  
+        condition: service_healthy
+      auth:
+        condition: service_started
+      core:
+        condition: service_started
     restart: unless-stopped
-    networks:
-      - plexus-network
+    networks:  
+      - bot-network
+      - shared-network
     logging:
       driver: "json-file"
-      options:
+      options:  
         max-size: "10m"
         max-file: "3"
-
 
   # Traefik reverse proxy
   traefik:
@@ -182,21 +210,24 @@ services:
       - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./traefik.dev.yml:/etc/traefik/traefik.dev.yml
+      - ./traefik. dev.yml:/etc/traefik/traefik.dev. yml
     networks:
       - traefik-network
     restart: unless-stopped
 
-volumes:
-  postgres-auth-data:
-  postgres-core-data: 
+volumes: 
+  postgres-auth-data:  
+  postgres-core-data:
+  postgres-bot-data:  
 
 networks:
-  auth-network: 
+  auth-network:  
     driver: bridge
-  core-network:
+  core-network: 
     driver: bridge
-  shared-network:
+  bot-network: 
+    driver: bridge
+  shared-network: 
     driver: bridge
   traefik-network:
     external: true
