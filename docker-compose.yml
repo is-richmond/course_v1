@@ -38,6 +38,27 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${CORE_POSTGRES_USER:-coreuser} -d ${CORE_POSTGRES_DB:-coredb}"]
       interval: 10s
+      timeout:  5s
+      retries:  5
+
+  # Bot service database
+  postgres-bot:
+    image: postgres:16-alpine
+    container_name: course-postgres-bot
+    environment:
+      - POSTGRES_USER=${BOT_POSTGRES_USER:-botuser}
+      - POSTGRES_PASSWORD=${BOT_POSTGRES_PASSWORD:-botpass}
+      - POSTGRES_DB=${BOT_POSTGRES_DB:-botdb}
+    ports:
+      - "5434:5432"
+    volumes: 
+      - postgres-bot-data:/var/lib/postgresql/data
+    networks:
+      - bot-network
+    restart:  unless-stopped
+    healthcheck: 
+      test: ["CMD-SHELL", "pg_isready -U ${BOT_POSTGRES_USER:-botuser} -d ${BOT_POSTGRES_DB:-botdb}"]
+      interval:  10s
       timeout: 5s
       retries: 5
 
@@ -102,7 +123,7 @@ services:
 
   # Core service
   core:
-    build:
+    build: 
       context: ./core
       dockerfile: Dockerfile
     container_name: course-core-app
@@ -144,7 +165,7 @@ services:
       - "traefik.http.routers.core-docs.tls.certresolver=letsencrypt"
       - "traefik.http.routers.core-docs.service=core"
       - "traefik.http.routers.core-docs.priority=100"
-      - "traefik.http.routers.core-docs.middlewares=cors-api"  # ADD THIS LINE
+      - "traefik.http.routers.core-docs.middlewares=cors-api"
 
       - "traefik.http.services.core.loadbalancer.server.port=8000"
     entrypoint: []
@@ -154,6 +175,43 @@ services:
       alembic upgrade head &&
       uvicorn core.src.app.main:app --host 0.0.0.0 --port 8000 --reload
       "
+
+  # Telegram Bot
+  bot:
+    build:   
+      context: ./bot
+      dockerfile: Dockerfile
+    container_name: course-bot
+    environment:  
+      - BOT_TOKEN=${BOT_TOKEN}
+      - BOT_USERNAME=${BOT_USERNAME:-plexus_bot}
+      - CORE_API_URL=http://core:8000
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET=${S3_BUCKET}
+      - S3_REGION=${S3_REGION}
+      - DATABASE_URL=postgresql://${BOT_POSTGRES_USER:-botuser}:${BOT_POSTGRES_PASSWORD:-botpass}@postgres-bot:5432/${BOT_POSTGRES_DB:-botdb}
+      - LOG_LEVEL=INFO
+      - PYTHONPATH=/app
+    volumes:
+      - ./bot/src:/app/src:rw
+    depends_on:
+      postgres-bot:  
+        condition: service_healthy
+      auth:
+        condition: service_started
+      core:
+        condition: service_started
+    restart: unless-stopped
+    networks:  
+      - bot-network
+      - shared-network
+    logging:
+      driver: "json-file"
+      options:  
+        max-size: "10m"
+        max-file: "3"
 
   # Admin panel (Next.js)
   admin:
@@ -250,11 +308,16 @@ volumes:
   postgres-core-data:
     driver: local
     name: course-postgres-core-data
+  postgres-bot-data:
+    driver: local
+    name: course-postgres-bot-data
 
 networks:
   auth-network: 
     driver: bridge
   core-network:
+    driver: bridge
+  bot-network:
     driver: bridge
   shared-network:
     driver: bridge
