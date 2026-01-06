@@ -1,34 +1,45 @@
-"""Start command handler"""
+"""Updated start command handler with welcome menu"""
 
 from aiogram import Router, F, types
 from aiogram.filters import Command, StateFilter
-from aiogram.types import Message, KeyboardButton, ReplyKeyboardMarkup
+from aiogram.types import Message, KeyboardButton, ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from src.services.api_service import APIService
 from src.services.session_service import session_service
+from src.services.reminder_type_service import reminder_type_service
 from src.utils.logger import get_logger
 import re
 
 logger = get_logger(__name__)
 
 router = Router()
-
 api_service = APIService()
 
-# Определяем состояния для FSM
 class UserStates(StatesGroup):
     waiting_for_phone = State()
 
 @router.message(Command("start"))
 async def cmd_start(message: Message, state: FSMContext):
-    """Handle /start command - ask for phone number"""
+    """Handle /start command"""
+    # Check if user already authenticated
+    data = await state.get_data()
+    user_id = data.get("user_id")
+    
+    if user_id:
+        # User already authenticated, show welcome menu
+        await show_welcome_menu(message)
+    else:
+        # New user, ask for phone
+        await ask_for_phone(message, state)
+
+async def ask_for_phone(message: Message, state: FSMContext):
+    """Ask user for phone number"""
     telegram_id = message.from_user.id
     username = message.from_user.username or "unknown"
     
     logger.info(f"🤖 User started bot: {telegram_id} (@{username})")
     
-    # Создаем клавиатуру с кнопкой "Отправить номер"
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="📱 Отправить номер телефона", request_contact=True)]
@@ -40,44 +51,55 @@ async def cmd_start(message: Message, state: FSMContext):
     await message.answer(
         "👋 Добро пожаловать!\n\n"
         "📱 Пожалуйста, отправьте ваш номер телефона для проверки в системе.\n\n"
-        "Нажмите кнопку ниже или отправьте номер вручную в формате:  +7 (123) 456-78-90",
+        "Нажмите кнопку ниже или отправьте номер вручную в формате: +7 (123) 456-78-90",
         reply_markup=keyboard
     )
     
-    # Переходим в состояние ожидания номера
     await state.set_state(UserStates.waiting_for_phone)
 
+async def show_welcome_menu(message: Message):
+    """Show welcome menu with buttons"""
+    # Get welcome message from database
+    welcome_msg = reminder_type_service.get_welcome_message("welcome")
+    
+    welcome_text = welcome_msg.message if welcome_msg else (
+        "👋 <b>Привет! Я бот-помощник для курса!</b>\n\n"
+        "Я помогу тебе:\n"
+        "✅ Отслеживать выполнение домашних заданий\n"
+        "✅ Напоминать о дедлайнах\n"
+        "✅ Поддерживать твою серию выполнения\n"
+        "✅ Следить за статусом гарантии\n\n"
+        "Выбери интересующий раздел:"
+    )
+    
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="❓ Как пользоваться ботом", callback_data="faq_how_to")],
+        [InlineKeyboardButton(text="🛡️ Как работает гарантия", callback_data="faq_guarantee")],
+        [InlineKeyboardButton(text="📚 Туториал Anki", callback_data="faq_anki")],
+        [InlineKeyboardButton(text="📸 Загрузить ДЗ", callback_data="upload_homework")],
+        [InlineKeyboardButton(text="📊 Мой прогресс", callback_data="my_progress")]
+    ])
+    
+    await message.answer(
+        welcome_text,
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
 
 @router.message(UserStates.waiting_for_phone, F.contact)
 async def handle_contact(message: Message, state: FSMContext):
     """Handle phone number from contact button"""
     phone_number = message.contact.phone_number
-    first_name = message.contact.first_name
     
-    logger.info(f"📱 User sent phone:  {phone_number}")
+    logger.info(f"📱 User sent phone: {phone_number}")
     
-    # Нормализуем номер телефона
     normalized_phone = normalize_phone(phone_number)
-    
-    # Проверяем юзера по номеру телефона
     user = await api_service.check_user_by_phone(normalized_phone)
     
     if user:
-        # Юзер найден!    
-        await message.answer(
-            f"✅ Найдена учетная запись!\n\n"
-            f"👤 Пользователь: {user.first_name} {user.last_name or ''}\n"
-            f"📧 Email: {user.email}\n"
-            f"📱 Телефон: {user.phone}\n\n"
-            f"📸 Теперь вы можете загружать фотографии.\n"
-            f"Просто отправьте мне фото! ",
-            reply_markup=types.ReplyKeyboardRemove()
-        )
+        # User found - register and show welcome
+        session_service.register_user(user.id, message.chat.id)
         
-        # ← РЕГИСТРИРУЕМ ПОЛЬЗОВАТЕЛЯ В СЕССИИ
-        session_service. register_user(user.id, message.chat.id)
-        
-        # Очищаем state и сохраняем данные пользователя
         await state.clear()
         await state.update_data(
             user_id=user.id,
@@ -85,117 +107,196 @@ async def handle_contact(message: Message, state: FSMContext):
             telegram_id=message.from_user.id
         )
         
-        logger. info(f"✅ User authenticated: {user.id}")
+        await message.answer(
+            f"✅ <b>Аккаунт найден!</b>\n\n"
+            f"👤 {user.first_name} {user.last_name or ''}\n"
+            f"📧 {user.email}\n"
+            f"📱 {user.phone}",
+            reply_markup=types.ReplyKeyboardRemove(),
+            parse_mode="HTML"
+        )
+        
+        logger.info(f"✅ User authenticated: {user.id}")
+        
+        # Show welcome menu
+        await show_welcome_menu(message)
     else:
-        # Юзер не найден
         await message.answer(
             "❌ К сожалению, пользователь с таким номером не найден в системе.\n\n"
             "🔗 Пожалуйста, зарегистрируйтесь на сайте:\n"
             "https://plexus.kz/register\n\n"
             "Или попробуйте еще раз с другим номером.",
-            reply_markup=types.  ReplyKeyboardRemove()
+            reply_markup=types.ReplyKeyboardRemove()
         )
         
-        # Возвращаемся к запросу номера
         await state.set_state(UserStates.waiting_for_phone)
 
-
-@router.message(UserStates.  waiting_for_phone, F.  text)
+@router.message(UserStates.waiting_for_phone, F.text)
 async def handle_text_phone(message: Message, state: FSMContext):
-    """Handle phone number as text - ТОЛЬКО если это НЕ команда"""
+    """Handle phone number as text"""
     phone_text = message.text
     
-    logger.info(f"📱 User sent:  {phone_text}")
-    
-    # Пропускаем команды
-    if phone_text. startswith('/'):
-        logger.warning(f"User sent command while waiting for phone: {phone_text}")
+    if phone_text.startswith('/'):
         await message.answer(
             "❌ Пожалуйста, сначала введите номер телефона.\n\n"
-            "Нажмите кнопку ниже или отправьте номер вручную в формате: +7 (123) 456-78-90"
+            "Нажмите кнопку ниже или отправьте номер вручную."
         )
         return
     
-    # Нормализуем номер телефона
     normalized_phone = normalize_phone(phone_text)
     
     if not normalized_phone:
         await message.answer(
-            "❌ Пожалуйста, отправьте правильный номер телефона в формате:\n"
-            "+7 (123) 456-78-90 или +7123456789010"
+            "❌ Неверный формат номера телефона.\n"
+            "Используйте: +7 (123) 456-78-90"
         )
         return
     
-    # Проверяем юзера по номеру телефона
     user = await api_service.check_user_by_phone(normalized_phone)
     
     if user:
-        await message.answer(
-            f"✅ Найдена учетная запись!\n\n"
-            f"👤 Пользователь: {user.first_name} {user.  last_name or ''}\n"
-            f"📧 Email: {user.email}\n"
-            f"📱 Телефон: {user.phone}\n\n"
-            f"📸 Теперь вы можете загружать фотографии.\n"
-            f"Просто отправьте мне фото!",
-            reply_markup=types.ReplyKeyboardRemove()
-        )
-        
-        # ← РЕГИСТРИРУЕМ ПОЛЬЗОВАТЕЛЯ В СЕССИИ
         session_service.register_user(user.id, message.chat.id)
         
-        # Очищаем state и сохраняем данные пользователя
-        await state.  clear()
+        await state.clear()
         await state.update_data(
             user_id=user.id,
             phone=normalized_phone,
             telegram_id=message.from_user.id
         )
         
-        logger.info(f"✅ User authenticated: {user.  id}")
+        await message.answer(
+            f"✅ <b>Аккаунт найден!</b>\n\n"
+            f"👤 {user.first_name} {user.last_name or ''}\n"
+            f"📧 {user.email}\n"
+            f"📱 {user.phone}",
+            reply_markup=types.ReplyKeyboardRemove(),
+            parse_mode="HTML"
+        )
+        
+        logger.info(f"✅ User authenticated: {user.id}")
+        await show_welcome_menu(message)
     else:
         await message.answer(
-            "❌ К сожалению, пользователь с таким номером не найден.\n\n"
-            "🔗 Пожалуйста, зарегистрируйтесь на сайте:\n"
-            "https://plexus.kz/register"
+            "❌ Пользователь не найден.\n\n"
+            "🔗 Зарегистрируйтесь: https://plexus.kz/register"
         )
 
+# ========== FAQ HANDLERS ==========
 
-@router.message(StateFilter(None), Command("help"))
-async def cmd_help(message: Message):
-    """Handle /help command"""
-    help_text = (
-        "📖 <b>Справка по использованию бота</b>\n\n"
-        "/start - Начать работу с ботом\n"
-        "/help - Эта справка\n"
-        "/photos - Мои фото\n"
-        "/profile - Мой профиль\n\n"
-        "📸 <b>Как загружать фото:  </b>\n"
-        "1. Используйте /start и отправьте номер телефона\n"
-        "2. После проверки отправьте фото\n"
-        "3. Фото будет загружено в облако"
+@router.callback_query(F.data == "faq_how_to")
+async def show_faq_how_to(callback: types.CallbackQuery):
+    """Show how to use bot FAQ"""
+    faq = reminder_type_service.get_welcome_message("how_to_use")
+    
+    text = faq.message if faq else (
+        "📖 <b>Как пользоваться ботом</b>\n\n"
+        "1️⃣ <b>Загрузка ДЗ</b>\n"
+        "Каждый день нужно загрузить 3 скриншота:\n"
+        "• 📝 Anki карточки\n"
+        "• 📋 Тест\n"
+        "• 🎓 Урок\n\n"
+        "2️⃣ <b>Напоминания</b>\n"
+        "Бот будет напоминать:\n"
+        "• 21:00 - ДЗ на завтра\n"
+        "• 11:00 - первое напоминание\n"
+        "• 20:00 - последнее напоминание\n"
+        "• 00:00 - статус выполнения\n\n"
+        "3️⃣ <b>Серия выполнения</b>\n"
+        "За регулярное выполнение ДЗ вы получите поздравления!\n\n"
+        "4️⃣ <b>Гарантия</b>\n"
+        "Выполняйте все задания вовремя для сохранения гарантии"
     )
-    await message.answer(help_text, parse_mode="HTML")
+    
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_menu")]
+    ])
+    
+    await callback.message.edit_text(
+        text,
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+    await callback.answer()
 
+@router.callback_query(F.data == "faq_guarantee")
+async def show_faq_guarantee(callback: types.CallbackQuery):
+    """Show guarantee FAQ"""
+    faq = reminder_type_service.get_welcome_message("guarantee")
+    
+    text = faq.message if faq else (
+        "🛡️ <b>Как работает гарантия</b>\n\n"
+        "✅ <b>Условия сохранения гарантии:</b>\n\n"
+        "1. Выполнять ВСЕ 3 типа ДЗ каждый день\n"
+        "2. Загружать ДЗ до 00:00\n"
+        "3. Не пропускать ни одного дня\n\n"
+        "⚠️ <b>Гарантия аннулируется если:</b>\n\n"
+        "• Пропущен хотя бы один день\n"
+        "• Загружено не все ДЗ\n"
+        "• Нарушены правила курса\n\n"
+        "💡 <b>Проверка гарантии:</b>\n"
+        "Используйте кнопку в меню для проверки статуса"
+    )
+    
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_menu")]
+    ])
+    
+    await callback.message.edit_text(
+        text,
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+@router.callback_query(F.data == "faq_anki")
+async def show_faq_anki(callback: types.CallbackQuery):
+    """Show Anki tutorial"""
+    faq = reminder_type_service.get_welcome_message("anki")
+    
+    text = faq.message if faq else (
+        "📚 <b>Туториал Anki</b>\n\n"
+        "Anki - это программа для запоминания информации через карточки.\n\n"
+        "🎯 <b>Как использовать:</b>\n\n"
+        "1. Скачайте Anki: https://apps.ankiweb.net/\n"
+        "2. Создайте карточки с вопросами\n"
+        "3. Повторяйте их каждый день\n"
+        "4. Делайте скриншот статистики\n\n"
+        "📸 <b>Что загружать:</b>\n"
+        "Скриншот экрана с количеством повторенных карточек за день\n\n"
+        "💡 <b>Совет:</b>\n"
+        "Лучше делать карточки сразу после изучения темы!"
+    )
+    
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_menu")]
+    ])
+    
+    await callback.message.edit_text(
+        text,
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+@router.callback_query(F.data == "back_to_menu")
+async def back_to_menu(callback: types.CallbackQuery):
+    """Return to main menu"""
+    await show_welcome_menu(callback.message)
+    await callback.answer()
 
 def normalize_phone(phone: str) -> str:
-    """Normalize phone number to standard format"""
-    
-    # Удаляем все символы кроме цифр и +
+    """Normalize phone number"""
     cleaned = re.sub(r'[^\d+]', '', phone)
     
-    # Если номер начинается с 7, добавляем +
     if cleaned.startswith('7') and not cleaned.startswith('+'):
         cleaned = '+' + cleaned
     
-    # Если номер начинается с 8, заменяем на +7
     if cleaned.startswith('8'):
         cleaned = '+7' + cleaned[1:]
     
-    # Если нет +, добавляем
     if not cleaned.startswith('+'):
         cleaned = '+' + cleaned
     
-    # Проверяем формат (11-15 цифр после +)
     if not re.match(r'^\+\d{10,15}$', cleaned):
         return None
     
