@@ -74,6 +74,7 @@ services:
       - DATABASE_URL=postgresql+asyncpg://${AUTH_POSTGRES_USER:-authuser}:${AUTH_POSTGRES_PASSWORD:-authpass}@postgres-auth:5432/${AUTH_POSTGRES_DB:-authdb}
       - DEBUG=${DEBUG:-True}
       - PYTHONPATH=/app
+      - TZ=Asia/Almaty
     volumes:
       - ./auth/src:/app/auth/src:rw
       - ./auth/alembic:/app/alembic:rw
@@ -134,6 +135,7 @@ services:
       - DEBUG=${DEBUG:-True}
       - PYTHONPATH=/app
       - AUTH_SERVICE_URL=${AUTH_SERVICE_URL:-http://auth:8000}
+      - TZ=Asia/Almaty
     volumes:
       - ./core/src:/app/core/src:rw
       - ./core/alembic:/app/alembic:rw
@@ -194,6 +196,7 @@ services:
       - DATABASE_URL=postgresql://${BOT_POSTGRES_USER:-botuser}:${BOT_POSTGRES_PASSWORD:-botpass}@postgres-bot:5432/${BOT_POSTGRES_DB:-botdb}
       - LOG_LEVEL=INFO
       - PYTHONPATH=/app
+      - TZ=Asia/Almaty
     volumes:
       - ./bot/src:/app/src:rw
     depends_on:
