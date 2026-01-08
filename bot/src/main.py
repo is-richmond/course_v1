@@ -45,7 +45,7 @@ async def setup_bot_commands(bot: Bot):
     """Настройка команд для обычных пользователей"""
     
     user_commands = [
-        BotCommand(command="start", description="🚀 Запустить бота"),
+        BotCommand(command="start", description="Запустить бота"),
         # BotCommand(command="menu", description="📋 Главное меню"),
         # BotCommand(command="homework", description="📸 Загрузить домашку"),
         # BotCommand(command="progress", description="📊 Мой прогресс"),
@@ -66,14 +66,20 @@ async def setup_admin_commands(bot: Bot):
     
     admin_commands = [
         # Обычные команды
-        BotCommand(command="start", description="🚀 Запустить бота"),
+        BotCommand(command="start", description="Запустить бота"),
         # BotCommand(command="menu", description="📋 Главное меню"),
         # BotCommand(command="homework", description="📸 Загрузить домашку"),
         # BotCommand(command="progress", description="📊 Мой прогресс"),
         # BotCommand(command="help", description="❓ Помощь"),
         # Админские команды
-        BotCommand(command="admin", description="Админ-панель"),
+        # BotCommand(command="admin", description="Админ-панель"),
         BotCommand(command="admin_reminders", description="Рассылка"),
+        BotCommand(command="create_reminder_type", description="Создать тип напоминания"),
+        BotCommand(command="list_reminder_types", description="Список типов напоминаний"),
+        BotCommand(command="add_message", description="Добавить сообщение в пулл"),
+        BotCommand(command="list_messages", description="Список сообщений"),
+        BotCommand(command="create_streak_msg", description="Создать поздравление за стрик"),
+        BotCommand(command="list_streak_msgs", description="Список поздравлений"),
         BotCommand(command="admin_hw", description="Управление домашними заданиями"),
         BotCommand(command="hw_stats", description="Статистика ДЗ"),
         BotCommand(command="guarantee_set", description="Управление гарантией"),

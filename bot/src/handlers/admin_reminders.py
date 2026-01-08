@@ -205,7 +205,6 @@ async def finish_reminder_type(callback: types.CallbackQuery, state: FSMContext)
     else:
         await callback.message.edit_text("❌ Ошибка создания типа напоминания")
     
-    await state.clear()
     await callback.answer()
 
 @router.message(Command("list_reminder_types"))
@@ -238,7 +237,40 @@ async def list_reminder_types(message: types.Message):
     
     await message.answer(text, parse_mode="HTML")
 
+
+
 # ========== MESSAGE POOL ==========
+
+
+@router.message(Command("list_messages"))
+async def list_messages(message: types.Message):
+    """List all messages in pools"""
+    if not is_admin(message.from_user.id):
+        await message.answer("❌ У вас нет доступа")
+        return
+    
+    types_list = reminder_type_service.get_all_reminder_types()
+    
+    if not types_list:
+        await message.answer("📭 Нет типов напоминаний")
+        return
+    
+    text = "<b>📋 Сообщения в пулле:</b>\n\n"
+    
+    for rt in types_list:
+        messages = reminder_type_service.get_messages_for_type(rt. id)
+        
+        if not messages:
+            text += f"<b>#{rt.id}:</b> {rt.name}\n📭 Нет сообщений\n\n"
+            continue
+        
+        text += f"<b>#{rt.id}:</b> {rt.name}\n"
+        for i, msg in enumerate(messages, 1):
+            image_info = " 🖼️" if msg.image_url else ""
+            text += f"  {i}. {msg.message[: 50]}... {image_info}\n"
+        text += "\n"
+    
+    await message.answer(text, parse_mode="HTML")
 
 @router.message(Command("add_message"))
 async def add_message(message: types.Message, state: FSMContext):
@@ -385,7 +417,6 @@ async def save_message_to_pool(message: types.Message, state: FSMContext, image_
     else:
         await message.answer("❌ Ошибка добавления сообщения")
     
-    await state.clear()
 
 # ========== STREAK MESSAGES ==========
 
@@ -433,7 +464,6 @@ async def process_streak_message(message: types.Message, state: FSMContext):
     else:
         await message.answer("❌ Ошибка создания")
     
-    await state.clear()
 
 @router.message(Command("list_streak_msgs"))
 async def list_streak_messages(message: types.Message):
