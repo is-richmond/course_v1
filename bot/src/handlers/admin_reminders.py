@@ -1,5 +1,7 @@
 """Admin handlers for managing reminder types and message pools"""
-
+import io
+import uuid
+from src.services.api_service import APIService
 from aiogram import Router, F, types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
@@ -11,6 +13,7 @@ from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 router = Router()
+api_service = APIService()
 
 # Admin IDs
 ADMIN_IDS = [894877615]  # Add your admin IDs here
@@ -310,12 +313,50 @@ async def request_image(callback: types.CallbackQuery, state: FSMContext):
 @router.message(MessagePoolState.waiting_for_image, F.photo)
 async def process_image(message: types.Message, state: FSMContext):
     """Process image"""
-    # Get file URL
-    photo = message.photo[-1]
-    file = await message.bot.get_file(photo.file_id)
-    file_url = f"https://api.telegram.org/file/bot{message.bot.token}/{file.file_path}"
+    status_msg = await message.answer("⏳ Загружаю картинку...")
     
-    await save_message_to_pool(message, state, file_url)
+    try:
+        # Download photo
+        photo = message.photo[-1]
+        file = await message.bot.get_file(photo.file_id)
+        
+        file_bytes = io.BytesIO()
+        await message.bot.download_file(file.file_path, file_bytes)
+        file_bytes = file_bytes.getvalue()
+        
+        # Generate filename
+        filename = f"reminder_{uuid.uuid4()}.jpg"
+        
+        # ✅ Получаем UUID пользователя из состояния
+        data = await state.get_data()
+        user_id = data.get('user_id')  # Это уже UUID из авторизации
+        
+        if not user_id:
+            await status_msg.edit_text("❌ Ошибка: не найден user_id. Попробуйте /start")
+            return
+        
+        # Upload to S3 via API
+        photo_response = await api_service.upload_photo(
+            user_id=user_id,  # Передаём UUID
+            file_data=file_bytes,
+            filename=filename
+        )
+        
+        if not photo_response:
+            await status_msg.edit_text("❌ Ошибка загрузки картинки. Попробуйте еще раз.")
+            return
+        
+        await status_msg.delete()
+        
+        # Сохраняем постоянный URL из S3
+        await save_message_to_pool(message, state, photo_response.download_url)
+        
+    except Exception as e:
+        logger.error(f"Error uploading reminder image: {e}", exc_info=True)
+        try:
+            await status_msg.edit_text("❌ Ошибка загрузки")
+        except:
+            await message.answer("❌ Ошибка загрузки")
 
 @router.callback_query(MessagePoolState.waiting_for_message, F.data == "save_no_image")
 async def save_without_image(callback: types.CallbackQuery, state: FSMContext):
