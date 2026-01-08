@@ -20,7 +20,8 @@ from src.handlers import (
     admin_reminders,
     admin_homework,
     commands,
-    errors
+    errors,
+    admin_schedule,
 )
 from src.services.scheduler_service import init_scheduler
 
@@ -117,6 +118,7 @@ async def main():
         dp.include_router(homework.router)
         dp.include_router(guarantee.router)
         dp.include_router(commands.router)
+        dp.include_router(admin_schedule.router)
         dp.include_router(admin_reminders.router)
         dp.include_router(admin_homework.router)
         dp.include_router(errors.router)

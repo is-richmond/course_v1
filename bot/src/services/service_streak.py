@@ -1,4 +1,4 @@
-"""Streak service - tracks user homework streaks"""
+"""Streak service - tracks user homework streaks based on schedule"""
 
 from datetime import datetime, date, timedelta
 from typing import Optional
@@ -11,15 +11,15 @@ from src.models.homework_model import Base, UserStreak, StreakMessage
 
 logger = get_logger(__name__)
 
-# Database setup
 try:
     engine = create_engine(settings.DATABASE_URL)
     SessionLocal = sessionmaker(bind=engine)
     Base.metadata.create_all(bind=engine)
-    logger.info("✅ Streak database tables created")
-except Exception as e:
-    logger.error(f"❌ Database connection error: {e}")
+    logger.info("✅ Streak tables created")
+except Exception as e: 
+    logger.error(f"❌ Database error: {e}")
     raise
+
 
 class StreakService:
     """Service for managing user streaks"""
@@ -27,132 +27,117 @@ class StreakService:
     def __init__(self):
         self.db: Session = SessionLocal()
     
-    def get_or_create_streak(self, user_id: int) -> UserStreak:
-        """Get or create streak record for user"""
+    def get_or_create_streak(self, user_id: str, schedule_id: int) -> UserStreak:
+        """Get or create streak for user"""
         streak = self.db.query(UserStreak).filter(
-            UserStreak.user_id == user_id
+            UserStreak.user_id == user_id,
+            UserStreak.homework_schedule_id == schedule_id
         ).first()
         
         if not streak:
-            streak = UserStreak(user_id=user_id)
+            streak = UserStreak(
+                user_id=user_id,
+                homework_schedule_id=schedule_id
+            )
             self.db.add(streak)
             self.db.commit()
             self.db.refresh(streak)
-            logger.info(f"✅ Created streak record for user {user_id}")
+            logger.info(f"✅ Created streak for user {user_id}")
         
         return streak
     
-    def update_streak(self, user_id: int) -> dict:
-        """Update user streak when homework completed"""
-        streak = self.get_or_create_streak(user_id)
+    def update_streak(self, user_id: str, schedule_id: int) -> dict:
+        """Update streak when homework completed"""
+        from src.services.homework_schedule_service import homework_schedule_service
+        
+        streak = self.get_or_create_streak(user_id, schedule_id)
+        
+        # Get homework days
+        homework_days = homework_schedule_service.get_days(schedule_id)
+        if not homework_days:
+            return {"updated": False, "message": "No schedule configured"}
+        
         today = date.today()
-        yesterday = today - timedelta(days=1)
+        today_weekday = today.weekday() + 1  # 1=ПН, 7=ВС
         
-        # If already updated today, skip
+        # Check if homework today
+        if today_weekday not in homework_days:
+            return {"updated": False, "message":  "No homework today"}
+        
+        # Already updated today
         if streak.last_completed_date == today:
-            return {
-                "updated": False,
-                "current_streak": streak.current_streak,
-                "message": "Already updated today"
-            }
+            return {"updated": False, "current_streak": streak.current_streak}
         
-        # Check if streak continues
-        if streak.last_completed_date == yesterday:
-            # Continue streak
+        # Find last homework day before today
+        last_hw_day = today - timedelta(days=1)
+        while last_hw_day. weekday() + 1 not in homework_days:
+            last_hw_day -= timedelta(days=1)
+        
+        # Continue or reset streak
+        if streak.last_completed_date == last_hw_day:
             streak.current_streak += 1
-        elif streak.last_completed_date is None or streak.last_completed_date < yesterday:
-            # Reset streak (missed a day or first time)
+        else:
             streak.current_streak = 1
         
-        # Update longest streak
-        if streak.current_streak > streak.longest_streak:
+        # Update record
+        if streak.current_streak > streak. longest_streak:
             streak.longest_streak = streak.current_streak
         
         streak.last_completed_date = today
         streak.updated_at = datetime.now()
-        
         self.db.commit()
         
-        logger.info(f"✅ Updated streak for user {user_id}: {streak.current_streak} days")
+        logger.info(f"✅ Updated streak:  user={user_id}, streak={streak.current_streak}")
         
-        # Check if we need to send congratulation
-        congrats_message = self.get_streak_congratulation(streak.current_streak)
+        # Get congratulation
+        congrats = self.get_congratulation(streak.current_streak)
         
         return {
-            "updated": True,
+            "updated":  True,
             "current_streak": streak.current_streak,
-            "longest_streak": streak.longest_streak,
-            "congratulation": congrats_message
+            "longest_streak": streak. longest_streak,
+            "congratulation": congrats
         }
     
-    def get_streak_congratulation(self, streak_days: int) -> Optional[str]:
-        """Get congratulation message for streak milestone"""
-        # Check if this is a milestone (3, 5, 7, 10, 14, 21, 30, etc.)
+    def get_congratulation(self, streak_days: int) -> Optional[str]:
+        """Get congratulation for milestone"""
         milestones = [3, 5, 7, 10, 14, 21, 30, 45, 60, 90, 100]
         
         if streak_days not in milestones:
             return None
         
-        # Get all messages for this milestone
         messages = self.db.query(StreakMessage).filter(
             StreakMessage.streak_days == streak_days,
             StreakMessage.is_active == True
         ).all()
         
-        if not messages:
-            return None
-        
-        # Pick random message
-        selected = random.choice(messages)
-        return selected.message
+        return random.choice(messages).message if messages else None
     
-    def get_user_streak(self, user_id: int) -> dict:
-        """Get user's current streak info"""
-        streak = self.get_or_create_streak(user_id)
-        
+    def get_user_streak(self, user_id: str, schedule_id: int) -> dict:
+        """Get user streak info"""
+        streak = self.get_or_create_streak(user_id, schedule_id)
         return {
             "current_streak": streak.current_streak,
             "longest_streak": streak.longest_streak,
-            "last_completed": streak.last_completed_date
+            "last_completed":  streak.last_completed_date
         }
     
-    def create_streak_message(self, streak_days: int, message: str) -> bool:
-        """Create new streak congratulation message (admin function)"""
+    def create_message(self, streak_days: int, message: str) -> bool:
+        """Create streak message (admin)"""
         try:
-            new_message = StreakMessage(
-                streak_days=streak_days,
-                message=message
-            )
-            self.db.add(new_message)
+            msg = StreakMessage(streak_days=streak_days, message=message)
+            self.db.add(msg)
             self.db.commit()
-            logger.info(f"✅ Created streak message for {streak_days} days")
+            logger.info(f"✅ Created message for {streak_days} days")
             return True
         except Exception as e:
-            logger.error(f"Error creating streak message: {e}")
+            logger.error(f"Error:  {e}")
             self.db.rollback()
             return False
     
-    def get_all_streak_messages(self) -> list:
-        """Get all streak messages (admin function)"""
-        return self.db.query(StreakMessage).order_by(StreakMessage.streak_days).all()
-    
-    def delete_streak_message(self, message_id: int) -> bool:
-        """Delete streak message (admin function)"""
-        try:
-            message = self.db.query(StreakMessage).filter(
-                StreakMessage.id == message_id
-            ).first()
-            
-            if message:
-                self.db.delete(message)
-                self.db.commit()
-                logger.info(f"✅ Deleted streak message {message_id}")
-                return True
-            return False
-        except Exception as e:
-            logger.error(f"Error deleting streak message: {e}")
-            self.db.rollback()
-            return False
+    def get_all_messages(self) -> list:
+        """Get all messages"""
+        return self.db. query(StreakMessage).order_by(StreakMessage. streak_days).all()
 
-# Global instance
+
 streak_service = StreakService()

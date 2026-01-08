@@ -1,7 +1,7 @@
 """Homework database models"""
 
 from datetime import datetime, date
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, Text, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, Text, UniqueConstraint, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
@@ -49,6 +49,7 @@ class UserStreak(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(UUID(as_uuid=True), nullable=False)
+    homework_schedule_id = Column(Integer, ForeignKey("homework_schedules.id"), nullable=False)  # ✅
     current_streak = Column(Integer, default=0)
     longest_streak = Column(Integer, default=0)
     last_completed_date = Column(Date, nullable=True)
@@ -78,3 +79,15 @@ class UserGuarantee(Base):
     updated_by = Column(String(255), nullable=True)  # Admin ID
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
     created_at = Column(DateTime, default=datetime.now)
+
+
+class HomeworkSchedule(Base):
+    """Homework schedule - which days have homework"""
+    __tablename__ = "homework_schedules"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=False)  # "Основное расписание", "Летний курс"
+    days_of_week = Column(String(50), nullable=False)  # "1,2,3,4" = ПН-ЧТ
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
