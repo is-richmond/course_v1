@@ -652,7 +652,7 @@ export const photosApi = {
     skip: number = 0,
     limit: number = 100
   ): Promise<MediaListResponse> => {
-    const response = await axios.get(`/v1/photos/user/${userId}`, {
+    const response = await axios.get(`/photos/user/${userId}`, {
       params: { skip, limit },
     });
     return response.data;
