@@ -12,6 +12,7 @@ import {
   GrantAdminRequest,
   EnrollmentResponse,
   MyCoursesResponse,
+  MediaListResponse
 } from "../types/types";
 
 // ============================================================================
@@ -638,6 +639,22 @@ export const s3Api = {
   // Get media configuration
   getMediaConfig: async () => {
     const response = await axios.get("/s3/config");
+    return response.data;
+  },
+};
+
+
+
+export const photosApi = {
+  // Get user photos
+  getUserPhotos: async (
+    userId: string,
+    skip: number = 0,
+    limit: number = 100
+  ): Promise<MediaListResponse> => {
+    const response = await axios.get(`/v1/photos/user/${userId}`, {
+      params: { skip, limit },
+    });
     return response.data;
   },
 };

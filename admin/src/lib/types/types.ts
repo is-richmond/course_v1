@@ -343,3 +343,32 @@ export interface DashboardStats {
   recentCourses: Course[];
   popularCourses: Course[];
 }
+
+
+
+
+export interface Photo {
+  id: number;
+  user_id: string;
+  file_name: string;
+  file_path: string;
+  upload_date: string;
+  file_size?: number;
+  mime_type?: string;
+}
+
+export interface MediaListResponse {
+  items: Photo[];
+  total: number;
+  skip: number;
+  limit: number;
+}
+
+export interface PhotosByDate {
+  [date: string]: Photo[];
+}
+
+export interface PhotosLoadingState {
+  users: boolean;
+  photos: boolean;
+}

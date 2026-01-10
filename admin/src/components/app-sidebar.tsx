@@ -44,6 +44,11 @@ const navigationItems = [
     url: "/dashboard/admin",
     icon: ShieldCheck,
   },
+  {
+    title: "Homework",
+    url:  "/dashboard/homework",
+    icon: ShieldCheck,
+  },
 ]
 
 export function AppSidebar() {
