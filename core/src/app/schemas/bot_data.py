@@ -2,15 +2,15 @@
 
 from datetime import datetime, date, time
 from typing import Optional
-from pydantic import BaseModel, ConfigDict
-
+from uuid import UUID  # Добавьте этот импорт
+from pydantic import BaseModel, ConfigDict, field_serializer
 
 # ========== HOMEWORK SCHEMAS ==========
 
 class UserHomeworkResponse(BaseModel):
     """Response schema for user homework."""
     id: int
-    user_id: str
+    user_id: UUID
     date: date
     
     anki_submitted: bool
@@ -30,6 +30,11 @@ class UserHomeworkResponse(BaseModel):
     
     created_at: datetime
     updated_at: datetime
+
+
+    @field_serializer('user_id')
+    def serialize_user_id(self, user_id: UUID, _info):
+        return str(user_id)
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -55,13 +60,17 @@ class HomeworkStatistics(BaseModel):
 class UserStreakResponse(BaseModel):
     """Response schema for user streak."""
     id: int
-    user_id: str
+    user_id: UUID
     homework_schedule_id: int
     current_streak: int
     longest_streak: int
     last_completed_date: Optional[date] = None
     created_at: datetime
     updated_at: datetime
+
+    @field_serializer('user_id')
+    def serialize_user_id(self, user_id: UUID, _info):
+        return str(user_id)
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -71,13 +80,20 @@ class UserStreakResponse(BaseModel):
 class UserGuaranteeResponse(BaseModel):
     """Response schema for user guarantee."""
     id: int
-    user_id: str
+    user_id: UUID
     has_guarantee: bool
     notes: Optional[str] = None
     updated_by: Optional[str] = None
     updated_at: datetime
     created_at: datetime
+
+
+    @field_serializer('user_id')
+    def serialize_user_id(self, user_id: UUID, _info):
+        return str(user_id)
     
+
+
     model_config = ConfigDict(from_attributes=True)
 
 
