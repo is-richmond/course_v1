@@ -327,7 +327,7 @@ const ContentEditor:  React.FC<ContentEditorProps> = ({
         file.name
       );
 
-      const media = response.file;
+      const media = response.media;
 
       setUploadedImages((prev) =>
         new Map(prev).set(media.id, {
