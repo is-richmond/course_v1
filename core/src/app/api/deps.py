@@ -30,6 +30,17 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
+async def get_bot_db_session() -> AsyncGenerator[AsyncSession, None]:
+    """
+    Get database session for bot service.
+    
+    Yields:
+        AsyncSession: Bot database session
+    """
+    from core.src.app.db.bot_db import get_bot_async_session
+    async for session in get_bot_async_session():
+        yield session
+
 async def get_current_user_id(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> str:

@@ -14,6 +14,7 @@ from core.src.app.api.endpoints import (
     progress,
     combined,
     photos,
+    bot
 )
 
 api_router = APIRouter()
@@ -30,3 +31,4 @@ api_router.include_router(progress.router, prefix="/progress", tags=["Progress"]
 api_router.include_router(s3.router, prefix="/s3", tags=["S3"])     
 api_router.include_router(combined.router, prefix="/combined-tests", tags=["Combined Tests"])
 api_router.include_router(photos.router, prefix="/photos", tags=["Photos"])
+api_router.include_router(bot.router, prefix="/bot", tags=["Bot endpoints"])
