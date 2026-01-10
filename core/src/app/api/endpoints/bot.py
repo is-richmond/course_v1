@@ -7,6 +7,16 @@ from typing import List, Optional
 from datetime import date, datetime, timedelta
 from core.src.app.api.deps import get_bot_db_session
 
+import sys
+from pathlib import Path
+project_root = Path(__file__).resolve().parent.parent.parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+
+from bot.src.models.homework_model import UserHomework, UserStreak, UserGuarantee
+from bot.src.models.reminder_types_model import ReminderType, ReminderMessagePool
+
 from core.src.app.api.deps import get_db_session
 from core.src.app.schemas.bot_data import (
     UserHomeworkResponse,
@@ -33,7 +43,6 @@ async def get_user_homework(
     db: AsyncSession = Depends(get_bot_db_session),
 ):
     """Get homework submissions for a specific user."""
-    from bot.src.models.homework_model import UserHomework
     
     query = select(UserHomework).where(UserHomework.user_id == user_id)
     
@@ -58,7 +67,6 @@ async def get_homework_by_date(
     db: AsyncSession = Depends(get_bot_db_session),
 ):
     """Get all homework submissions for a specific date."""
-    from bot.src.models.homework_model import UserHomework
     
     query = select(UserHomework).where(UserHomework.date == homework_date)
     result = await db.execute(query)
@@ -74,7 +82,6 @@ async def get_homework_statistics(
     db: AsyncSession = Depends(get_bot_db_session),
 ):
     """Get homework completion statistics."""
-    from bot.src.models.homework_model import UserHomework
     
     query = select(UserHomework)
     
@@ -118,7 +125,6 @@ async def get_user_streak(
     db: AsyncSession = Depends(get_bot_db_session),
 ):
     """Get streak information for a specific user."""
-    from bot.src.models.homework_model import UserStreak
     
     query = select(UserStreak).where(UserStreak.user_id == user_id)
     result = await db.execute(query)
@@ -136,7 +142,6 @@ async def get_streak_leaderboard(
     db: AsyncSession = Depends(get_bot_db_session),
 ):
     """Get top users by current streak."""
-    from bot.src.models.homework_model import UserStreak
     
     query = (
         select(UserStreak)
@@ -156,7 +161,6 @@ async def get_all_streaks(
     db: AsyncSession = Depends(get_bot_db_session),
 ):
     """Get all user streaks with optional minimum filter."""
-    from bot.src.models.homework_model import UserStreak
     
     query = select(UserStreak)
     
@@ -179,7 +183,6 @@ async def get_user_guarantee(
     db: AsyncSession = Depends(get_bot_db_session),
 ):
     """Get guarantee status for a specific user."""
-    from bot.src.models.homework_model import UserGuarantee
     
     query = select(UserGuarantee).where(UserGuarantee.user_id == user_id)
     result = await db.execute(query)
@@ -197,7 +200,6 @@ async def get_guarantees_by_status(
     db: AsyncSession = Depends(get_bot_db_session),
 ):
     """Get all users with specific guarantee status."""
-    from bot.src.models.homework_model import UserGuarantee
     
     query = select(UserGuarantee).where(UserGuarantee.has_guarantee == has_guarantee)
     result = await db.execute(query)
@@ -214,7 +216,6 @@ async def get_reminder_types(
     db: AsyncSession = Depends(get_bot_db_session),
 ):
     """Get all reminder types."""
-    from bot.src.models.reminder_types_model import ReminderType
     
     query = select(ReminderType)
     
@@ -233,7 +234,6 @@ async def get_reminder_messages(
     db: AsyncSession = Depends(get_bot_db_session),
 ):
     """Get all messages for a specific reminder type."""
-    from bot.src.models.reminder_types_model import ReminderMessagePool
     
     query = select(ReminderMessagePool).where(
         ReminderMessagePool.reminder_type_id == reminder_type_id
@@ -252,7 +252,6 @@ async def get_daily_completion_rate(
     db: AsyncSession = Depends(get_bot_db_session),
 ):
     """Get daily homework completion rate for the last N days."""
-    from bot.src.models.homework_model import UserHomework
     
     end_date = date.today()
     start_date = end_date - timedelta(days=days)
@@ -289,7 +288,6 @@ async def get_user_activity(
     db: AsyncSession = Depends(get_bot_db_session),
 ):
     """Get user activity for the last N days."""
-    from bot.src.models.homework_model import UserHomework, UserStreak
     
     end_date = date.today()
     start_date = end_date - timedelta(days=days)
