@@ -335,9 +335,9 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
         throw new Error(`Пожалуйста, выберите ${mediaType === "image" ? "изображение" : "видео"}`);
       }
 
-      const maxSize = mediaType === "image" ? 10 * 1024 * 1024 : 100 * 1024 * 1024;
+      const maxSize = mediaType === "image" ? 10 * 1024 * 1024 : 500 * 1024 * 1024;
       if (file.size > maxSize) {
-        throw new Error(`Размер файла не должен превышать ${mediaType === "image" ? "10MB" : "100MB"}`);
+        throw new Error(`Размер файла не должен превышать ${mediaType === "image" ? "10MB" : "500MB"}`);
       }
 
       const response = await s3Api.uploadMedia(
