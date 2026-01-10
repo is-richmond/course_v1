@@ -1,10 +1,11 @@
 """API endpoints for accessing Bot database data."""
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, func, and_, or_, desc
+from sqlalchemy import select, func, and_, or_, desc, Integer, cast
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional, Integer
 from datetime import date, datetime, timedelta
+from core.src.app.api.deps import get_bot_db_session
 
 from core.src.app.api.deps import get_db_session
 from core.src.app.schemas.bot_data import (
@@ -29,7 +30,7 @@ async def get_user_homework(
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     completed_only: Optional[bool] = None,
-    db: AsyncSession = Depends(get_db_session),
+    db: AsyncSession = Depends(get_bot_db_session),
 ):
     """Get homework submissions for a specific user."""
     from bot.src.models.homework_model import UserHomework
@@ -259,7 +260,7 @@ async def get_daily_completion_rate(
     query = select(
         UserHomework.date,
         func.count(UserHomework.id).label('total'),
-        func.sum(func.cast(UserHomework.is_complete, Integer)).label('completed')
+        func.sum(cast(UserHomework.is_complete, Integer)).label('completed')
     ).where(
         and_(
             UserHomework.date >= start_date,
