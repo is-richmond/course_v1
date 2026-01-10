@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     
     # Database Settings
     DATABASE_URL: str = "sqlite+aiosqlite:///./data/core.db"
-    BOT_DATABASE_URL: str = "postgresql://botuser:botpass@localhost:5432/botdb"
+    BOT_DATABASE_URL: str = "postgresql+asyncpg://botuser:botpass@localhost:5432/botdb"
     # Application Settings
     APP_NAME: str = "Course Platform Core"
     API_PREFIX: str = "/v1"
