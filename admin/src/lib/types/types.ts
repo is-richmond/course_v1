@@ -372,3 +372,27 @@ export interface PhotosLoadingState {
   users: boolean;
   photos: boolean;
 }
+
+
+export interface UploadProgress {
+  percentCompleted: number;
+  loaded: number;
+  total: number;
+  mediaType: "image" | "video";
+}
+
+export interface MediaUploadResponse {
+  success: boolean;
+  file: {
+    id: string;
+    filename: string;
+    download_url: string;
+    media_type: string;
+    size: number;
+  };
+}
+
+export interface SupportedFormats {
+  image: Array<{ ext: string; type:  string }>;
+  video: Array<{ ext: string; type:  string }>;
+}

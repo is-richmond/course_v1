@@ -589,6 +589,23 @@ export const apiClient = {
 // ============================================================================
 
 export const s3Api = {
+  // ✅ Валидация поддерживаемых форматов
+  getSupportedFormats: () => ({
+    image: [
+      { ext: "jpg/jpeg", type: "image/jpeg" },
+      { ext: "png", type: "image/png" },
+      { ext: "webp", type: "image/webp" },
+      { ext: "gif", type:  "image/gif" },
+    ],
+    video: [
+      { ext: "mp4", type: "video/mp4" },
+      { ext: "webm", type: "video/webm" },
+      { ext: "mov", type:  "video/quicktime" },
+      { ext: "avi", type: "video/x-msvideo" },
+      { ext: "mkv", type: "video/x-matroska" },
+    ],
+  }),
+
   // Upload media file (image or video)
   uploadMedia: async (
     file: File,
@@ -597,6 +614,51 @@ export const s3Api = {
     lessonId?: number,
     customName?: string
   ) => {
+    // ✅ Валидация файла существует
+    if (!file) {
+      throw new Error(
+        `Пожалуйста, выберите ${mediaType === "video" ? "видео" : "изображение"}`
+      );
+    }
+
+    // ✅ Проверка типа файла
+    const validImageTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/gif",
+    ];
+    const validVideoTypes = [
+      "video/mp4",
+      "video/webm",
+      "video/quicktime",
+      "video/x-msvideo",
+      "video/x-matroska",
+    ];
+
+    const validTypes =
+      mediaType === "video" ?  validVideoTypes : validImageTypes;
+
+    if (!validTypes.includes(file.type)) {
+      throw new Error(
+        `Неверный формат ${mediaType === "video" ? "видео" : "изображения"}. ` +
+          `Допустимые:  ${validTypes.join(", ")}`
+      );
+    }
+
+    // ✅ Проверка размера файла
+    const maxSize =
+      mediaType === "video"
+        ? 500 * 1024 * 1024 // 500MB для видео
+        : 50 * 1024 * 1024; // 50MB для фото
+
+    if (file.size > maxSize) {
+      throw new Error(
+        `Файл слишком большой.  Максимум:  ${maxSize / (1024 * 1024)}MB, ` +
+          `у вас:  ${(file.size / (1024 * 1024)).toFixed(1)}MB`
+      );
+    }
+
     const formData = new FormData();
     formData.append("file", file);
     formData.append("media_type", mediaType);
@@ -605,33 +667,87 @@ export const s3Api = {
     if (lessonId) formData.append("lesson_id", lessonId.toString());
     if (customName) formData.append("custom_name", customName);
 
-    const response = await axios.post("/s3/upload", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-    return response.data;
+    try {
+      const response = await axios.post("/s3/upload", formData, {
+        headers:  {
+          "Content-Type":  "multipart/form-data",
+        },
+        // ✅ УВЕЛИЧИВАЕМ TIMEOUT до 5 минут
+        timeout: 5 * 60 * 1000,
+
+        // ✅ ОТСЛЕЖИВАНИЕ ПРОГРЕССА ЗАГРУЗКИ
+        onUploadProgress: (progressEvent) => {
+          const total = progressEvent.total || 0;
+          const loaded = progressEvent.loaded || 0;
+          const percentCompleted = total
+            ? Math.round((loaded * 100) / total)
+            : 0;
+
+          console. log(
+            `Upload progress: ${percentCompleted}% (${(loaded / (1024 * 1024)).toFixed(1)}MB / ${(total / (1024 * 1024)).toFixed(1)}MB)`
+          );
+
+          // ✅ Диспатчим событие для обновления UI
+          window.dispatchEvent(
+            new CustomEvent("uploadProgress", {
+              detail: { percentCompleted, loaded, total, mediaType },
+            })
+          );
+        },
+      });
+
+      return response.data;
+    } catch (error:  any) {
+      // ✅ ЛУЧШАЯ ОБРАБОТКА ОШИБОК
+      if (error.code === "ECONNABORTED") {
+        throw new Error(
+          `Загрузка заняла слишком много времени.  Попробуйте файл поменьше или проверьте интернет. `
+        );
+      }
+
+      if (error.response?.status === 413) {
+        throw new Error(`Файл слишком большой для сервера`);
+      }
+
+      if (error.response?.status === 415) {
+        throw new Error(
+          `Неподдерживаемый формат файла. Проверьте тип файла.`
+        );
+      }
+
+      if (error.response?.data?.detail) {
+        throw new Error(error.response.data.detail);
+      }
+
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+
+      throw new Error(
+        error.message || `Ошибка загрузки ${mediaType === "video" ? "видео" : "изображения"}`
+      );
+    }
   },
 
   // Get all media files
-  getAllMedia: async (
+  getAllMedia:  async (
     skip: number = 0,
     limit: number = 100,
     mediaType?: "image" | "video",
     courseId?: number,
     lessonId?: number
   ) => {
-    const params: any = { skip, limit };
+    const params:  any = { skip, limit };
     if (mediaType) params.media_type = mediaType;
     if (courseId) params.course_id = courseId;
     if (lessonId) params.lesson_id = lessonId;
 
     const response = await axios.get("/s3/media", { params });
-    return response.data;
+    return response. data;
   },
 
   // Delete media file
-  deleteMedia: async (mediaId: string) => {
+  deleteMedia:  async (mediaId: string) => {
     const response = await axios.delete(`/s3/media/${mediaId}`);
     return response.data;
   },
@@ -642,8 +758,6 @@ export const s3Api = {
     return response.data;
   },
 };
-
-
 
 export const photosApi = {
   // Get user photos

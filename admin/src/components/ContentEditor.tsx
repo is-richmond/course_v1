@@ -29,7 +29,7 @@ import { s3Api } from "@/lib/api/api";
 interface ContentEditorProps {
   value: string;
   onChange: (value: string) => void;
-  courseId?: number;
+  courseId?:  number;
   lessonId?: number;
   placeholder?: string;
   label?: string;
@@ -40,20 +40,27 @@ interface UploadedMedia {
   id: string;
   filename: string;
   download_url: string | null;
-  media_type: "image" | "video";
-  created_at?: string;
+  media_type:  "image" | "video";
+  created_at?:  string;
 }
 
-const ContentEditor: React.FC<ContentEditorProps> = ({
+interface UploadProgress {
+  percentCompleted: number;
+  loaded: number;
+  total: number;
+}
+
+const ContentEditor:  React.FC<ContentEditorProps> = ({
   value,
   onChange,
   courseId,
   lessonId,
-  placeholder = "Введите контент урока...",
+  placeholder = "Введите контент урока.. .",
   label = "Контент",
   rows = 12,
 }) => {
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [codeMode, setCodeMode] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<Map<string, UploadedMedia>>(new Map());
@@ -81,20 +88,36 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
     "#800080", "#FF00FF", "#8B4513", "#FFFFFF"
   ];
 
+  // ✅ Слушаем прогресс события от uploadMedia
+  useEffect(() => {
+    const handleUploadProgress = (event: Event) => {
+      const customEvent = event as CustomEvent<UploadProgress>;
+      if (customEvent.detail) {
+        setUploadProgress(customEvent.detail.percentCompleted);
+      }
+    };
+
+    window.addEventListener("uploadProgress", handleUploadProgress);
+
+    return () => {
+      window.removeEventListener("uploadProgress", handleUploadProgress);
+    };
+  }, []);
+
   const renderEditableContent = (content: string) => {
-    if (!content) return "";
+    if (! content) return "";
     
     let rendered = content;
     
     // Заменяем плейсхолдеры изображений на превью
     rendered = rendered.replace(
-      /\[IMAGE:([^\]]+)\]/g,
+      /\[IMAGE: ([^\]]+)\]/g,
       (match, mediaId) => {
         const imageInfo = uploadedImages.get(mediaId) || libraryMedia.find(m => m.id === mediaId);
-        if (imageInfo?.download_url) {
-          return `<img src="${imageInfo.download_url}" alt="${imageInfo.filename}" style="max-width: 100%; height: auto; border-radius: 0.5rem; margin: 1rem 0; display: block;" data-media-id="${mediaId}" data-media-type="image" />`;
+        if (imageInfo?. download_url) {
+          return `<img src="${imageInfo.download_url}" alt="${imageInfo.filename}" style="max-width: 100%; height:  auto; border-radius: 0.5rem; margin:  1rem 0; display: block;" data-media-id="${mediaId}" data-media-type="image" />`;
         }
-        return `<div style="padding: 1rem; background: #f3f4f6; border-radius: 0.5rem; text-align: center; color: #6b7280; margin: 1rem 0;" data-media-id="${mediaId}" data-media-type="image">Изображение: ${mediaId.substring(0, 8)}...</div>`;
+        return `<div style="padding: 1rem; background: #f3f4f6; border-radius: 0.5rem; text-align: center; color: #6b7280; margin: 1rem 0;" data-media-id="${mediaId}" data-media-type="image">Изображение:  ${mediaId. substring(0, 8)}...</div>`;
       }
     );
 
@@ -109,7 +132,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
             Ваш браузер не поддерживает видео.
           </video>`;
         }
-        return `<div style="padding: 1rem; background: #f3f4f6; border-radius: 0.5rem; text-align: center; color: #6b7280; margin: 1rem 0;" data-media-id="${mediaId}" data-media-type="video">Видео: ${mediaId.substring(0, 8)}...</div>`;
+        return `<div style="padding: 1rem; background: #f3f4f6; border-radius: 0.5rem; text-align: center; color: #6b7280; margin: 1rem 0;" data-media-id="${mediaId}" data-media-type="video">Видео:  ${mediaId.substring(0, 8)}...</div>`;
       }
     );
 
@@ -144,81 +167,55 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
     return content;
   };
 
-  const saveSelection = () => {
-    const selection = window.getSelection();
-    if (selection && selection.rangeCount > 0) {
-      return selection.getRangeAt(0);
-    }
-    return null;
-  };
-
-  const restoreSelection = (range: Range | null) => {
-    if (range) {
-      try {
-        const selection = window.getSelection();
-        if (selection) {
-          selection.removeAllRanges();
-          selection.addRange(range);
-        }
-      } catch (e) {
-        // Игнорируем ошибки восстановления
-      }
-    }
-  };
-
-  const handleEditableInput = useCallback((eventOrImmediate?: React.FormEvent<HTMLDivElement> | boolean) => {
-    if (editableRef.current && !isUpdatingRef.current) {
+  const handleEditableInput = useCallback((eventOrImmediate?:  React.FormEvent<HTMLDivElement> | boolean) => {
+    if (editableRef.current && ! isUpdatingRef.current) {
       const html = editableRef.current.innerHTML;
       const converted = convertHTMLToPlaceholders(html);
       
-      // Только обновляем если контент действительно изменился
       if (converted !== value) {
         onChange(converted);
       }
     }
   }, [onChange, value]);
 
-  // Инициализация контента только один раз при монтировании
   useEffect(() => {
     if (editableRef.current && !isUpdatingRef.current) {
       const rendered = renderEditableContent(value);
       if (rendered) {
         editableRef.current.innerHTML = rendered;
-      } else if (!value) {
-        editableRef.current.innerHTML = `<p class="text-gray-400 italic">${placeholder}</p>`;
+      } else if (! value) {
+        editableRef. current.innerHTML = `<p class="text-gray-400 italic">${placeholder}</p>`;
       }
     }
-  }, []); // Только при монтировании
+  }, []);
 
-  // Обновление при изменении value извне (например, из кода)
   useEffect(() => {
-    if (editableRef.current && !isUpdatingRef.current && !document.activeElement?.isSameNode(editableRef.current)) {
-      const currentConverted = convertHTMLToPlaceholders(editableRef.current.innerHTML);
+    if (editableRef.current && !isUpdatingRef.current && ! document.activeElement?. isSameNode(editableRef.current)) {
+      const currentConverted = convertHTMLToPlaceholders(editableRef.current. innerHTML);
       if (currentConverted !== value) {
         const rendered = renderEditableContent(value);
         if (rendered) {
           isUpdatingRef.current = true;
-          editableRef.current.innerHTML = rendered;
+          editableRef.current. innerHTML = rendered;
           isUpdatingRef.current = false;
         }
       }
     }
   }, [value, uploadedImages, libraryMedia]);
 
-  const execCommand = (command: string, value?: string) => {
+  const execCommand = (command: string, value?:  string) => {
     if (!editableRef.current) return;
     
     editableRef.current.focus();
     document.execCommand(command, false, value);
     
-    // Принудительно обновляем состояние после команды
     setTimeout(() => {
       handleEditableInput();
     }, 10);
   };
 
   const formatBlock = (tag: string) => {
-    if (!editableRef.current) return;
+    if (! editableRef.current) return;
     
     editableRef.current.focus();
     document.execCommand('formatBlock', false, `<${tag}>`);
@@ -231,7 +228,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
   const insertList = () => {
     if (!editableRef.current) return;
     
-    editableRef.current.focus();
+    editableRef.current. focus();
     document.execCommand('insertUnorderedList', false);
     
     setTimeout(() => {
@@ -240,7 +237,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
   };
 
   const applyColor = (color: string) => {
-    if (!editableRef.current) return;
+    if (!editableRef. current) return;
     
     editableRef.current.focus();
     document.execCommand('foreColor', false, color);
@@ -258,14 +255,10 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
-      
-      // Перемещаем курсор в конец выделения (если есть выделение)
       range.collapse(false);
       
-      // Вычисляем количество переносов строк (1rem ≈ 1.5 строки)
       const lineCount = Math.max(1, Math.round(parseFloat(spacingValue) * 1.5));
       
-      // Вставляем переносы строк
       for (let i = 0; i < lineCount; i++) {
         const br = document.createElement('br');
         range.insertNode(br);
@@ -273,7 +266,6 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
         range.collapse(true);
       }
       
-      // Курсор остается после вставленных переносов
       selection.removeAllRanges();
       selection.addRange(range);
       
@@ -288,7 +280,6 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
 
   const insertAtCursor = (text: string) => {
     if (codeMode && textareaRef.current) {
-      // Режим кода
       const textarea = textareaRef.current;
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
@@ -300,8 +291,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
         textarea.setSelectionRange(start + text.length, start + text.length);
       });
     } else if (editableRef.current) {
-      // Визуальный режим
-      editableRef.current.focus();
+      editableRef.current. focus();
       const selection = window.getSelection();
       if (selection && selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
@@ -325,21 +315,10 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
   const handleMediaUpload = async (file: File, mediaType: "image" | "video") => {
     setUploading(true);
     setUploadError(null);
+    setUploadProgress(0);
 
     try {
-      const validTypes = mediaType === "image" 
-        ? ["image/jpeg", "image/png", "image/gif", "image/webp"]
-        : ["video/mp4", "video/webm", "video/ogg"];
-
-      if (!validTypes.includes(file.type)) {
-        throw new Error(`Пожалуйста, выберите ${mediaType === "image" ? "изображение" : "видео"}`);
-      }
-
-      const maxSize = mediaType === "image" ? 10 * 1024 * 1024 : 500 * 1024 * 1024;
-      if (file.size > maxSize) {
-        throw new Error(`Размер файла не должен превышать ${mediaType === "image" ? "10MB" : "500MB"}`);
-      }
-
+      // ✅ Вызываем обновленную функцию с улучшенной валидацией
       const response = await s3Api.uploadMedia(
         file,
         mediaType,
@@ -348,13 +327,13 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
         file.name
       );
 
-      const media = response.media;
+      const media = response.file;
 
       setUploadedImages((prev) =>
         new Map(prev).set(media.id, {
           id: media.id,
-          filename: media.original_filename || media.filename,
-          download_url: media.download_url,
+          filename: media.filename,
+          download_url: media. download_url,
           media_type: mediaType,
         })
       );
@@ -362,16 +341,16 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
       const placeholder = mediaType === "image" ? `[IMAGE:${media.id}]` : `[VIDEO:${media.id}]`;
       insertAtCursor(placeholder);
 
-      console.log(`${mediaType} uploaded successfully:`, media.id);
-    } catch (error: any) {
+      console.log(`${mediaType} uploaded successfully: `, media.id);
+    } catch (error:  any) {
       console.error("Upload error:", error);
       setUploadError(
-        error.response?.data?.detail ||
-          error.message ||
-          "Не удалось загрузить файл"
+        error.message ||
+        "Не удалось загрузить файл"
       );
     } finally {
       setUploading(false);
+      setUploadProgress(0);
       if (fileInputRef.current) fileInputRef.current.value = "";
       if (videoInputRef.current) videoInputRef.current.value = "";
     }
@@ -380,15 +359,17 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
   const loadMediaLibrary = async () => {
     setLoadingLibrary(true);
     try {
-      const response = await s3Api.getAllMedia(courseId);
+      const response = await s3Api.getAllMedia(0, 100, undefined, courseId);
 
-      setLibraryMedia(response.media.map((m: any) => ({
-        id: m.id,
-        filename: m.original_filename || m.filename,
-        download_url: m.download_url,
-        media_type: m.media_type,
-        created_at: m.created_at,
-      })));
+      setLibraryMedia(
+        (response.items || []).map((m:  any) => ({
+          id:  m.id,
+          filename: m.filename || m.original_filename,
+          download_url: m.download_url,
+          media_type: m.media_type,
+          created_at: m.created_at,
+        }))
+      );
     } catch (error) {
       console.error("Error loading media library:", error);
       setUploadError("Не удалось загрузить библиотеку медиа");
@@ -405,8 +386,9 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
 
   const deleteMediaFromLibrary = async (mediaId: string) => {
     try {
-      await s3Api.deleteMedia(mediaId);
+      await s3Api. deleteMedia(mediaId);
       setLibraryMedia((prev) => prev.filter((m) => m.id !== mediaId));
+      setUploadError(null);
     } catch (error) {
       console.error("Error deleting media:", error);
       setUploadError("Не удалось удалить файл");
@@ -414,7 +396,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
   };
 
   const countMedia = () => {
-    const images = (value.match(/\[IMAGE:[^\]]+\]/g) || []).length;
+    const images = (value. match(/\[IMAGE:[^\]]+\]/g) || []).length;
     const videos = (value.match(/\[VIDEO:[^\]]+\]/g) || []).length;
     return { images, videos };
   };
@@ -428,7 +410,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
         <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500">
           <span>{mediaCount.images} изобр.</span>
           <span>{mediaCount.videos} видео</span>
-          <span>{value.length} симв.</span>
+          <span>{value. length} симв.</span>
         </div>
       </div>
 
@@ -439,7 +421,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => codeMode ? null : execCommand('bold')}
+              onClick={() => codeMode ?  null : execCommand('bold')}
               disabled={codeMode}
               title="Жирный"
               className="h-8 w-8 p-0"
@@ -451,7 +433,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => codeMode ? null : execCommand('italic')}
+              onClick={() => codeMode ? null :  execCommand('italic')}
               disabled={codeMode}
               title="Курсив"
               className="h-8 w-8 p-0"
@@ -466,7 +448,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => codeMode ? null : formatBlock('h1')}
+                onClick={() => codeMode ? null :  formatBlock('h1')}
                 disabled={codeMode}
                 title="Заголовок 1"
                 className="h-8 w-8 p-0"
@@ -520,7 +502,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => codeMode ? null : setShowColorPicker(!showColorPicker)}
+                onClick={() => codeMode ? null : setShowColorPicker(! showColorPicker)}
                 disabled={codeMode}
                 title="Цвет текста"
                 className="h-8 w-8 p-0"
@@ -528,7 +510,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
                 <Palette className="w-4 h-4" />
               </Button>
 
-              {showColorPicker && !codeMode && (
+              {showColorPicker && ! codeMode && (
                 <div className="absolute top-10 left-0 z-50 bg-white border-2 rounded-lg shadow-lg p-3">
                   <div className="grid grid-cols-4 gap-2 mb-2">
                     {predefinedColors.map((color) => (
@@ -545,7 +527,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
                   <Input
                     type="color"
                     value={selectedColor}
-                    onChange={(e) => setSelectedColor(e.target.value)}
+                    onChange={(e) => setSelectedColor(e. target.value)}
                     className="w-full h-8"
                   />
                   <Button
@@ -637,7 +619,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
               type="file"
               accept="video/*"
               onChange={(e) => {
-                const file = e.target.files?.[0];
+                const file = e.target. files?.[0];
                 if (file) handleMediaUpload(file, "video");
               }}
               className="hidden"
@@ -647,12 +629,12 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
 
             <Button
               type="button"
-              variant={codeMode ? "default" : "outline"}
+              variant={codeMode ? "default" :  "outline"}
               size="sm"
               onClick={() => setCodeMode(!codeMode)}
               className="h-8 px-2 sm:px-3"
             >
-              {codeMode ? (
+              {codeMode ?  (
                 <>
                   <Eye className="w-4 h-4" />
                   <span className="hidden sm:inline ml-1 text-xs">Визуал</span>
@@ -665,6 +647,19 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
               )}
             </Button>
           </div>
+
+          {/* ✅ ПРОГРЕСС БАР ЗАГРУЗКИ */}
+          {uploading && uploadProgress > 0 && (
+            <div className="mt-3 pt-3 border-t">
+              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                <div
+                  className="bg-blue-600 h-full transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">{uploadProgress}% загружено</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -684,7 +679,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
         </div>
       )}
 
-      {codeMode ? (
+      {codeMode ?  (
         <textarea
           key="code-mode"
           ref={textareaRef}
@@ -700,7 +695,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
             <style dangerouslySetInnerHTML={{
               __html: `
                 [contenteditable] h1 {
-                  font-size: 2em;
+                  font-size:  2em;
                   font-weight: bold;
                   margin-top: 0.67em;
                   margin-bottom: 0.67em;
@@ -725,7 +720,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
                 }
                 [contenteditable] ol {
                   list-style-type: decimal;
-                  margin-top: 1em;
+                  margin-top:  1em;
                   margin-bottom: 1em;
                   padding-left: 40px;
                 }
@@ -734,11 +729,11 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
                   margin-bottom: 0.5em;
                 }
                 [contenteditable] p {
-                  margin-top: 0.5em;
+                  margin-top:  0.5em;
                   margin-bottom: 0.5em;
                 }
                 [contenteditable] strong {
-                  font-weight: bold;
+                  font-weight:  bold;
                 }
                 [contenteditable] em {
                   font-style: italic;
@@ -812,7 +807,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
                 </button>
               </div>
 
-              {loadingLibrary ? (
+              {loadingLibrary ?  (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
                 </div>
@@ -827,17 +822,19 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
                       key={media.id}
                       className="border-2 rounded-lg p-2 hover:border-blue-500 transition-colors"
                     >
-                      {media.media_type === "image" ? (
+                      {media.media_type === "image" ?  (
                         <img
                           src={media.download_url || ""}
-                          alt={media.filename}
+                          alt={media. filename}
                           className="w-full h-32 object-cover rounded mb-2"
+                          onError={(e) => {
+                            e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23f3f4f6' width='100' height='100'/%3E%3Ctext x='50' y='50' dominant-baseline='middle' text-anchor='middle' font-size='12' fill='%236b7280'%3EОшибка загрузки%3C/text%3E%3C/svg%3E";
+                          }}
                         />
                       ) : (
-                        <video
-                          src={media.download_url || ""}
-                          className="w-full h-32 object-cover rounded mb-2"
-                        />
+                        <div className="w-full h-32 bg-gray-200 rounded mb-2 flex items-center justify-center">
+                          <Video className="w-8 h-8 text-gray-400" />
+                        </div>
                       )}
                       <p className="text-xs truncate mb-2" title={media.filename}>
                         {media.filename}
