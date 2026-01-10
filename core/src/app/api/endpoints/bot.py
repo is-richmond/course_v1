@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select, func, and_, or_, desc, Integer, cast
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Optional, Integer
+from typing import List, Optional
 from datetime import date, datetime, timedelta
 from core.src.app.api.deps import get_bot_db_session
 
