@@ -55,7 +55,7 @@ async def get_user_homework(
 @router.get("/homework/date/{homework_date}", response_model=List[UserHomeworkResponse])
 async def get_homework_by_date(
     homework_date: date,
-    db: AsyncSession = Depends(get_db_session),
+    db: AsyncSession = Depends(get_bot_db_session),
 ):
     """Get all homework submissions for a specific date."""
     from bot.src.models.homework_model import UserHomework
@@ -71,7 +71,7 @@ async def get_homework_by_date(
 async def get_homework_statistics(
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
-    db: AsyncSession = Depends(get_db_session),
+    db: AsyncSession = Depends(get_bot_db_session),
 ):
     """Get homework completion statistics."""
     from bot.src.models.homework_model import UserHomework
@@ -115,7 +115,7 @@ async def get_homework_statistics(
 @router.get("/streaks/user/{user_id}", response_model=UserStreakResponse)
 async def get_user_streak(
     user_id: str,
-    db: AsyncSession = Depends(get_db_session),
+    db: AsyncSession = Depends(get_bot_db_session),
 ):
     """Get streak information for a specific user."""
     from bot.src.models.homework_model import UserStreak
@@ -133,7 +133,7 @@ async def get_user_streak(
 @router.get("/streaks/leaderboard", response_model=List[UserStreakResponse])
 async def get_streak_leaderboard(
     limit: int = Query(10, ge=1, le=100),
-    db: AsyncSession = Depends(get_db_session),
+    db: AsyncSession = Depends(get_bot_db_session),
 ):
     """Get top users by current streak."""
     from bot.src.models.homework_model import UserStreak
@@ -153,7 +153,7 @@ async def get_streak_leaderboard(
 @router.get("/streaks/all", response_model=List[UserStreakResponse])
 async def get_all_streaks(
     min_streak: int = Query(0, ge=0),
-    db: AsyncSession = Depends(get_db_session),
+    db: AsyncSession = Depends(get_bot_db_session),
 ):
     """Get all user streaks with optional minimum filter."""
     from bot.src.models.homework_model import UserStreak
@@ -176,7 +176,7 @@ async def get_all_streaks(
 @router.get("/guarantee/user/{user_id}", response_model=UserGuaranteeResponse)
 async def get_user_guarantee(
     user_id: str,
-    db: AsyncSession = Depends(get_db_session),
+    db: AsyncSession = Depends(get_bot_db_session),
 ):
     """Get guarantee status for a specific user."""
     from bot.src.models.homework_model import UserGuarantee
@@ -194,7 +194,7 @@ async def get_user_guarantee(
 @router.get("/guarantee/status/{has_guarantee}", response_model=List[UserGuaranteeResponse])
 async def get_guarantees_by_status(
     has_guarantee: bool,
-    db: AsyncSession = Depends(get_db_session),
+    db: AsyncSession = Depends(get_bot_db_session),
 ):
     """Get all users with specific guarantee status."""
     from bot.src.models.homework_model import UserGuarantee
@@ -211,7 +211,7 @@ async def get_guarantees_by_status(
 @router.get("/reminders/types", response_model=List[ReminderTypeResponse])
 async def get_reminder_types(
     active_only: bool = Query(True),
-    db: AsyncSession = Depends(get_db_session),
+    db: AsyncSession = Depends(get_bot_db_session),
 ):
     """Get all reminder types."""
     from bot.src.models.reminder_types_model import ReminderType
@@ -230,7 +230,7 @@ async def get_reminder_types(
 @router.get("/reminders/messages/{reminder_type_id}", response_model=List[ReminderMessageResponse])
 async def get_reminder_messages(
     reminder_type_id: int,
-    db: AsyncSession = Depends(get_db_session),
+    db: AsyncSession = Depends(get_bot_db_session),
 ):
     """Get all messages for a specific reminder type."""
     from bot.src.models.reminder_types_model import ReminderMessagePool
@@ -249,7 +249,7 @@ async def get_reminder_messages(
 @router.get("/analytics/daily-completion")
 async def get_daily_completion_rate(
     days: int = Query(30, ge=1, le=365),
-    db: AsyncSession = Depends(get_db_session),
+    db: AsyncSession = Depends(get_bot_db_session),
 ):
     """Get daily homework completion rate for the last N days."""
     from bot.src.models.homework_model import UserHomework
@@ -286,7 +286,7 @@ async def get_daily_completion_rate(
 async def get_user_activity(
     user_id: str,
     days: int = Query(30, ge=1, le=365),
-    db: AsyncSession = Depends(get_db_session),
+    db: AsyncSession = Depends(get_bot_db_session),
 ):
     """Get user activity for the last N days."""
     from bot.src.models.homework_model import UserHomework, UserStreak
