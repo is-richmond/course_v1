@@ -155,7 +155,7 @@ services:
       - traefik-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.core-api.rule=Host(`api.${DOMAIN}`) && (PathPrefix(`/v1/courses`) || PathPrefix(`/v1/media`) || PathPrefix(`/v1/s3`) || PathPrefix(`/v1/lessons`) || PathPrefix(`/v1/progress`) || PathPrefix(`/v1/modules`) || PathPrefix(`/v1/options`) || PathPrefix(`/v1/questions`) || PathPrefix(`/v1/tests`) || PathPrefix(`/v1/combined-tests`))"
+      - "traefik.http.routers.core-api.rule=Host(`api.${DOMAIN}`) && (PathPrefix(`/v1/courses`) || PathPrefix(`/v1/media`) || PathPrefix(`/v1/s3`) || PathPrefix(`/v1/lessons`) || PathPrefix(`/v1/progress`) || PathPrefix(`/v1/modules`) || PathPrefix(`/v1/options`) || PathPrefix(`/v1/questions`) || PathPrefix(`/v1/tests`) || PathPrefix(`/v1/combined-tests`) || PathPrefix(`/v1/photos`))"
       - "traefik.http.routers.core-api.entrypoints=websecure"
       - "traefik.http.routers.core-api.tls.certresolver=letsencrypt"
       - "traefik.http.routers.core-api.service=core"
