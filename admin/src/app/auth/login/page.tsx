@@ -71,7 +71,7 @@ const LoginPage: React.FC = () => {
 
       if (response.access_token) {
         // Success - redirect to dashboard
-        router.push('/admin/home');
+        router.push('/dashboard/home');
       } else {
         setErrorMessage('Login failed. Please try again.');
       }
