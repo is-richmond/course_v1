@@ -132,6 +132,7 @@ services:
       - SECRET_KEY=${CORE_SECRET_KEY}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
       - DATABASE_URL=postgresql+asyncpg://${CORE_POSTGRES_USER:-coreuser}:${CORE_POSTGRES_PASSWORD:-corepass}@postgres-core:5432/${CORE_POSTGRES_DB:-coredb}
+      - BOT_DATABASE_URL=postgresql+asyncpg://${BOT_POSTGRES_USER:-botuser}:${BOT_POSTGRES_PASSWORD:-botpass}@postgres-bot:5432/${BOT_POSTGRES_DB:-botdb}
       - DEBUG=${DEBUG:-True}
       - PYTHONPATH=/app
       - AUTH_SERVICE_URL=${AUTH_SERVICE_URL:-http://auth:8000}
@@ -141,16 +142,20 @@ services:
       - ./core/alembic:/app/alembic:rw
       - ./core/alembic.ini:/app/alembic.ini:ro
       - ./core/alembic/versions:/app/alembic/versions:rw
+      - ./bot/src:/app/bot/src:ro
     env_file:
       - ./core/.env
     depends_on:
       postgres-core: 
+        condition: service_healthy
+      postgres-bot:  # Добавьте эту зависимость
         condition: service_healthy
       auth:
         condition: service_started
     restart: unless-stopped
     networks:
       - core-network
+      - bot-network
       - shared-network
       - traefik-network
     labels:
