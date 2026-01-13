@@ -31,7 +31,7 @@ interface ToastMessage {
   message: string;
 }
 
-const UserPhotosPage: React.FC = () => {
+const UserPhotosPage:  React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -48,13 +48,13 @@ const UserPhotosPage: React.FC = () => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 20,
+    limit:  20,
   });
 
   // Toast management
-  const addToast = useCallback((toast: Omit<ToastMessage, 'id'>) => {
+  const addToast = useCallback((toast:  Omit<ToastMessage, 'id'>) => {
     const id = Math.random().toString(36).substr(2, 9);
-    const newToast: ToastMessage = { ...toast, id };
+    const newToast: ToastMessage = { ... toast, id };
     setToasts(prev => [...prev, newToast]);
     
     setTimeout(() => {
@@ -79,21 +79,31 @@ const UserPhotosPage: React.FC = () => {
     } finally {
       setLoading(prev => ({ ...prev, users: false }));
     }
-  }, [pagination.page, pagination.limit, addToast]);
+  }, [pagination.page, pagination. limit, addToast]);
 
   // Fetch user photos
-  const fetchUserPhotos = useCallback(async (userId: string) => {
+  const fetchUserPhotos = useCallback(async (userId:  string) => {
     setLoading(prev => ({ ...prev, photos: true }));
     try {
-      const response: MediaListResponse = await photosApi.getUserPhotos(userId, 0, 1000);
+      const response:  MediaListResponse = await photosApi.getUserPhotos(userId, 0, 1000);
       
-      const photosData: Photo[] = response.items || [];
+      // Map API response to Photo array - API returns data in 'media' field
+      const photosData:  Photo[] = (response.media || []).map(item => ({
+        ... item,
+        // Add aliases for backwards compatibility
+        file_name: item.original_filename,
+        file_path: item.download_url,
+        upload_date: item.created_at,
+        file_size: item.size,
+        mime_type: item.content_type,
+      }));
+
       setPhotos(photosData);
 
       // Group photos by date
-      const grouped: PhotosByDate = {};
+      const grouped:  PhotosByDate = {};
       photosData.forEach(photo => {
-        const date = new Date(photo.upload_date).toLocaleDateString('en-US', {
+        const date = new Date(photo.created_at).toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'long',
           day: 'numeric',
@@ -105,12 +115,12 @@ const UserPhotosPage: React.FC = () => {
       });
 
       // Sort dates in descending order
-      const sortedGrouped: PhotosByDate = {};
+      const sortedGrouped:  PhotosByDate = {};
       Object.keys(grouped)
-        .sort((a, b) => new Date(grouped[b][0].upload_date).getTime() - new Date(grouped[a][0].upload_date).getTime())
+        .sort((a, b) => new Date(grouped[b][0]. created_at).getTime() - new Date(grouped[a][0].created_at).getTime())
         .forEach(date => {
-          sortedGrouped[date] = grouped[date].sort((a, b) => 
-            new Date(b.upload_date).getTime() - new Date(a.upload_date).getTime()
+          sortedGrouped[date] = grouped[date]. sort((a, b) => 
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
           );
         });
 
@@ -135,8 +145,8 @@ const UserPhotosPage: React.FC = () => {
       setFilteredUsers(users);
     } else {
       const filtered = users.filter(user =>
-        user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (user.first_name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        user.email.toLowerCase().includes(searchQuery. toLowerCase()) ||
+        (user.first_name?. toLowerCase().includes(searchQuery.toLowerCase())) ||
         (user.last_name?.toLowerCase().includes(searchQuery.toLowerCase()))
       );
       setFilteredUsers(filtered);
@@ -156,7 +166,7 @@ const UserPhotosPage: React.FC = () => {
   };
 
   // Format file size
-  const formatFileSize = (bytes?: number) => {
+  const formatFileSize = (bytes?:  number) => {
     if (!bytes) return 'N/A';
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
@@ -212,7 +222,7 @@ const UserPhotosPage: React.FC = () => {
                   <div className="ml-4">
                     <p className="text-sm font-medium text-purple-100">Users with Photos</p>
                     <p className="text-3xl font-bold">
-                      {filteredUsers.length}
+                      {filteredUsers. length}
                     </p>
                   </div>
                 </div>
@@ -260,7 +270,7 @@ const UserPhotosPage: React.FC = () => {
                 onClick={fetchUsers}
                 disabled={loading.users}
               >
-                {loading.users ? 'Loading...' : 'Refresh'}
+                {loading.users ?  'Loading...' : 'Refresh'}
               </Button>
             </CardHeader>
             <CardContent className="p-0">
@@ -314,7 +324,7 @@ const UserPhotosPage: React.FC = () => {
                           <TableCell className="text-sm text-gray-600">
                             {new Date(user.created_at).toLocaleDateString('en-US', {
                               year: 'numeric',
-                              month: 'short',
+                              month:  'short',
                               day: 'numeric',
                             })}
                           </TableCell>
@@ -348,7 +358,7 @@ const UserPhotosPage: React.FC = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-                    disabled={pagination.page === 1}
+                    disabled={pagination. page === 1}
                   >
                     <ChevronLeft className="w-4 h-4 mr-1" />
                     Previous
@@ -357,7 +367,7 @@ const UserPhotosPage: React.FC = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-                    disabled={pagination.page * pagination.limit >= filteredUsers.length}
+                    disabled={pagination.page * pagination.limit >= filteredUsers. length}
                   >
                     Next
                     <ChevronRight className="w-4 h-4 ml-1" />
@@ -374,7 +384,7 @@ const UserPhotosPage: React.FC = () => {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <ImageIcon className="w-5 h-5" />
-                Photos for {selectedUser?.email}
+                Photos for {selectedUser?. email}
               </DialogTitle>
               {selectedUser && (
                 <p className="text-sm text-gray-500">
@@ -418,8 +428,8 @@ const UserPhotosPage: React.FC = () => {
                           }}
                         >
                           <img
-                            src={photo.file_path}
-                            alt={photo.file_name}
+                            src={photo.download_url}
+                            alt={photo.original_filename}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                             onError={(e) => {
                               e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
@@ -427,7 +437,7 @@ const UserPhotosPage: React.FC = () => {
                           />
                           <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-end justify-center pb-2 opacity-0 group-hover:opacity-100">
                             <span className="text-white text-xs font-medium">
-                              {formatDateTime(photo.upload_date)}
+                              {formatDateTime(photo.created_at)}
                             </span>
                           </div>
                         </div>
@@ -446,7 +456,7 @@ const UserPhotosPage: React.FC = () => {
 
         {/* Photo Preview Modal */}
         <Dialog open={isPhotoPreviewOpen} onOpenChange={setIsPhotoPreviewOpen}>
-          <DialogContent className="sm:max-w-3xl">
+          <DialogContent className="sm: max-w-3xl">
             <DialogHeader>
               <DialogTitle>Photo Details</DialogTitle>
             </DialogHeader>
@@ -454,8 +464,8 @@ const UserPhotosPage: React.FC = () => {
               <div className="space-y-4">
                 <div className="relative w-full aspect-video bg-gray-100 rounded-lg overflow-hidden">
                   <img
-                    src={selectedPhoto.file_path}
-                    alt={selectedPhoto.file_name}
+                    src={selectedPhoto.download_url}
+                    alt={selectedPhoto.original_filename}
                     className="w-full h-full object-contain"
                     onError={(e) => {
                       e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
@@ -465,12 +475,12 @@ const UserPhotosPage: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-gray-500">File Name</p>
-                    <p className="font-medium">{selectedPhoto.file_name}</p>
+                    <p className="font-medium">{selectedPhoto.original_filename}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Upload Date</p>
                     <p className="font-medium">
-                      {new Date(selectedPhoto.upload_date).toLocaleString('en-US', {
+                      {new Date(selectedPhoto.created_at).toLocaleString('en-US', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
@@ -481,11 +491,11 @@ const UserPhotosPage: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">File Size</p>
-                    <p className="font-medium">{formatFileSize(selectedPhoto.file_size)}</p>
+                    <p className="font-medium">{formatFileSize(selectedPhoto.size)}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Type</p>
-                    <p className="font-medium">{selectedPhoto.mime_type || 'N/A'}</p>
+                    <p className="font-medium">{selectedPhoto.content_type || 'N/A'}</p>
                   </div>
                 </div>
               </div>

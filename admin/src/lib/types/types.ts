@@ -1,8 +1,8 @@
 export interface User {
   id: string;
   email: string;
-  first_name?: string | null;
-  last_name?: string | null;
+  first_name?:  string | null;
+  last_name?:  string | null;
   phone_number?: string | null;
   is_active: boolean;
   is_superuser: boolean;
@@ -37,7 +37,7 @@ export interface UserProfileUpdate {
 }
 
 export interface TokenResponse {
-  access_token: string;
+  access_token:  string;
   refresh_token: string;
   token_type: string;
 }
@@ -76,7 +76,7 @@ export interface MyCoursesResponse {
 // UI State types
 export interface UserFilters {
   search: string;
-  is_active?: boolean;
+  is_active?:  boolean;
   is_superuser?: boolean;
   is_verified?: boolean;
 }
@@ -89,8 +89,8 @@ export interface PaginationState {
 
 export interface UserFormData {
   email: string;
-  password?: string;
-  is_active: boolean;
+  password?:  string;
+  is_active:  boolean;
   is_superuser: boolean;
   is_verified: boolean;
 }
@@ -98,13 +98,13 @@ export interface UserFormData {
 export interface UserTableColumn {
   key: keyof User | 'actions';
   label: string;
-  sortable?: boolean;
+  sortable?:  boolean;
   width?: string;
 }
 
 export interface ApiError {
   message: string;
-  status?: number;
+  status?:  number;
 }
 
 export interface UserLoadingState {
@@ -120,7 +120,7 @@ export interface ToastMessage {
   type: 'success' | 'error' | 'warning' | 'info';
   title: string;
   message: string;
-  duration?: number;
+  duration?:  number;
 }
 
 // Course Management Types
@@ -145,8 +145,8 @@ export enum MediaType {
 export interface Course {
   id: number;
   title: string;
-  description: string | null;
-  author_id: number | null;
+  description:  string | null;
+  author_id:  number | null;
   status: CourseStatus;
   price: number;
   created_at: string;
@@ -156,9 +156,9 @@ export interface Course {
 export interface CourseCreate {
   title: string;
   description?: string;
-  author_id?: number;
+  author_id?:  number;
   status?: CourseStatus;
-  price?: number;
+  price?:  number;
 }
 
 export interface CourseUpdate {
@@ -174,7 +174,7 @@ export interface CourseWithModules extends Course {
 }
 
 export interface CourseModule {
-  id: number;
+  id:  number;
   title: string;
   order_index: number;
   course_id: number;
@@ -182,8 +182,8 @@ export interface CourseModule {
 
 export interface CourseModuleCreate {
   title: string;
-  order_index?: number;
-  course_id: number;
+  order_index?:  number;
+  course_id:  number;
 }
 
 export interface CourseModuleUpdate {
@@ -192,14 +192,14 @@ export interface CourseModuleUpdate {
 }
 
 export interface ModuleWithLessons extends CourseModule {
-  lessons: Lesson[];
+  lessons:  Lesson[];
 }
 
 export interface Lesson {
   id: number;
   title: string;
   content: string | null;
-  lesson_type: LessonType;
+  lesson_type:  LessonType;
   order_index: number;
   module_id: number;
 }
@@ -207,13 +207,13 @@ export interface Lesson {
 export interface LessonCreate {
   title: string;
   content?: string;
-  lesson_type?: LessonType;
+  lesson_type?:  LessonType;
   order_index?: number;
-  module_id: number;
+  module_id:  number;
 }
 
 export interface LessonUpdate {
-  title?: string;
+  title?:  string;
   content?: string;
   lesson_type?: LessonType;
   order_index?: number;
@@ -234,8 +234,8 @@ export interface LessonMedia {
 export interface LessonMediaCreate {
   media_url: string;
   media_type?: MediaType;
-  order_index?: number;
-  lesson_id: number;
+  order_index?:  number;
+  lesson_id:  number;
 }
 
 export interface LessonMediaUpdate {
@@ -246,15 +246,15 @@ export interface LessonMediaUpdate {
 
 export interface CourseFilters {
   search: string;
-  status?: CourseStatus;
+  status?:  CourseStatus;
   author_id?: number;
   minPrice?: number;
-  maxPrice?: number;
+  maxPrice?:  number;
 }
 
 export interface CourseTableColumn {
   key: keyof Course | 'actions';
-  label: string;
+  label:  string;
   sortable?: boolean;
   width?: string;
 }
@@ -263,7 +263,7 @@ export interface CourseLoadingState {
   courses: boolean;
   modules: boolean;
   lessons: boolean;
-  media: boolean;
+  media:  boolean;
   create: boolean;
   update: boolean;
   delete: boolean;
@@ -271,19 +271,19 @@ export interface CourseLoadingState {
 
 export interface CourseFormData {
   title: string;
-  description: string;
-  author_id: number | null;
-  status: CourseStatus;
-  price: number;
+  description:  string;
+  author_id:  number | null;
+  status:  CourseStatus;
+  price:  number;
   modules: ModuleFormData[];
 }
 
 export interface ModuleFormData {
-  id?: number;
+  id?:  number;
   title: string;
   order_index: number;
   lessons: LessonFormData[];
-  isExpanded?: boolean;
+  isExpanded?:  boolean;
 }
 
 export interface LessonFormData {
@@ -291,7 +291,7 @@ export interface LessonFormData {
   title: string;
   content: string;
   lesson_type: LessonType;
-  order_index: number;
+  order_index:  number;
   media: MediaFormData[];
   isExpanded?: boolean;
 }
@@ -307,9 +307,9 @@ export interface UserProgress {
   id: number;
   user_id: number;
   course_id: number;
-  lesson_id: number | null;
-  completed: boolean;
-  completed_at: string | null;
+  lesson_id:  number | null;
+  completed:  boolean;
+  completed_at:  string | null;
 }
 
 export interface UserProgressCreate {
@@ -320,8 +320,8 @@ export interface UserProgressCreate {
 }
 
 export interface UserProgressUpdate {
-  completed?: boolean;
-  completed_at?: string;
+  completed?:  boolean;
+  completed_at?:  string;
 }
 
 export interface ApiResponse<T> {
@@ -333,8 +333,8 @@ export interface CourseStats {
   totalCourses: number;
   publishedCourses: number;
   draftCourses: number;
-  archivedCourses: number;
-  totalModules: number;
+  archivedCourses:  number;
+  totalModules:  number;
   totalLessons: number;
 }
 
@@ -344,35 +344,51 @@ export interface DashboardStats {
   popularCourses: Course[];
 }
 
+// Photo API Response Types
+export interface PhotoMedia {
+  id: string;
+  filename: string;
+  original_filename: string;
+  custom_name:  string;
+  size: number;
+  content_type: string;
+  media_type: 'image' | 'video';
+  s3_key: string;
+  course_id: string | null;
+  lesson_id: string | null;
+  question_option_id: string | null;
+  test_question_id: string | null;
+  width?:  number;
+  height?: number;
+  duration?: number | null;
+  uploaded_by:  string | null;
+  created_at: string;
+  updated_at: string;
+  download_url:  string;
+}
 
+export interface MediaListResponse {
+  media: PhotoMedia[];
+  total:  number;
+}
 
-
-export interface Photo {
-  id: number;
-  user_id: string;
-  file_name: string;
-  file_path: string;
-  upload_date: string;
+export interface Photo extends PhotoMedia {
+  // Alias properties for compatibility
+  file_name?:  string;
+  file_path?: string;
+  upload_date?: string;
   file_size?: number;
   mime_type?: string;
 }
 
-export interface MediaListResponse {
-  items: Photo[];
-  total: number;
-  skip: number;
-  limit: number;
-}
-
 export interface PhotosByDate {
-  [date: string]: Photo[];
+  [date:  string]: Photo[];
 }
 
 export interface PhotosLoadingState {
   users: boolean;
   photos: boolean;
 }
-
 
 export interface UploadProgress {
   percentCompleted: number;

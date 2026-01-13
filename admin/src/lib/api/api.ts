@@ -42,7 +42,7 @@ export const authApi = {
   refreshToken: async (
     refreshData: RefreshTokenRequest
   ): Promise<TokenResponse> => {
-    const response = await axios.post("/auth/refresh", refreshData);
+    const response = await axios. post("/auth/refresh", refreshData);
     const { access_token, refresh_token } = response.data;
 
     // Update tokens
@@ -70,11 +70,11 @@ export const authApi = {
   resetPassword: async (
     token: string,
     newPassword: string
-  ): Promise<{ message: string }> => {
+  ): Promise<{ message:  string }> => {
     const response = await axios.post("/auth/reset-password", null, {
       params: { token, new_password: newPassword },
     });
-    return response.data;
+    return response. data;
   },
 
   // Change password (authenticated)
@@ -98,9 +98,9 @@ export const authApi = {
 
 export const userApi = {
   // Get current user
-  getCurrentUser: async (): Promise<User> => {
+  getCurrentUser:  async (): Promise<User> => {
     const response = await axios.get("/user/me");
-    return response.data;
+    return response. data;
   },
 
   // Update current user
@@ -120,13 +120,13 @@ export const userApi = {
 
   // Get all users (admin only)
   getAllUsers: async (
-    skip: number = 0,
+    skip:  number = 0,
     limit: number = 100
   ): Promise<User[]> => {
     const response = await axios.get("/user/all", {
       params: { skip, limit },
     });
-    return response.data;
+    return response. data;
   },
 
   // Get user by ID (admin only)
@@ -146,10 +146,10 @@ export const userApi = {
 
   // Delete user by ID (admin only)
   deleteUserById: async (userId: string): Promise<void> => {
-    await axios.delete(`/user/${userId}`);
+    await axios. delete(`/user/${userId}`);
   },
 
-  // Helper: Get users with pagination
+  // Helper:  Get users with pagination
   getUsers: (page: number = 1, limit: number = 20) => {
     const skip = (page - 1) * limit;
     return userApi.getAllUsers(skip, limit);
@@ -163,7 +163,7 @@ export const enrollmentApi = {
   // Enroll user in course (admin only - requires user_id)
   enrollInCourse: async (
     courseId: string,
-    userId: string
+    userId:  string
   ): Promise<EnrollmentResponse> => {
     const response = await axios.post(`/enrollment/courses/${courseId}`, null, {
       params: { user_id: userId },
@@ -201,7 +201,7 @@ export const enrollmentApi = {
 
 export const courseApi = {
   // Get all courses
-  getAllCourses: async (skip: number = 0, limit: number = 100) => {
+  getAllCourses:  async (skip: number = 0, limit:  number = 100) => {
     const response = await axios.get("/courses/", {
       params: { skip, limit },
     });
@@ -233,7 +233,7 @@ export const courseApi = {
   },
 
   // Update course
-  updateCourse: async (courseId: number, data: any) => {
+  updateCourse: async (courseId: number, data:  any) => {
     const response = await axios.put(`/courses/${courseId}`, data);
     return response.data;
   },
@@ -251,7 +251,7 @@ export const courseApi = {
 export const moduleApi = {
   // Get module by ID
   getModule: async (moduleId: number) => {
-    const response = await axios.get(`/modules/${moduleId}`);
+    const response = await axios. get(`/modules/${moduleId}`);
     return response.data;
   },
 
@@ -297,7 +297,7 @@ export const lessonApi = {
   },
 
   // Get lesson with media
-  getLessonWithMedia: async (lessonId: number) => {
+  getLessonWithMedia: async (lessonId:  number) => {
     const response = await axios.get(`/lessons/${lessonId}/with-media`);
     return response.data;
   },
@@ -321,7 +321,7 @@ export const lessonApi = {
   },
 
   // Delete lesson
-  deleteLesson: async (lessonId: number) => {
+  deleteLesson: async (lessonId:  number) => {
     await axios.delete(`/lessons/${lessonId}`);
   },
 };
@@ -398,7 +398,7 @@ export const testApi = {
 
   // Delete test
   deleteTest: async (testId: number) => {
-    await axios.delete(`/tests/${testId}`);
+    await axios. delete(`/tests/${testId}`);
   },
 
   // Start test (authenticated)
@@ -414,7 +414,7 @@ export const testApi = {
   },
 
   // Get test attempts (authenticated)
-  getTestAttempts: async (testId: number) => {
+  getTestAttempts: async (testId:  number) => {
     const response = await axios.get(`/tests/${testId}/attempts`);
     return response.data;
   },
@@ -433,7 +433,7 @@ export const testApi = {
 
   // Assign test to course (by updating test's course_id)
   assignTestToCourse: async (testId: number, courseId: number) => {
-    const response = await axios.put(`/tests/${testId}`, {
+    const response = await axios. put(`/tests/${testId}`, {
       course_id: courseId,
     });
     return response.data;
@@ -458,26 +458,26 @@ export const questionApi = {
   },
 
   // Get question with options
-  getQuestionWithOptions: async (questionId: number) => {
+  getQuestionWithOptions:  async (questionId: number) => {
     const response = await axios.get(`/questions/${questionId}/with-options`);
     return response.data;
   },
 
   // Get questions by test
-  getQuestionsByTest: async (testId: number) => {
+  getQuestionsByTest:  async (testId: number) => {
     const response = await axios.get(`/questions/test/${testId}`);
     return response.data;
   },
 
   // Create question
-  createQuestion: async (data: any) => {
-    const response = await axios.post("/questions/", data);
+  createQuestion:  async (data: any) => {
+    const response = await axios. post("/questions/", data);
     return response.data;
   },
 
   // Update question
-  updateQuestion: async (questionId: number, data: any) => {
-    const response = await axios.put(`/questions/${questionId}`, data);
+  updateQuestion: async (questionId:  number, data: any) => {
+    const response = await axios. put(`/questions/${questionId}`, data);
     return response.data;
   },
 
@@ -493,13 +493,13 @@ export const questionApi = {
 
 export const optionApi = {
   // Get option by ID
-  getOption: async (optionId: number) => {
+  getOption: async (optionId:  number) => {
     const response = await axios.get(`/options/${optionId}`);
     return response.data;
   },
 
   // Get options by question
-  getOptionsByQuestion: async (questionId: number) => {
+  getOptionsByQuestion: async (questionId:  number) => {
     const response = await axios.get(`/options/question/${questionId}`);
     return response.data;
   },
@@ -511,7 +511,7 @@ export const optionApi = {
   },
 
   // Update option
-  updateOption: async (optionId: number, data: any) => {
+  updateOption: async (optionId: number, data:  any) => {
     const response = await axios.put(`/options/${optionId}`, data);
     return response.data;
   },
@@ -534,7 +534,7 @@ export const progressApi = {
   },
 
   // Get progress by user and course
-  getProgressByUserAndCourse: async (userId: number, courseId: number) => {
+  getProgressByUserAndCourse: async (userId:  number, courseId: number) => {
     const response = await axios.get(
       `/progress/user/${userId}/course/${courseId}`
     );
@@ -577,8 +577,8 @@ export const apiClient = {
     const response = await axios({
       method,
       url: endpoint,
-      data: options?.body ? JSON.parse(options.body) : undefined,
-      ...options,
+      data: options?.body ?  JSON.parse(options. body) : undefined,
+      ... options,
     });
     return response.data;
   },
@@ -595,12 +595,12 @@ export const s3Api = {
       { ext: "jpg/jpeg", type: "image/jpeg" },
       { ext: "png", type: "image/png" },
       { ext: "webp", type: "image/webp" },
-      { ext: "gif", type:  "image/gif" },
+      { ext:  "gif", type: "image/gif" },
     ],
     video: [
       { ext: "mp4", type: "video/mp4" },
       { ext: "webm", type: "video/webm" },
-      { ext: "mov", type:  "video/quicktime" },
+      { ext: "mov", type: "video/quicktime" },
       { ext: "avi", type: "video/x-msvideo" },
       { ext: "mkv", type: "video/x-matroska" },
     ],
@@ -610,7 +610,7 @@ export const s3Api = {
   uploadMedia: async (
     file: File,
     mediaType: "image" | "video",
-    courseId?: number,
+    courseId?:  number,
     lessonId?: number,
     customName?: string
   ) => {
@@ -654,7 +654,7 @@ export const s3Api = {
 
     if (file.size > maxSize) {
       throw new Error(
-        `Файл слишком большой.  Максимум:  ${maxSize / (1024 * 1024)}MB, ` +
+        `Файл слишком большой. Максимум:  ${maxSize / (1024 * 1024)}MB, ` +
           `у вас:  ${(file.size / (1024 * 1024)).toFixed(1)}MB`
       );
     }
@@ -663,14 +663,14 @@ export const s3Api = {
     formData.append("file", file);
     formData.append("media_type", mediaType);
 
-    if (courseId) formData.append("course_id", courseId.toString());
+    if (courseId) formData.append("course_id", courseId. toString());
     if (lessonId) formData.append("lesson_id", lessonId.toString());
     if (customName) formData.append("custom_name", customName);
 
     try {
       const response = await axios.post("/s3/upload", formData, {
-        headers:  {
-          "Content-Type":  "multipart/form-data",
+        headers: {
+          "Content-Type": "multipart/form-data",
         },
         // ✅ УВЕЛИЧИВАЕМ TIMEOUT до 5 минут
         timeout: 5 * 60 * 1000,
@@ -683,7 +683,7 @@ export const s3Api = {
             ? Math.round((loaded * 100) / total)
             : 0;
 
-          console. log(
+          console.log(
             `Upload progress: ${percentCompleted}% (${(loaded / (1024 * 1024)).toFixed(1)}MB / ${(total / (1024 * 1024)).toFixed(1)}MB)`
           );
 
@@ -701,7 +701,7 @@ export const s3Api = {
       // ✅ ЛУЧШАЯ ОБРАБОТКА ОШИБОК
       if (error.code === "ECONNABORTED") {
         throw new Error(
-          `Загрузка заняла слишком много времени.  Попробуйте файл поменьше или проверьте интернет. `
+          `Загрузка заняла слишком много времени. Попробуйте файл поменьше или проверьте интернет. `
         );
       }
 
@@ -730,10 +730,10 @@ export const s3Api = {
   },
 
   // Get all media files
-  getAllMedia:  async (
-    skip: number = 0,
+  getAllMedia: async (
+    skip:  number = 0,
     limit: number = 100,
-    mediaType?: "image" | "video",
+    mediaType?:  "image" | "video",
     courseId?: number,
     lessonId?: number
   ) => {
@@ -747,7 +747,7 @@ export const s3Api = {
   },
 
   // Delete media file
-  deleteMedia:  async (mediaId: string) => {
+  deleteMedia: async (mediaId: string) => {
     const response = await axios.delete(`/s3/media/${mediaId}`);
     return response.data;
   },
@@ -759,8 +759,11 @@ export const s3Api = {
   },
 };
 
+// ============================================================================
+// PHOTOS API
+// ============================================================================
 export const photosApi = {
-  // Get user photos
+  // Get user photos with correct structure
   getUserPhotos: async (
     userId: string,
     skip: number = 0,
@@ -769,6 +772,6 @@ export const photosApi = {
     const response = await axios.get(`/photos/user/${userId}`, {
       params: { skip, limit },
     });
-    return response.data;
+    return response. data;
   },
 };
