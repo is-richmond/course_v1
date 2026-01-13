@@ -10,23 +10,22 @@ import uuid
 from src.services.homework_service import homework_service
 from src.services.service_streak import streak_service
 from src.services.homework_schedule_service import homework_schedule_service
-from src.services.api_service import APIService
+from src. services.api_service import APIService
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 router = Router()
 api_service = APIService()
 
-# Default schedule ID
-DEFAULT_SCHEDULE_ID = 1  # ПН-ЧТ
 
 class HomeworkStates(StatesGroup):
     waiting_for_anki = State()
     waiting_for_test = State()
     waiting_for_lesson = State()
 
+
 @router.callback_query(F.data == "upload_homework")
-async def show_homework_menu(callback: types.CallbackQuery, state: FSMContext):
+async def show_homework_menu(callback:  types.CallbackQuery, state: FSMContext):
     """Show homework menu"""
     data = await state.get_data()
     user_id = data.get("user_id")
@@ -61,7 +60,7 @@ async def show_homework_menu(callback: types.CallbackQuery, state: FSMContext):
             text="📝 Anki", callback_data="hw_upload_anki"
         )])
     if not status['test_submitted']: 
-        keyboard_buttons.append([InlineKeyboardButton(
+        keyboard_buttons. append([InlineKeyboardButton(
             text="📋 Тест", callback_data="hw_upload_test"
         )])
     if not status['lesson_submitted']:
@@ -80,6 +79,7 @@ async def show_homework_menu(callback: types.CallbackQuery, state: FSMContext):
     )
     await callback.answer()
 
+
 @router.callback_query(F.data == "hw_upload_anki")
 async def upload_anki(callback: types. CallbackQuery, state: FSMContext):
     """Start Anki upload"""
@@ -91,190 +91,131 @@ async def upload_anki(callback: types. CallbackQuery, state: FSMContext):
     await state.set_state(HomeworkStates.waiting_for_anki)
     await callback.answer()
 
+
+@router.message(HomeworkStates.waiting_for_anki)
+async def process_anki_photo(message: Message, state: FSMContext):
+    """Process Anki photo"""
+    await process_homework_submission(message, state, "anki")
+
+
 @router.callback_query(F.data == "hw_upload_test")
 async def upload_test(callback: types.CallbackQuery, state: FSMContext):
-    """Start test upload"""
+    """Start Test upload"""
     await callback.message.edit_text(
         "📋 <b>Тест</b>\n\n"
-        "Отправьте скриншот выполненного теста.",
+        "Отправьте скриншот результата теста.",
         parse_mode="HTML"
     )
     await state.set_state(HomeworkStates.waiting_for_test)
     await callback.answer()
 
+
+@router.message(HomeworkStates.waiting_for_test)
+async def process_test_photo(message: Message, state:  FSMContext):
+    """Process Test photo"""
+    await process_homework_submission(message, state, "test")
+
+
 @router.callback_query(F.data == "hw_upload_lesson")
-async def upload_lesson(callback:  types.CallbackQuery, state: FSMContext):
-    """Start lesson upload"""
+async def upload_lesson(callback: types.CallbackQuery, state: FSMContext):
+    """Start Lesson upload"""
     await callback. message.edit_text(
         "🎓 <b>Урок</b>\n\n"
-        "Отправьте скриншот пройденного урока.",
+        "Отправьте скриншот конспекта урока.",
         parse_mode="HTML"
     )
     await state.set_state(HomeworkStates.waiting_for_lesson)
-    await callback.answer()
+    await callback. answer()
 
-# ========== PHOTO HANDLERS ==========
 
-@router.message(HomeworkStates.waiting_for_anki, F.photo)
-async def handle_anki_photo(message:  Message, state: FSMContext):
-    await process_homework_photo(message, state, "anki", "Anki")
+@router.message(HomeworkStates.waiting_for_lesson)
+async def process_lesson_photo(message: Message, state: FSMContext):
+    """Process Lesson photo"""
+    await process_homework_submission(message, state, "lesson")
 
-@router.message(HomeworkStates.waiting_for_test, F.photo)
-async def handle_test_photo(message: Message, state: FSMContext):
-    await process_homework_photo(message, state, "test", "теста")
 
-@router.message(HomeworkStates.waiting_for_lesson, F.photo)
-async def handle_lesson_photo(message: Message, state: FSMContext):
-    await process_homework_photo(message, state, "lesson", "урока")
-
-async def process_homework_photo(
-    message: Message,
-    state: FSMContext,
-    hw_type: str,
-    type_name: str
-):
-    """Process homework photo"""
+async def process_homework_submission(message: Message, state: FSMContext, homework_type: str):
+    """Process any homework submission"""
+    if not message.photo:
+        await message.answer("❌ Отправьте фото")
+        return
+    
     data = await state.get_data()
     user_id = data. get("user_id")
     
-    if not user_id: 
-        await message.answer("❌ Авторизуйтесь: /start")
-        return
-    
-    status_msg = await message.answer("⏳ Загружаю...")
-    
     try:
-        # Download photo
+        # Get largest photo
         photo = message.photo[-1]
         file = await message.bot.get_file(photo.file_id)
         
-        file_bytes = io.BytesIO()
-        await message.bot.download_file(file.file_path, file_bytes)
-        file_bytes = file_bytes.getvalue()
-        
-        filename = f"{hw_type}_{uuid.uuid4()}.jpg"
+        # Download photo
+        photo_bytes = await message.bot.download_file(file.file_path)
         
         # Upload to S3
-        photo_response = await api_service.upload_photo(
-            user_id=user_id,
-            file_data=file_bytes,
-            filename=filename
-        )
+        file_name = f"{homework_type}_{uuid.uuid4()}.jpg"
+        photo_url = await api_service.upload_to_s3(photo_bytes, file_name)
         
-        if not photo_response:
-            await status_msg.edit_text("❌ Ошибка загрузки")
+        if not photo_url:
+            await message.answer("❌ Ошибка загрузки на сервер")
             return
         
-        # Save to DB
-        result = homework_service.submit_homework(
-            user_id=user_id,
-            homework_type=hw_type,
-            photo_url=photo_response. download_url
-        )
+        # Submit homework
+        result = homework_service.submit_homework(user_id, homework_type, photo_url)
         
         if not result['success']:
-            await status_msg. edit_text("❌ Ошибка сохранения")
+            await message.answer(f"❌ Ошибка:  {result. get('error')}")
             return
         
-        await status_msg. delete()
-        
-        # Check if complete
-        if result['is_complete']:
-            # ✅ UPDATE STREAK
-            streak_result = streak_service.update_streak(
-                user_id=user_id,
-                schedule_id=DEFAULT_SCHEDULE_ID
-            )
+        # ✅ ГЛАВНОЕ ИЗМЕНЕНИЕ: Обновляем стрик если ДЗ завершено! 
+        if result. get('is_complete'):
+            logger.info(f"📌 Homework complete for {user_id}, updating streak...")
             
-            response = f"✅ <b>ДЗ принято! </b>\n\n"
-            
-            if streak_result['updated']: 
-                response += (
-                    f"🔥 <b>Стрик:  {streak_result['current_streak']} дней! </b>\n"
-                    f"🏆 Рекорд: {streak_result['longest_streak']} дней\n\n"
-                )
+            # Получаем активное расписание
+            active_schedules = homework_schedule_service.get_all_schedules()
+            if active_schedules:
+                active_schedule_id = active_schedules[0].id
                 
-                if streak_result. get('congratulation'):
-                    response += f"🎉 {streak_result['congratulation']}"
+                # Обновляем стрик
+                streak_result = streak_service.update_streak(user_id, active_schedule_id)
+                
+                if streak_result. get('updated'):
+                    current_streak = streak_result. get('current_streak', 0)
+                    congrats = streak_result.get('congratulation')
+                    
+                    await message.answer(
+                        f"🔥 <b>Стрик обновлен!</b>\n\n"
+                        f"Текущая серия: {current_streak} дней 📈",
+                        parse_mode="HTML"
+                    )
+                    
+                    # Если есть поздравление на этот день
+                    if congrats: 
+                        await message.answer(f"🎉 {congrats}", parse_mode="HTML")
             else:
-                response += f"💡 {streak_result. get('message', 'Статус: неизвестно')}"
-            
-            await message.answer(response, parse_mode="HTML")
-        else:
-            # Show remaining
-            remaining = []
-            if not result['anki_submitted']: 
-                remaining.append("📝 Anki")
-            if not result['test_submitted']:
-                remaining.append("📋 Тест")
-            if not result['lesson_submitted']:
-                remaining.append("🎓 Урок")
-            
-            await message.answer(
-                f"✅ {type_name} загружено!\n\n"
-                f"<b>Осталось:</b>\n" + "\n".join(remaining),
-                parse_mode="HTML"
-            )
+                logger.warning("No active schedule found for streak update")
         
-        # Save user_id and clear state
+        # Show status
+        status = homework_service. get_today_status(user_id)
+        anki_icon = "✅" if status['anki_submitted'] else "⏳"
+        test_icon = "✅" if status['test_submitted'] else "⏳"
+        lesson_icon = "✅" if status['lesson_submitted'] else "⏳"
+        
+        text = (
+            f"✅ <b>{homework_type. upper()} загружено!</b>\n\n"
+            f"<b>Статус ДЗ:</b>\n"
+            f"{anki_icon} Anki\n"
+            f"{test_icon} Тест\n"
+            f"{lesson_icon} Урок\n\n"
+        )
+        
+        if status['is_complete']:
+            text += "🎉 <b>ВСЕ ЗАДАНИЯ ВЫПОЛНЕНЫ!</b>"
+        
+        text += "\n\n📸 Загрузить еще?  /start"
+        
+        await message. answer(text, parse_mode="HTML")
         await state.clear()
-        await state.update_data(user_id=user_id)
-        
-        # Show menu button
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="📸 Еще", callback_data="upload_homework")],
-            [InlineKeyboardButton(text="◀️ Меню", callback_data="back_to_menu")]
-        ])
-        
-        await message.answer("Что дальше?", reply_markup=keyboard)
-        
-        logger.info(f"✅ Homework uploaded: user={user_id}, type={hw_type}")
         
     except Exception as e:
-        logger.error(f"Error: {e}", exc_info=True)
-        try:
-            await status_msg. edit_text("❌ Ошибка загрузки")
-        except:
-            await message.answer("❌ Ошибка")
-
-# ========== PROGRESS ==========
-
-@router.callback_query(F.data == "my_progress")
-async def show_progress(callback: types.CallbackQuery, state: FSMContext):
-    """Show progress"""
-    data = await state.get_data()
-    user_id = data.get("user_id")
-    
-    if not user_id:
-        await callback. answer("❌ Авторизуйтесь", show_alert=True)
-        return
-    
-    today_status = homework_service.get_today_status(user_id)
-    streak_info = streak_service.get_user_streak(user_id, DEFAULT_SCHEDULE_ID)
-    history = homework_service.get_user_homework_history(user_id, days=7)
-    
-    completed = sum(1 for h in history if h. is_complete)
-    
-    anki_icon = "✅" if today_status['anki_submitted'] else "⏳"
-    test_icon = "✅" if today_status['test_submitted'] else "⏳"
-    lesson_icon = "✅" if today_status['lesson_submitted'] else "⏳"
-    
-    text = (
-        f"📊 <b>Прогресс</b>\n\n"
-        f"<b>Сегодня: </b>\n"
-        f"{anki_icon} Anki\n"
-        f"{test_icon} Тест\n"
-        f"{lesson_icon} Урок\n\n"
-        f"🔥 Стрик: {streak_info['current_streak']} дней\n"
-        f"🏆 Рекорд:  {streak_info['longest_streak']} дней\n\n"
-        f"📈 За 7 дней: {completed}/{len(history)} дней\n\n"
-        f"💪 Продолжай!"
-    )
-    
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🛡️ Гарантия", callback_data="check_guarantee")],
-        [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_menu")]
-    ])
-    
-    await callback.message. edit_text(text, reply_markup=keyboard, parse_mode="HTML")
-    await callback.answer()
+        logger.error(f"Error processing homework: {e}")
+        await message.answer(f"❌ Ошибка: {str(e)}")

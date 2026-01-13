@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from src.config import settings
 from src.utils.logger import get_logger
-from src.models. homework_model import Base, HomeworkSchedule
+from src.models.homework_model import Base, HomeworkSchedule
 
 logger = get_logger(__name__)
 
@@ -15,16 +15,16 @@ try:
     SessionLocal = sessionmaker(bind=engine)
     Base.metadata.create_all(bind=engine)
     logger.info("✅ Homework schedule tables created")
-except Exception as e: 
+except Exception as e:  
     logger.error(f"❌ Database connection error: {e}")
     raise
 
 
-class HomeworkScheduleService: 
+class HomeworkScheduleService:  
     """Service for managing homework schedules"""
     
     def __init__(self):
-        self.db:  Session = SessionLocal()
+        self.db: Session = SessionLocal()
     
     def create_schedule(
         self,
@@ -32,7 +32,7 @@ class HomeworkScheduleService:
         days_of_week: List[int]  # [1, 2, 3, 4] = ПН-ЧТ
     ) -> Optional[int]:
         """Create new homework schedule"""
-        try: 
+        try:  
             days_str = ','.join(map(str, days_of_week)) if days_of_week else None
             
             new_schedule = HomeworkSchedule(
@@ -47,29 +47,50 @@ class HomeworkScheduleService:
             logger.info(f"✅ Created homework schedule: {name} - Days: {days_str}")
             return new_schedule.id
         except Exception as e:
-            logger.error(f"Error creating homework schedule: {e}")
+            logger. error(f"Error creating homework schedule: {e}")
             self.db.rollback()
             return None
     
     def get_schedule(self, schedule_id: int) -> Optional[HomeworkSchedule]:
-        """Get schedule by ID"""
+        """Get schedule by ID (only if active)"""
         return self.db.query(HomeworkSchedule).filter(
             HomeworkSchedule.id == schedule_id,
             HomeworkSchedule.is_active == True
         ).first()
     
-    def get_all_schedules(self) -> List[HomeworkSchedule]: 
-        """Get all active schedules"""
-        return self. db.query(HomeworkSchedule).filter(
+    def get_schedule_by_id_any(self, schedule_id: int) -> Optional[HomeworkSchedule]:
+        """Get schedule by ID regardless of active status"""
+        return self.db.query(HomeworkSchedule).filter(
+            HomeworkSchedule.id == schedule_id
+        ).first()
+    
+    def get_all_schedules(self) -> List[HomeworkSchedule]:  
+        """Get all ACTIVE schedules"""
+        schedules = self.db.query(HomeworkSchedule).filter(
             HomeworkSchedule.is_active == True
         ).all()
+        
+        logger.info(f"Active schedules:  {[s.id for s in schedules]}")
+        return schedules
+    
+    def get_all_schedules_any(self) -> List[HomeworkSchedule]:
+        """Get ALL schedules (active or not)"""
+        return self.db.query(HomeworkSchedule).all()
     
     def get_days(self, schedule_id: int) -> List[int]:
         """Get homework days for schedule"""
-        schedule = self.get_schedule(schedule_id)
+        # Get schedule WITHOUT checking is_active
+        schedule = self. db.query(HomeworkSchedule).filter(
+            HomeworkSchedule.id == schedule_id
+        ).first()
+        
         if not schedule or not schedule.days_of_week:
+            logger.warning(f"Schedule {schedule_id} not found or has no days")
             return []
-        return [int(d) for d in schedule.days_of_week. split(',')]
+        
+        days = [int(d) for d in schedule.days_of_week. split(',')]
+        logger.info(f"Schedule {schedule_id} has days: {days}")
+        return days
     
     def update_schedule(
         self,
@@ -78,8 +99,8 @@ class HomeworkScheduleService:
     ) -> bool:
         """Update schedule days"""
         try:
-            schedule = self.get_schedule(schedule_id)
-            if not schedule:
+            schedule = self.get_schedule_by_id_any(schedule_id)
+            if not schedule: 
                 return False
             
             days_str = ','.join(map(str, days_of_week))
@@ -95,26 +116,27 @@ class HomeworkScheduleService:
             return False
 
     def set_as_default(self, schedule_id: int) -> bool:
-        """Set schedule as default"""
+        """Set schedule as default (active)"""
         try:
-            # Deactivate all others
-            self.db.query(HomeworkSchedule).update(
-                {HomeworkSchedule.is_active: False}
-            )
+            # ⚠️ Деактивируем все расписания
+            all_schedules = self.db.query(HomeworkSchedule).all()
+            for sched in all_schedules: 
+                sched.is_active = False
             
-            # Activate this one
+            # ✅ Активируем нужное
             schedule = self.db.query(HomeworkSchedule).filter(
                 HomeworkSchedule.id == schedule_id
             ).first()
             
             if schedule:
                 schedule.is_active = True
-                self.db. commit()
-                logger.info(f"✅ Set schedule {schedule_id} as default")
+                schedule.updated_at = datetime.now()
+                self.db.commit()
+                logger.info(f"✅ Set schedule {schedule_id} as default (active)")
                 return True
             
             return False
-        except Exception as e:
+        except Exception as e: 
             logger.error(f"Error setting default:  {e}")
             self.db.rollback()
             return False
