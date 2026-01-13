@@ -141,23 +141,34 @@ async def process_homework_submission(message: Message, state: FSMContext, homew
         return
     
     data = await state.get_data()
-    user_id = data. get("user_id")
+    user_id = data.get("user_id")
     
     try:
         # Get largest photo
         photo = message.photo[-1]
         file = await message.bot.get_file(photo.file_id)
         
-        # Download photo
-        photo_bytes = await message.bot.download_file(file.file_path)
+        # Download photo as bytes
+        photo_bytes_io = io.BytesIO()
+        await message.bot.download_file(file.file_path, photo_bytes_io)
+        photo_bytes = photo_bytes_io.getvalue()  # Получаем bytes
         
         # Upload to S3
         file_name = f"{homework_type}_{uuid.uuid4()}.jpg"
-        photo_url = await api_service.upload_photo(photo_bytes, file_name)
         
-        if not photo_url:
+        # ✅ ИСПРАВЛЕНИЕ: правильный вызов метода
+        photo_response = await api_service.upload_photo(
+            user_id=user_id,
+            file_data=photo_bytes,
+            filename=file_name
+        )
+        
+        if not photo_response:
             await message.answer("❌ Ошибка загрузки на сервер")
             return
+        
+        # ✅ ИСПРАВЛЕНИЕ: извлекаем URL из ответа
+        photo_url = photo_response.download_url
         
         # Submit homework
         result = homework_service.submit_homework(user_id, homework_type, photo_url)
