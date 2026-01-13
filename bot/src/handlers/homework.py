@@ -153,7 +153,7 @@ async def process_homework_submission(message: Message, state: FSMContext, homew
         
         # Upload to S3
         file_name = f"{homework_type}_{uuid.uuid4()}.jpg"
-        photo_url = await api_service.upload_to_s3(photo_bytes, file_name)
+        photo_url = await api_service.upload_photo(photo_bytes, file_name)
         
         if not photo_url:
             await message.answer("❌ Ошибка загрузки на сервер")
