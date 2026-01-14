@@ -308,6 +308,34 @@ async def show_faq_anki(callback: types.CallbackQuery):
     )
     await callback.answer()
 
+
+@router.callback_query(F.data == "my_progress")
+async def show_my_progress(callback: types.CallbackQuery, state: FSMContext):
+    """Show user progress"""
+    data = await state.get_data()
+    user_id = data.get("user_id")
+    
+    if not user_id:
+        await callback.answer("❌ Авторизуйтесь:  /start", show_alert=True)
+        return
+    
+    text = (
+        "📊 <b>Мой прогресс</b>\n\n"
+        "Ваша статистика здесь"
+    )
+    
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🛡 Проверить гарантию", callback_data="check_guarantee")],
+        [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_menu")]
+    ])
+    
+    await callback.message.edit_text(
+        text,
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
 @router.callback_query(F.data == "back_to_menu")
 async def back_to_menu(callback: types.CallbackQuery):
     """Return to main menu"""
