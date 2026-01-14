@@ -328,7 +328,6 @@ async def show_my_progress(callback: types.CallbackQuery, state: FSMContext):
         "📊 <b>Мой прогресс</b>\n\n"
         f"🔥 <b>Серия дней: </b> {streak_info['current_streak']}\n"
         f"📈 <b>Лучшая серия:</b> {streak_info['longest_streak']}\n"
-        f"✅ <b>Всего выполнено дней:</b> {streak_info['total_completed_days']}\n\n"
         "Продолжай в том же духе! 💪"
     )
     
