@@ -10,6 +10,8 @@ from src.services.session_service import session_service
 from src.services.reminder_type_service import reminder_type_service
 from src.utils.logger import get_logger
 import re
+from src.services.service_streak import streak_service
+
 
 logger = get_logger(__name__)
 
@@ -316,16 +318,21 @@ async def show_my_progress(callback: types.CallbackQuery, state: FSMContext):
     user_id = data.get("user_id")
     
     if not user_id:
-        await callback.answer("❌ Авторизуйтесь:  /start", show_alert=True)
+        await callback. answer("❌ Авторизуйтесь:  /start", show_alert=True)
         return
+    
+    # Get streak info
+    streak_info = streak_service.get_user_streak(user_id)
     
     text = (
         "📊 <b>Мой прогресс</b>\n\n"
-        "Ваша статистика здесь"
+        f"🔥 <b>Серия дней: </b> {streak_info['current_streak']}\n"
+        f"📈 <b>Лучшая серия:</b> {streak_info['best_streak']}\n"
+        f"✅ <b>Всего выполнено дней:</b> {streak_info['total_completed_days']}\n\n"
+        "Продолжай в том же духе! 💪"
     )
     
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🛡 Проверить гарантию", callback_data="check_guarantee")],
         [InlineKeyboardButton(text="◀️ Назад", callback_data="back_to_menu")]
     ])
     

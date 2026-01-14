@@ -9,6 +9,7 @@ from src.config import settings
 from src.utils.logger import get_logger
 from src.models.homework_model import Base, UserStreak, StreakMessage
 
+
 logger = get_logger(__name__)
 
 try:
