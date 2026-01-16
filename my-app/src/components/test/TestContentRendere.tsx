@@ -6,10 +6,10 @@ import { ImageModal } from "@/src/components/ui/ImageModal";
 // Types for test media from API
 interface TestMedia {
   id: string;
-  download_url?:  string | null;
+  download_url? :  string | null;
   original_filename?: string | null;
   custom_name?: string | null;
-  media_type:  "image" | "video";
+  media_type:   "image" | "video";
 }
 
 interface UrlMedia {
@@ -20,7 +20,7 @@ interface UrlMedia {
 
 interface TestContentRendererProps {
   content: string;
-  testMedia?:  TestMedia[];
+  testMedia? :  TestMedia[];
   urlMedia?:  UrlMedia[];
 }
 
@@ -34,6 +34,7 @@ interface HoverPreview {
 /**
  * TestContentRenderer - рендерер контента тестов
  * - Парсит [IMAGE: uuid] и [VIDEO:uuid] плейсхолдеры
+ * - Поддерживает HTML разметку (<p>, <strong>, <em>, <br> и т.д.)
  * - Используется для описаний вопросов, вариантов ответов и объяснений
  * - Адаптивный дизайн кнопок и превью
  * - Hover-превью на desktop, клик для полного просмотра
@@ -49,8 +50,8 @@ export function TestContentRenderer({
     alt: string;
   } | null>(null);
   const [modalVideo, setModalVideo] = useState<{
-    url:  string;
-    alt: string;
+    url:   string;
+    alt:  string;
   } | null>(null);
   const [hoverPreview, setHoverPreview] = useState<HoverPreview | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -62,13 +63,13 @@ export function TestContentRenderer({
     // Add S3 media (test_media)
     testMedia.forEach((media) => {
       if (media.download_url) {
-        map.set(media. id, media.download_url);
+        map.set(media.  id, media.download_url);
       }
     });
 
     // Add URL media
     urlMedia.forEach((media) => {
-      if (media. media_url) {
+      if (media.  media_url) {
         map.set(String(media.id), media.media_url);
       }
     });
@@ -81,7 +82,7 @@ export function TestContentRenderer({
     (e: React.MouseEvent, url: string, type: "image" | "video") => {
       // Only show hover preview on desktop (no touch)
       if (window.matchMedia("(hover: hover)").matches) {
-        const rect = (e. target as HTMLElement).getBoundingClientRect();
+        const rect = (e.  target as HTMLElement).getBoundingClientRect();
         setHoverPreview({
           url,
           x: rect.left + rect.width / 2,
@@ -103,7 +104,7 @@ export function TestContentRenderer({
     setModalImage({ url, alt });
   }, []);
 
-  const handleVideoClick = useCallback((url: string, alt:  string) => {
+  const handleVideoClick = useCallback((url: string, alt:   string) => {
     setHoverPreview(null);
     setModalVideo({ url, alt });
   }, []);
@@ -119,17 +120,29 @@ export function TestContentRenderer({
 
     // Regex to find [IMAGE:uuid] or [VIDEO:uuid] placeholders
     const placeholderRegex = /\[(IMAGE|VIDEO):([a-zA-Z0-9-]+)\]/g;
-    const parts:  React.ReactNode[] = [];
+    
+    // First, clean up the HTML - remove data-* attributes that come from rich editors
+    let cleanedContent = content
+      .replace(/data-start="[^"]*"/g, '')
+      .replace(/data-end="[^"]*"/g, '');
+
+    const parts:   React.ReactNode[] = [];
     let lastIndex = 0;
     let match;
 
     // Function to render text (with HTML support if needed)
     const renderText = (text: string, key: string) => {
-      if (! text) return null;
+      if (!  text) return null;
 
       if (isHtmlContent) {
         // Render as HTML for rich content from WYSIWYG editor
-        return <span key={key} dangerouslySetInnerHTML={{ __html: text }} />;
+        return (
+          <div
+            key={key}
+            className="prose prose-sm max-w-none"
+            dangerouslySetInnerHTML={{ __html: text }}
+          />
+        );
       } else {
         // Plain text with line breaks
         return (
@@ -145,13 +158,13 @@ export function TestContentRenderer({
       }
     };
 
-    while ((match = placeholderRegex.exec(content)) !== null) {
+    while ((match = placeholderRegex.exec(cleanedContent)) !== null) {
       const [fullMatch, mediaType, mediaId] = match;
       const matchStart = match.index;
 
       // Add text before this placeholder
       if (matchStart > lastIndex) {
-        const textBefore = content.slice(lastIndex, matchStart);
+        const textBefore = cleanedContent.slice(lastIndex, matchStart);
         parts.push(renderText(textBefore, `text-${lastIndex}`));
       }
 
@@ -165,11 +178,11 @@ export function TestContentRenderer({
             <button
               key={`image-${mediaId}-${matchStart}`}
               onClick={() =>
-                handleImageClick(mediaUrl, `��зображение ${mediaId}`)
+                handleImageClick(mediaUrl, `Изображение ${mediaId}`)
               }
               onMouseEnter={(e) => handleMouseEnter(e, mediaUrl, "image")}
               onMouseLeave={handleMouseLeave}
-              className="inline-flex items-center gap-1. 5 px-2 py-1 sm:px-3 sm:py-1.5 mx-0.5 sm:mx-1 my-0.5 
+              className="inline-flex items-center gap-1.  5 px-2 py-1 sm:px-3 sm:py-1.5 mx-0.5 sm:mx-1 my-0.5 
                          bg-blue-50 hover:bg-blue-100 active:bg-blue-200
                          border border-blue-200 hover:border-blue-300
                          rounded-md sm:rounded-lg 
@@ -191,7 +204,7 @@ export function TestContentRenderer({
               >
                 <path
                   fill="currentColor"
-                  d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,160H40V56H216V200ZM176,88a12,12,0,1,1-12-12A12,12,0,0,1,176,88Zm36,72v40H44V184l52-52a8,8,0,0,1,11. 31,0l44. 69,44.69L191,137l. 66-. 66a8,8,0,0,1,11.31,0Z"
+                  d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,160H40V56H216V200ZM176,88a12,12,0,1,1-12-12A12,12,0,0,1,176,88Zm36,72v40H44V184l52-52a8,8,0,0,1,11.  31,0l44.  69,44.69L191,137l.  66-.  66a8,8,0,0,1,11.31,0Z"
                 />
               </svg>
               <span className="hidden xs:inline">Изображение</span>
@@ -206,14 +219,14 @@ export function TestContentRenderer({
               onMouseEnter={(e) => handleMouseEnter(e, mediaUrl, "video")}
               onMouseLeave={handleMouseLeave}
               className="inline-flex items-center gap-1.5 px-2 py-1 sm:px-3 sm:py-1.5 mx-0.5 sm:mx-1 my-0.5 
-                         bg-red-50 hover: bg-red-100 active: bg-red-200
+                         bg-red-50 hover:  bg-red-100 active:  bg-red-200
                          border border-red-200 hover:border-red-300
                          rounded-md sm:rounded-lg 
                          text-red-600 hover:text-red-700
                          text-xs sm:text-sm 
                          transition-all duration-200 
                          cursor-pointer
-                         focus:outline-none focus: ring-2 focus:ring-red-500 focus:ring-offset-1
+                         focus:outline-none focus:  ring-2 focus:ring-red-500 focus:ring-offset-1
                          touch-manipulation"
               title="Нажмите для просмотра видео"
               aria-label="Открыть видео"
@@ -223,22 +236,22 @@ export function TestContentRenderer({
                 width="14"
                 height="14"
                 viewBox="0 0 256 256"
-                className="shrink-0 sm:w-4 sm:h-4"
+                className="shrink-0 sm:w-4 sm: h-4"
               >
                 <path
                   fill="currentColor"
                   d="M224,56v144a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V56A16,16,0,0,1,48,40h160A16,16,0,0,1,224,56Zm-16,0H48V200h160ZM102,140l44-32a8,8,0,0,0,0-13.06l-44-32A8,8,0,0,0,88,64V176A8,8,0,0,0,102,140Z"
                 />
               </svg>
-              <span className="hidden xs: inline">Видео</span>
+              <span className="hidden xs:  inline">Видео</span>
             </button>
           );
         }
       } else {
         // Media not found, show placeholder
         const mediaLabel =
-          mediaType === "IMAGE" ? "Изображение" :  "Видео";
-        parts.push(
+          mediaType === "IMAGE" ? "Изображение" :   "Видео";
+        parts. push(
           <span
             key={`missing-${mediaId}-${matchStart}`}
             className="inline-flex items-center gap-1 px-2 py-1 mx-0.5 my-0.5
@@ -266,8 +279,8 @@ export function TestContentRenderer({
     }
 
     // Add remaining text after last placeholder
-    if (lastIndex < content.length) {
-      const textAfter = content.slice(lastIndex);
+    if (lastIndex < cleanedContent.length) {
+      const textAfter = cleanedContent.slice(lastIndex);
       parts.push(renderText(textAfter, `text-end-${lastIndex}`));
     }
 
@@ -287,17 +300,18 @@ export function TestContentRenderer({
       {/* Content container - адаптивная типографика для тестов */}
       <div
         ref={containerRef}
-        className="test-content text-gray-700 leading-relaxed
-                   prose-headings:text-gray-900 prose-headings:font-bold
-                   [&_h1]:text-base [&_h1]:sm:text-lg [&_h1]:lg:text-xl [&_h1]:font-bold
-                   [&_h2]:text-sm [&_h2]:sm: text-base [&_h2]:lg:text-lg [&_h2]:font-bold
-                   [&_h3]: text-xs [&_h3]:sm:text-sm [&_h3]:lg:text-base [&_h3]:font-bold
-                   [&_p]:text-xs [&_p]:sm:text-sm [&_p]:lg:text-base [&_p]:leading-relaxed
-                   [&_ul]:pl-4 [&_ul]: sm:pl-6
-                   [&_ol]:pl-4 [&_ol]: sm:pl-6
-                   [&_li]:text-xs [&_li]:sm:text-sm [&_li]:lg:text-base
-                   [&_strong]:font-bold
-                   [&_em]:italic"
+        className="test-content leading-relaxed
+                   [&_p]:text-sm [&_p]:sm:text-base [&_p]:mb-4 [&_p]:sm:mb-5
+                   [&_strong]:font-bold [&_strong]:text-gray-900
+                   [&_em]:italic
+                   [&_br]:block
+                   [&_h1]:text-base [&_h1]:sm:text-lg [&_h1]:lg:text-xl [&_h1]:font-bold [&_h1]:mb-4
+                   [&_h2]:text-sm [&_h2]:sm: text-base [&_h2]:lg:text-lg [&_h2]:font-bold [&_h2]:mb-3
+                   [&_h3]:text-xs [&_h3]:sm: text-sm [&_h3]:lg:text-base [&_h3]:font-bold [&_h3]:mb-2
+                   [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:sm: pl-6 [&_ul]:mb-4
+                   [&_ol]: list-decimal [&_ol]: pl-4 [&_ol]:sm:pl-6 [&_ol]:mb-4
+                   [&_li]:text-sm [&_li]:sm:text-base [&_li]:mb-2
+                   text-gray-800"
       >
         {renderContent}
       </div>
@@ -314,7 +328,7 @@ export function TestContentRenderer({
           }}
         >
           <div className="bg-white p-1 rounded-xl shadow-2xl border border-gray-200">
-            {hoverPreview.type === "image" ?  (
+            {hoverPreview.type === "image" ?   (
               <img
                 src={hoverPreview.url}
                 alt="Preview"
@@ -322,7 +336,7 @@ export function TestContentRenderer({
               />
             ) : (
               <video
-                src={hoverPreview. url}
+                src={hoverPreview.  url}
                 className="max-w-[200px] lg:max-w-[280px] max-h-[150px] lg:max-h-[200px] object-contain rounded-lg"
                 controls
               />
@@ -334,7 +348,7 @@ export function TestContentRenderer({
 
       {/* Image modal for full size view */}
       <ImageModal
-        isOpen={!!modalImage}
+        isOpen={!! modalImage}
         imageUrl={modalImage?.url || ""}
         alt={modalImage?.alt}
         onClose={() => setModalImage(null)}
@@ -362,7 +376,7 @@ export function TestContentRenderer({
                 viewBox="0 0 256 256"
                 fill="currentColor"
               >
-                <path d="M202. 83,74.83a8,8,0,0,0-11.66,0L128,137.17,64.83,74.83a8,8,0,0,0-11.66,11.66L116.34,128,53.17,191.17a8,8,0,0,0,11.66,11.66L128,139.83l63.17,63.17a8,8,0,0,0,11.66-11.66L139.66,128l63.17-63.17A8,8,0,0,0,202.83,74.83Z" />
+                <path d="M202.  83,74. 83a8,8,0,0,0-11.66,0L128,137.17,64.83,74.83a8,8,0,0,0-11.66,11.66L116.34,128,53.17,191.17a8,8,0,0,0,11.66,11.66L128,139.83l63.17,63.17a8,8,0,0,0,11.66-11.66L139.66,128l63.17-63.17A8,8,0,0,0,202.83,74.83Z" />
               </svg>
             </button>
             <video
