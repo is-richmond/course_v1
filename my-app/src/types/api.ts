@@ -18,7 +18,7 @@ export type TestType = "weekly" | "course_test" | "for_combined";
 
 export interface CourseCreate {
   title: string;
-  description?: string | null;
+  description?:  string | null;
   author_id?:  number | null;
   status?:  CourseStatus;
   price?: number | null;
@@ -27,15 +27,15 @@ export interface CourseCreate {
 export interface CourseUpdate {
   title?: string | null;
   description?: string | null;
-  author_id?: number | null;
-  status?: CourseStatus | null;
+  author_id?:  number | null;
+  status?:  CourseStatus | null;
   price?: number | null;
 }
 
 export interface CourseResponse {
   id: number;
   title: string;
-  description?:  string | null;
+  description?: string | null;
   author_id?:  number | null;
   status:  CourseStatus;
   price?:  number | null;
@@ -79,8 +79,8 @@ export interface ModuleWithLessons extends CourseModuleResponse {
 
 export interface LessonCreate {
   title:  string;
-  content?: string | null;
-  lesson_type?: LessonType;
+  content?:  string | null;
+  lesson_type?:  LessonType;
   order_index?: number;
   module_id: number;
 }
@@ -89,7 +89,7 @@ export interface LessonUpdate {
   title?: string | null;
   content?: string | null;
   lesson_type?: LessonType | null;
-  order_index?: number | null;
+  order_index?:  number | null;
 }
 
 export interface LessonResponse {
@@ -102,7 +102,7 @@ export interface LessonResponse {
 }
 
 export interface LessonWithMedia extends LessonResponse {
-  media: LessonMediaResponse[];
+  media:  LessonMediaResponse[];
 }
 
 export interface LessonWithAllMedia extends LessonResponse {
@@ -131,16 +131,16 @@ export interface LessonMediaResponse {
   id: number;
   media_url: string;
   media_type: MediaType;
-  order_index: number;
-  lesson_id: number;
+  order_index:  number;
+  lesson_id:  number;
 }
 
 export interface CourseMediaResponse {
-  id:  string;
+  id: string;
   filename: string;
-  original_filename: string;
+  original_filename:  string;
   custom_name?: string | null;
-  size: number;
+  size:  number;
   content_type: string;
   media_type: "image" | "video";
   s3_key:  string;
@@ -170,7 +170,7 @@ export interface TestCreate {
 export interface TestUpdate {
   title?: string | null;
   description?: string | null;
-  passing_score?: number | null;
+  passing_score?:  number | null;
   test_type?: TestType | null;
   course_id?: number | null;
 }
@@ -183,11 +183,12 @@ export interface TestResponse {
   test_type:  TestType;
   course_id?:  number | null;
   created_at: string;
-  updated_at?: string | null;
+  updated_at?:  string | null;
 }
 
 export interface TestWithQuestions extends TestResponse {
   questions: QuestionWithOptions[];
+  media?:  CourseMediaResponse[]; // ✅ Added:  S3 media files (images/videos for test content)
 }
 
 // =============================================================================
@@ -206,14 +207,14 @@ export interface TestQuestionCreate {
 export interface TestQuestionUpdate {
   question_text?: string | null;
   description?: string | null;
-  question_type?:  QuestionType | null;
+  question_type?: QuestionType | null;
   points?: number | null;
   order_index?: number | null;
 }
 
 export interface TestQuestionResponse {
-  id:  number;
-  question_text:  string;
+  id: number;
+  question_text: string;
   description?: string | null;
   description_media?: CourseMediaResponse[];
   question_type: QuestionType;
@@ -223,7 +224,7 @@ export interface TestQuestionResponse {
 }
 
 export interface QuestionOptionCreate {
-  option_text: string;
+  option_text:  string;
   description?: string | null;
   is_correct?: boolean;
   question_id: number;
@@ -245,7 +246,7 @@ export interface QuestionOptionResponse {
 }
 
 export interface QuestionWithOptions extends TestQuestionResponse {
-  options:  QuestionOptionResponse[];
+  options: QuestionOptionResponse[];
 }
 
 // =============================================================================
@@ -258,28 +259,28 @@ export interface TestAttemptResponse {
   test_id: number;
   score: number;
   total_points: number;
-  passed: boolean;
+  passed:  boolean;
   started_at: string;
-  completed_at?: string | null;
+  completed_at?:  string | null;
 }
 
 export interface TestAnswerSubmit {
   question_id: number;
-  selected_option_ids?: number[] | null;
+  selected_option_ids?:  number[] | null;
   text_answer?: string | null;
 }
 
 export interface TestSubmission {
-  answers:  TestAnswerSubmit[];
+  answers: TestAnswerSubmit[];
 }
 
 export interface TestAnswerResult {
   question_id: number;
   question_text: string;
-  selected_option_ids?: number[] | null;
+  selected_option_ids?:  number[] | null;
   text_answer?: string | null;
-  is_correct?: boolean | null;
-  points_earned: number;
+  is_correct?:  boolean | null;
+  points_earned:  number;
   points_possible: number;
 }
 
@@ -318,7 +319,7 @@ export interface UserProgressResponse {
   course_id: number;
   lesson_id?: number | null;
   completed: boolean;
-  completed_at?: string | null;
+  completed_at?:  string | null;
 }
 
 // =============================================================================
@@ -337,7 +338,7 @@ export interface MediaListResponse {
 
 export interface MediaConfigResponse {
   endpoint: string;
-  bucket: string;
+  bucket:  string;
   region: string;
   max_image_size: number;
   max_video_size: number;
@@ -369,8 +370,8 @@ export interface QuestionOption {
   id: number;
   question_id: number;
   option_text: string;
-  description?:  string | null;
-  is_correct: boolean;
+  description?: string | null;
+  is_correct:  boolean;
 }
 
 export interface CombinedTestQuestionResponse {
@@ -388,6 +389,7 @@ export interface CombinedTestQuestionResponse {
 
 export interface CombinedTestDetailResponse extends CombinedTestResponse {
   questions: CombinedTestQuestionResponse[];
+  media?:  CourseMediaResponse[]; // ✅ Added:  S3 media files (images/videos for test content)
 }
 
 export interface CombinedTestGenerateRequest {
@@ -412,7 +414,7 @@ export interface CombinedTestAnswerResult {
   description_media?: CourseMediaResponse[];
   source_test_title: string;
   selected_option_ids?: number[] | null;
-  options:  QuestionOptionResponse[];
+  options: QuestionOptionResponse[];
   text_answer?: string | null;
   is_correct:  boolean;
   points_earned:  number;
@@ -431,7 +433,7 @@ export interface CombinedTestResult {
 }
 
 export interface CombinedTestAttemptResponse {
-  id: number;
+  id:  number;
   combined_test_id: number;
   combined_test_title: string;
   user_id: string;

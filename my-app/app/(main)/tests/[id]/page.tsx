@@ -6,6 +6,7 @@ import { Header } from "@/src/components/layout/Header";
 import { Footer } from "@/src/components/layout/Footer";
 import { Card, CardContent } from "@/src/components/ui/Card";
 import { Button } from "@/src/components/ui/Button";
+import { TestContentRenderer } from "@/src/components/test/TestContentRendere";
 import { testsAPI } from "@/src/lib/api";
 import {
   calculatePercentage,
@@ -65,7 +66,7 @@ export default function TestPage() {
     const newAnswers = new Map(userAnswers);
 
     if (question.question_type === "single_choice") {
-      newAnswers. set(question.id, [optionId]);
+      newAnswers.set(question.id, [optionId]);
     } else {
       // multiple choice
       const current = newAnswers.get(question.id) || [];
@@ -102,7 +103,7 @@ export default function TestPage() {
     try {
       // Prepare submission
       const submission: TestSubmission = {
-        answers: test.questions.map((q) => ({
+        answers: test.questions. map((q) => ({
           question_id: q.id,
           selected_option_ids: userAnswers.get(q.id) || [],
         })),
@@ -132,7 +133,7 @@ export default function TestPage() {
       // Save to localStorage with proper structure
       // Load existing status to check if user has ever passed
       const existingStatus = loadTestStatusFromStorage(parseInt(testId));
-      const hasEverPassed = passed || (existingStatus?. hasEverPassed ??  false);
+      const hasEverPassed = passed || (existingStatus?. hasEverPassed ?? false);
       const bestPercentage = Math.max(
         percentage,
         existingStatus?.bestPercentage ??  0
@@ -283,7 +284,7 @@ export default function TestPage() {
                     >
                       <path
                         fill="currentColor"
-                        d="M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"
+                        d="M173. 66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"
                       />
                     </svg>
                   </div>
@@ -366,7 +367,7 @@ export default function TestPage() {
                   <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 sm:p-4 mb-6 sm:mb-8">
                     <p className="text-orange-700 text-sm sm:text-base">
                       Для прохождения теста необходимо набрать минимум{" "}
-                      {result.passingScore}%.  Попробуйте ещё раз!
+                      {result.passingScore}%.  Попробуйте ещё раз! 
                     </p>
                   </div>
                 )}
@@ -403,7 +404,7 @@ export default function TestPage() {
   }
 
   // =========================================================================
-  // QUESTION SCREEN - TWO COLUMN LAYOUT
+  // QUESTION SCREEN - TWO COLUMN LAYOUT WITH TestContentRenderer
   // =========================================================================
   const question = test.questions[currentQuestion];
   const answeredQuestions = userAnswers.size;
@@ -423,7 +424,7 @@ export default function TestPage() {
           <div className="mb-6 sm:mb-8">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs sm:text-sm font-medium text-gray-900">
-                Вопрос {currentQuestion + 1} из {test.questions. length}
+                Вопрос {currentQuestion + 1} из {test.questions.length}
               </p>
               <p className="text-xs sm:text-sm font-medium text-gray-600">
                 Отвечено: {answeredQuestions}
@@ -439,13 +440,29 @@ export default function TestPage() {
 
           {/* Two Column Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mb-6 sm:mb-8">
-            {/* Left Column - Question (2/3 width) */}
+            {/* Left Column - Question */}
             <div className="lg:col-span-1">
               <Card>
                 <CardContent className="p-4 sm:pt-8">
-                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-6 sm:mb-8">
-                    {question.question_text}
-                  </h2>
+                  {/* Question text */}
+                  <div className="mb-4 sm:mb-6">
+                    <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
+                      {question.question_text}
+                    </h2>
+                  </div>
+
+                  {/* Question description with media support - if exists */}
+                  {question. description && (
+                    <div className="mb-6 sm:mb-8 pb-6 sm:pb-8 border-b border-gray-200">
+                      <p className="text-xs sm:text-sm font-medium text-gray-600 mb-2 sm:mb-3">
+                        Описание вопроса
+                      </p>
+                      <TestContentRenderer
+                        content={question.description}
+                        testMedia={test.media || []}
+                      />
+                    </div>
+                  )}
 
                   {/* Answers - touch-friendly */}
                   <div className="space-y-2 sm:space-y-3">
@@ -493,9 +510,9 @@ export default function TestPage() {
                               : "hover:border-gray-300 active:border-gray-400"
                           }`}
                         >
-                          <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="flex items-start gap-2 sm:gap-3">
                             <div
-                              className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${iconColor}`}
+                              className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all mt-0.5 ${iconColor}`}
                             >
                               {hasAnswered && option.is_correct && (
                                 <svg
@@ -528,13 +545,13 @@ export default function TestPage() {
                                   </svg>
                                 )}
                               {! hasAnswered && isSelected && (
-                                <span className="text-white text-xs sm:text-sm">
+                                <span className="text-white text-xs sm:text-sm font-bold">
                                   ✓
                                 </span>
                               )}
                             </div>
                             <span
-                              className={`text-sm sm:text-base font-medium ${
+                              className={`text-sm sm:text-base font-medium flex-1 ${
                                 hasAnswered && option.is_correct
                                   ? "text-green-800"
                                   : hasAnswered &&
@@ -555,80 +572,67 @@ export default function TestPage() {
               </Card>
             </div>
 
-            {/* Right Column - Descriptions Panel (1/2 width, appears only after answer) */}
+            {/* Right Column - Descriptions Panel (appears only after answer) */}
             {hasAnswered && (
               <div className="lg:col-span-1">
                 <Card>
                   <CardContent className="p-4 sm:p-6">
                     <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-6">
-                      Описание
+                      Пояснения
                     </h3>
 
-                    {/* Question Description - FIRST */}
-                    {question. description && (
-                      <div className="mb-6 pb-6 border-b border-gray-200">
-                        <p className="text-xs sm:text-sm text-gray-600 font-medium mb-2">
-                          Вопрос
-                        </p>
-                        <p className="text-sm sm:text-base text-gray-800 leading-relaxed">
-                          {question.description}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* All Options Descriptions - SECOND */}
+                    {/* All Options Descriptions with TestContentRenderer */}
                     <div className="space-y-4">
-                      <p className="text-xs sm:text-sm text-gray-600 font-medium mb-4">
-                        Варианты ответов
-                      </p>
                       {question.options.map((option) => {
                         const isSelected = selectedOptions.includes(option.id);
-                        const isCorrect = option. is_correct;
+                        const isCorrect = option.is_correct;
 
                         return (
                           <div
                             key={option.id}
                             className={`p-3 sm:p-4 rounded-lg border-l-4 ${
                               isCorrect
-                                ?  "bg-green-50 border-green-500"
+                                ? "bg-green-50 border-green-500"
                                 : isSelected
                                 ? "bg-red-50 border-red-500"
-                                :  "bg-gray-50 border-gray-300"
+                                : "bg-gray-50 border-gray-300"
                             }`}
                           >
-                            <div className="flex items-start gap-2 mb-2">
+                            {/* Option title */}
+                            <div className="flex items-start gap-2 mb-3">
                               <div className="flex-shrink-0 mt-0.5">
                                 {isCorrect && (
-                                  <span className="text-green-600 font-bold">✓</span>
+                                  <span className="text-green-600 font-bold text-lg">
+                                    ✓
+                                  </span>
                                 )}
                                 {isSelected && !isCorrect && (
-                                  <span className="text-red-600 font-bold">✗</span>
+                                  <span className="text-red-600 font-bold text-lg">
+                                    ✗
+                                  </span>
                                 )}
                               </div>
                               <p
-                                className={`text-xs sm:text-sm font-medium ${
+                                className={`text-xs sm:text-sm font-bold ${
                                   isCorrect
                                     ? "text-green-900"
                                     : isSelected
                                     ? "text-red-900"
-                                    :  "text-gray-900"
+                                    : "text-gray-900"
                                 }`}
                               >
                                 {option.option_text}
                               </p>
                             </div>
+
+                            {/* Option description with media support */}
                             {option.description && (
-                              <p
-                                className={`text-xs sm:text-sm leading-relaxed ml-6 ${
-                                  isCorrect
-                                    ? "text-green-800"
-                                    : isSelected
-                                    ? "text-red-800"
-                                    :  "text-gray-700"
-                                }`}
-                              >
-                                {option.description}
-                              </p>
+                              <div className="ml-6">
+                                <TestContentRenderer
+                                  content={option.description}
+                                  testMedia={test.media || []}
+                                />
+                              </div>
                             )}
                           </div>
                         );
@@ -680,7 +684,7 @@ export default function TestPage() {
                 >
                   <path
                     fill="currentColor"
-                    d="M184. 49,136.49l-80,80a12,12,0,0,1-17-17L159,128,87.51,56.49a12,12,0,1,1,17-17l80,80A12,12,0,0,1,184.49,136.49Z"
+                    d="M184. 49,136.49l-80,80a12,12,0,0,1-17-17L159,128,87. 51,56.49a12,12,0,1,1,17-17l80,80A12,12,0,0,1,184.49,136.49Z"
                   />
                 </svg>
               )}
