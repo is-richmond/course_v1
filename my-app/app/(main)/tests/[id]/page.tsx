@@ -402,12 +402,13 @@ export default function TestPage() {
       </div>
     );
   }
+// ...  (весь файл остаётся как есть до QUESTION SCREEN)
 
   // =========================================================================
   // QUESTION SCREEN - TWO COLUMN LAYOUT WITH TestContentRenderer
   // =========================================================================
   const question = test.questions[currentQuestion];
-  const answeredQuestions = userAnswers.size;
+  const answeredQuestions = userAnswers. size;
   const progress = Math.round(
     ((currentQuestion + 1) / test.questions.length) * 100
   );
@@ -444,15 +445,16 @@ export default function TestPage() {
             <div className="lg:col-span-1">
               <Card>
                 <CardContent className="p-4 sm:pt-8">
-                  {/* Question text */}
-                  <div className="mb-4 sm:mb-6">
-                    <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
-                      {question.question_text}
-                    </h2>
+                  {/* Question text WITH TestContentRenderer */}
+                  <div className="mb-4 sm: mb-6">
+                    <TestContentRenderer
+                      content={question.question_text}
+                      testMedia={test.media || []}
+                    />
                   </div>
 
                   {/* Question description with media support - if exists */}
-                  {question. description && (
+                  {question.  description && (
                     <div className="mb-6 sm:mb-8 pb-6 sm:pb-8 border-b border-gray-200">
                       <p className="text-xs sm:text-sm font-medium text-gray-600 mb-2 sm:mb-3">
                         Описание вопроса
@@ -501,10 +503,10 @@ export default function TestPage() {
                         <button
                           key={option.id}
                           onClick={() =>
-                            ! isLocked && handleAnswerSelect(option.id)
+                            !  isLocked && handleAnswerSelect(option.id)
                           }
                           disabled={isLocked}
-                          className={`w-full text-left p-3 sm: p-4 rounded-lg border-2 transition-all min-h-[48px] ${borderClass} ${bgClass} ${
+                          className={`w-full text-left p-3 sm:  p-4 rounded-lg border-2 transition-all min-h-[48px] ${borderClass} ${bgClass} ${
                             isLocked
                               ? "cursor-default"
                               : "hover:border-gray-300 active:border-gray-400"
@@ -530,7 +532,7 @@ export default function TestPage() {
                               )}
                               {hasAnswered &&
                                 isSelected &&
-                                ! option.is_correct && (
+                                !  option.is_correct && (
                                   <svg
                                     xmlns="http://www.w3.org/2000/svg"
                                     width="14"
@@ -544,7 +546,7 @@ export default function TestPage() {
                                     />
                                   </svg>
                                 )}
-                              {! hasAnswered && isSelected && (
+                              {!  hasAnswered && isSelected && (
                                 <span className="text-white text-xs sm:text-sm font-bold">
                                   ✓
                                 </span>
@@ -556,12 +558,16 @@ export default function TestPage() {
                                   ? "text-green-800"
                                   : hasAnswered &&
                                     isSelected &&
-                                    !option.is_correct
+                                    ! option.is_correct
                                   ? "text-red-800"
                                   : "text-gray-900"
                               }`}
                             >
-                              {option.option_text}
+                              {/* ✅ Вариант ответа WITH TestContentRenderer */}
+                              <TestContentRenderer
+                                content={option.option_text}
+                                testMedia={test.media || []}
+                              />
                             </span>
                           </div>
                         </button>
@@ -629,7 +635,7 @@ export default function TestPage() {
                             {option.description && (
                               <div className="ml-6">
                                 <TestContentRenderer
-                                  content={option.description}
+                                  content={option. description}
                                   testMedia={test.media || []}
                                 />
                               </div>
@@ -673,7 +679,7 @@ export default function TestPage() {
               className="flex items-center gap-2 min-h-[44px] sm:min-h-[40px]"
             >
               {currentQuestion === test.questions.length - 1
-                ? "Завершить"
+                ?  "Завершить"
                 : "Далее"}
               {currentQuestion !== test.questions.length - 1 && (
                 <svg

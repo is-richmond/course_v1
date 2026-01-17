@@ -35,7 +35,7 @@ export default function CombinedTestPage() {
 
   const fetchTest = async () => {
     try {
-      const data = await combinedTestsAPI. get(testId);
+      const data = await combinedTestsAPI.  get(testId);
       setTest(data);
       setError(null);
     } catch (err) {
@@ -48,7 +48,7 @@ export default function CombinedTestPage() {
 
   const handleAnswerSelect = (questionId: number, optionId: number) => {
     const newAnswers = new Map(userAnswers);
-    const currentAnswers = newAnswers.get(questionId) || [];
+    const currentAnswers = newAnswers. get(questionId) || [];
 
     if (currentAnswers.includes(optionId)) {
       newAnswers.set(
@@ -63,7 +63,7 @@ export default function CombinedTestPage() {
   };
 
   const handleNext = () => {
-    if (test && currentQuestion < test.questions. length - 1) {
+    if (test && currentQuestion < test.questions.  length - 1) {
       setCurrentQuestion(currentQuestion + 1);
     }
   };
@@ -77,14 +77,14 @@ export default function CombinedTestPage() {
   const finishTest = async () => {
     if (!test) return;
 
-    if (! confirm("Вы уверены, что хотите завершить тест?")) return;
+    if (!  confirm("Вы уверены, что хотите завершить тест?")) return;
 
     try {
       const answers = Array.from(userAnswers.entries()).map(
         ([questionId, selectedOptionIds]) => ({
           question_id: questionId,
           selected_option_ids: 
-            selectedOptionIds. length > 0 ? selectedOptionIds : null,
+            selectedOptionIds.  length > 0 ? selectedOptionIds : null,
         })
       );
 
@@ -176,12 +176,12 @@ export default function CombinedTestPage() {
                     >
                       <path
                         fill="currentColor"
-                        d="M173. 66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"
+                        d="M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"
                       />
                     </svg>
                   </div>
                 ) : (
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 sm: mb-6">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:  mb-6">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="40"
@@ -206,7 +206,7 @@ export default function CombinedTestPage() {
                   {passed ? "Тест пройден!" : "Тест не пройден"}
                 </h1>
                 <p className="text-gray-600 text-sm sm:text-base mb-6 sm:mb-8">
-                  {test.title}
+                  {test. title}
                 </p>
 
                 {/* Score display */}
@@ -219,7 +219,7 @@ export default function CombinedTestPage() {
                       passed ? "text-green-600" : "text-red-600"
                     }`}
                   >
-                    {percentage. toFixed(0)}%
+                    {percentage.  toFixed(0)}%
                   </p>
                 </div>
 
@@ -253,11 +253,11 @@ export default function CombinedTestPage() {
                 </div>
 
                 {/* Status message */}
-                {! passed && (
+                {!  passed && (
                   <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 sm:p-4 mb-6 sm:mb-8">
                     <p className="text-orange-700 text-sm sm:text-base">
-                      Для прохождения теста необходимо набрать минимум 70%. 
-                      Попробуйте ещё раз! 
+                      Для прохождения теста необходимо набрать минимум 70%.  
+                      Попробуйте ещё раз!  
                     </p>
                   </div>
                 )}
@@ -293,7 +293,7 @@ export default function CombinedTestPage() {
   // =========================================================================
   const question = test.questions[currentQuestion];
   const progress = ((currentQuestion + 1) / test.questions.length) * 100;
-  const selectedAnswers = userAnswers. get(question.question_id) || [];
+  const selectedAnswers = userAnswers.  get(question.question_id) || [];
   const hasAnswered = selectedAnswers.length > 0;
 
   return (
@@ -306,7 +306,7 @@ export default function CombinedTestPage() {
           <div className="mb-6 sm:mb-8">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs sm:text-sm font-medium text-gray-900">
-                Вопрос {currentQuestion + 1} из {test.questions. length}
+                Вопрос {currentQuestion + 1} из {test.questions.  length}
               </p>
               <p className="text-xs sm:text-sm font-medium text-blue-600">
                 Тема: {question.source_test_title}
@@ -326,11 +326,12 @@ export default function CombinedTestPage() {
             <div className="lg:col-span-1">
               <Card>
                 <CardContent className="p-4 sm:pt-8">
-                  {/* Question text */}
+                  {/* Question text WITH TestContentRenderer */}
                   <div className="mb-4 sm:mb-6">
-                    <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
-                      {question.question_text}
-                    </h2>
+                    <TestContentRenderer
+                      content={question. question_text}
+                      testMedia={test.media || []}
+                    />
                   </div>
 
                   {/* Points info */}
@@ -344,7 +345,7 @@ export default function CombinedTestPage() {
                   </div>
 
                   {/* Question description with media support - if exists */}
-                  {question. description && (
+                  {question.  description && (
                     <div className="mb-6 sm:mb-8 pb-6 sm:pb-8 border-b border-gray-200">
                       <p className="text-xs sm:text-sm font-medium text-gray-600 mb-2 sm:mb-3">
                         Описание вопроса
@@ -393,7 +394,7 @@ export default function CombinedTestPage() {
                         <button
                           key={option.id}
                           onClick={() =>
-                            ! isLocked &&
+                            !  isLocked &&
                             handleAnswerSelect(question.question_id, option.id)
                           }
                           disabled={isLocked}
@@ -423,7 +424,7 @@ export default function CombinedTestPage() {
                               )}
                               {hasAnswered &&
                                 isSelected &&
-                                ! option.is_correct && (
+                                !  option.is_correct && (
                                   <svg
                                     xmlns="http://www.w3.org/2000/svg"
                                     width="14"
@@ -437,25 +438,19 @@ export default function CombinedTestPage() {
                                     />
                                   </svg>
                                 )}
-                              {! hasAnswered && isSelected && (
+                              {!  hasAnswered && isSelected && (
                                 <span className="text-white text-xs sm:text-sm font-bold">
                                   ✓
                                 </span>
                               )}
                             </div>
-                            <span
-                              className={`text-sm sm:text-base font-medium flex-1 ${
-                                hasAnswered && option.is_correct
-                                  ? "text-green-800"
-                                  : hasAnswered &&
-                                    isSelected &&
-                                    !option.is_correct
-                                  ? "text-red-800"
-                                  : "text-gray-900"
-                              }`}
-                            >
-                              {option.option_text}
-                            </span>
+                            <div className="flex-1">
+                              {/* ✅ Вариант ответа WITH TestContentRenderer */}
+                              <TestContentRenderer
+                                content={option.option_text}
+                                testMedia={test.media || []}
+                              />
+                            </div>
                           </div>
                         </button>
                       );
@@ -476,7 +471,7 @@ export default function CombinedTestPage() {
 
                     {/* All Options Descriptions with TestContentRenderer */}
                     <div className="space-y-4">
-                      {question.options. map((option) => {
+                      {question.options.  map((option) => {
                         const isSelected = selectedAnswers.includes(option.id);
                         const isCorrect = option.is_correct;
 
@@ -499,7 +494,7 @@ export default function CombinedTestPage() {
                                     ✓
                                   </span>
                                 )}
-                                {isSelected && !isCorrect && (
+                                {isSelected && ! isCorrect && (
                                   <span className="text-red-600 font-bold text-lg">
                                     ✗
                                   </span>
@@ -553,7 +548,7 @@ export default function CombinedTestPage() {
               >
                 <path
                   fill="currentColor"
-                  d="M168. 49,199.51a12,12,0,0,1-17,17l-80-80a12,12,0,0,1,0-17l80-80a12,12,0,0,1,17,17L97,128Z"
+                  d="M168.  49,199.51a12,12,0,0,1-17,17l-80-80a12,12,0,0,1,0-17l80-80a12,12,0,0,1,17,17L97,128Z"
                 />
               </svg>
               <span className="hidden sm:inline">Предыдущий</span>
@@ -561,19 +556,19 @@ export default function CombinedTestPage() {
             </Button>
 
             <div className="hidden sm:block text-xs sm:text-sm font-medium text-gray-600">
-              Отвечено: {userAnswers.size} / {test.questions.length}
+              Отвечено: {userAnswers. size} / {test.questions.length}
             </div>
 
             <Button
               variant="primary"
               onClick={
-                currentQuestion === test.questions. length - 1
-                  ?  finishTest
+                currentQuestion === test.questions.  length - 1
+                  ?   finishTest
                   : handleNext
               }
               className="flex items-center gap-2 min-h-[44px] sm:min-h-[40px]"
             >
-              {currentQuestion === test.questions.length - 1
+              {currentQuestion === test.questions. length - 1
                 ? "Завершить"
                 : "Далее"}
               {currentQuestion !== test.questions.length - 1 && (
@@ -585,7 +580,7 @@ export default function CombinedTestPage() {
                 >
                   <path
                     fill="currentColor"
-                    d="M184. 49,136.49l-80,80a12,12,0,0,1-17-17L159,128,87.51,56.49a12,12,0,1,1,17-17l80,80A12,12,0,0,1,184.49,136.49Z"
+                    d="M184.  49,136.49l-80,80a12,12,0,0,1-17-17L159,128,87.51,56. 49a12,12,0,1,1,17-17l80,80A12,12,0,0,1,184.49,136.49Z"
                   />
                 </svg>
               )}
