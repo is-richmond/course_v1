@@ -369,7 +369,7 @@ export const testsAPI = {
 
 
   getAllUserAttempts: async (): Promise<TestAttemptWithTestInfo[]> => {
-    const response = await testsClient.get('/attempts/user');
+    const response = await testsClient.get(`/attempts/user/${userId}`);
     return response.data;
   },
 
