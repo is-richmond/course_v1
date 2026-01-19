@@ -97,6 +97,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       ),
     },
     {
+      label: "Дэшборд",
+      href: "/test_dashboard",
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="15"
+          height="15"
+          viewBox="0 0 256 256"
+        >
+          <path
+            fill="currentColor"
+            d="M232,208H24a8,8,0,0,1,0-16H32V48a8,8,0,0,1,16,0V192h32V80a8,8,0,0,1,16,0V192h32V112a8,8,0,0,1,16,0V192h32V64a8,8,0,0,1,16,0V192h32a8,8,0,0,1,0,16Z"
+          />
+        </svg>
+      ),
+    },
+    {
       label: "Профиль",
       icon: (
         <svg
