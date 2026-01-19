@@ -350,6 +350,18 @@ class TestAttemptRepository(BaseRepository["TestAttempt"]):
         ).order_by(TestAttempt.started_at.desc())
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+
+    async def get_all_by_user(self, user_id: str) -> List:
+            """Get all attempts for a user across all tests."""
+            from core. src.app.models.course import TestAttempt, Test
+            stmt = select(TestAttempt).options(
+                selectinload(TestAttempt.test)  # Загружаем связанный тест для получения его названия
+            ).where(
+                TestAttempt.user_id == user_id
+            ).order_by(TestAttempt.started_at.desc())
+            result = await self.session.execute(stmt)
+            return list(result.scalars().all())
     
     async def get_with_answers(self, attempt_id: int):
         """Get attempt with answers loaded."""

@@ -313,6 +313,28 @@ async def get_test_attempts(
     return attempts
 
 
+@router.get("/attempts/user/{user_id}", response_model=List[TestAttemptResponse])
+async def get_user_all_attempts(
+    user_id: str,
+    session: AsyncSession = Depends(get_async_session)
+):
+    """Get all test attempts for a specific user across all tests."""
+    # Get all attempts for the user
+    attempt_repo = TestAttemptRepository(session)
+    attempts = await attempt_repo.get_all_by_user(user_id)
+    
+    # Преобразуем в response с информацией о тесте
+    response = []
+    for attempt in attempts: 
+        response.append({
+            **TestAttemptResponse.model_validate(attempt).model_dump(),
+            "test_title": attempt.test.title if hasattr(attempt, 'test') and attempt.test else None,
+            "test_id": attempt.test_id
+        })
+    
+    return response
+
+
 @router.get("/{test_id}/result/{attempt_id}", response_model=TestResult)
 async def get_test_result(
     test_id: int,
