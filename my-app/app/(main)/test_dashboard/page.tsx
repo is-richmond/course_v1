@@ -374,7 +374,7 @@ export default function TestsDashboardPage() {
                       return (
                         <Link
                           key={attempt.id}
-                          href={`/tests-dashboard/attempts/${attempt.test_id}/${attempt.id}`}
+                          href={`/tests_dashboard/attempts/${attempt.test_id}/${attempt.id}`}
                         >
                           <Card className="h-full hover:shadow-lg transition cursor-pointer group">
                             <div
