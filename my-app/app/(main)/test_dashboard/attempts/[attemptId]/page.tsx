@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Footer } from "@/src/components/layout/Footer";
 import { Button } from "@/src/components/ui/Button";
 import { Card, CardContent } from "@/src/components/ui/Card";
-import { tests } from "@/src/lib/api";
+import { testAPI } from "@/src/lib/api";
 import type { TestResult } from "@/src/types/api";
 
 export default function TestAttemptDetailPage() {

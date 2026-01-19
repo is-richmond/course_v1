@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Footer } from "@/src/components/layout/Footer";
 import { Button } from "@/src/components/ui/Button";
 import { Card, CardContent } from "@/src/components/ui/Card";
-import { tests } from "@/src/lib/api";
+import { testsAPI } from "@/src/lib/api";
 import {
   calculateDashboardStats,
   getAttemptInfo,
