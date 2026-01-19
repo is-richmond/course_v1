@@ -35,7 +35,7 @@ export default function CombinedTestPage() {
 
   const fetchTest = async () => {
     try {
-      const data = await combinedTestsAPI.  get(testId);
+      const data = await combinedTestsAPI. get(testId);
       setTest(data);
       setError(null);
     } catch (err) {
@@ -48,7 +48,7 @@ export default function CombinedTestPage() {
 
   const handleAnswerSelect = (questionId: number, optionId: number) => {
     const newAnswers = new Map(userAnswers);
-    const currentAnswers = newAnswers. get(questionId) || [];
+    const currentAnswers = newAnswers.get(questionId) || [];
 
     if (currentAnswers.includes(optionId)) {
       newAnswers.set(
@@ -63,7 +63,7 @@ export default function CombinedTestPage() {
   };
 
   const handleNext = () => {
-    if (test && currentQuestion < test.questions.  length - 1) {
+    if (test && currentQuestion < test.questions. length - 1) {
       setCurrentQuestion(currentQuestion + 1);
     }
   };
@@ -75,16 +75,16 @@ export default function CombinedTestPage() {
   };
 
   const finishTest = async () => {
-    if (!test) return;
+    if (! test) return;
 
-    if (!  confirm("Вы уверены, что хотите завершить тест?")) return;
+    if (! confirm("Вы уверены, что хотите завершить тест?")) return;
 
     try {
       const answers = Array.from(userAnswers.entries()).map(
         ([questionId, selectedOptionIds]) => ({
           question_id: questionId,
           selected_option_ids: 
-            selectedOptionIds.  length > 0 ? selectedOptionIds : null,
+            selectedOptionIds. length > 0 ? selectedOptionIds : null,
         })
       );
 
@@ -151,7 +151,7 @@ export default function CombinedTestPage() {
   }
 
   // =========================================================================
-  // RESULT SCREEN - Show pass/fail clearly
+  // RESULT SCREEN
   // =========================================================================
   if (isFinished && result) {
     const percentage = result.percentage;
@@ -164,7 +164,6 @@ export default function CombinedTestPage() {
           <div className="max-w-2xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-12">
             <Card>
               <CardContent className="p-6 sm:pt-12 sm:pb-12 text-center">
-                {/* Pass/Fail Icon */}
                 {passed ? (
                   <div className="w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
                     <svg
@@ -181,7 +180,7 @@ export default function CombinedTestPage() {
                     </svg>
                   </div>
                 ) : (
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:  mb-6">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 sm: mb-6">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="40"
@@ -197,19 +196,17 @@ export default function CombinedTestPage() {
                   </div>
                 )}
 
-                {/* Status Title */}
                 <h1
                   className={`text-2xl sm:text-3xl md:text-4xl font-bold mb-2 ${
                     passed ? "text-green-600" : "text-red-600"
                   }`}
                 >
-                  {passed ? "Тест пройден!" : "Тест не пройден"}
+                  {passed ?  "Тест пройден!" : "Тест не пройден"}
                 </h1>
                 <p className="text-gray-600 text-sm sm:text-base mb-6 sm:mb-8">
-                  {test. title}
+                  {test.title}
                 </p>
 
-                {/* Score display */}
                 <div className="mb-6 sm:mb-8">
                   <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">
                     Ваш результат
@@ -219,11 +216,10 @@ export default function CombinedTestPage() {
                       passed ? "text-green-600" : "text-red-600"
                     }`}
                   >
-                    {percentage.  toFixed(0)}%
+                    {percentage. toFixed(0)}%
                   </p>
                 </div>
 
-                {/* Progress bar */}
                 <div className="relative w-full bg-gray-200 rounded-full h-3 sm:h-4 mb-4 sm:mb-6">
                   <div
                     className={`h-3 sm:h-4 rounded-full transition-all ${
@@ -231,14 +227,12 @@ export default function CombinedTestPage() {
                     }`}
                     style={{ width: `${Math.min(percentage, 100)}%` }}
                   />
-                  {/* Passing threshold marker */}
                   <div
-                    className="absolute top-0 h-full w-0.5 bg-gray-500"
+                    className="absolute top-0 h-full w-0. 5 bg-gray-500"
                     style={{ left: "70%" }}
                   />
                 </div>
 
-                {/* Info row */}
                 <div className="flex justify-center gap-4 sm:gap-8 mb-6 sm:mb-8 text-xs sm:text-sm">
                   <div>
                     <p className="text-gray-600">Правильных ответов</p>
@@ -252,17 +246,15 @@ export default function CombinedTestPage() {
                   </div>
                 </div>
 
-                {/* Status message */}
-                {!  passed && (
+                {! passed && (
                   <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 sm:p-4 mb-6 sm:mb-8">
                     <p className="text-orange-700 text-sm sm:text-base">
-                      Для прохождения теста необходимо набрать минимум 70%.  
-                      Попробуйте ещё раз!  
+                      Для прохождения теста необходимо набрать минимум 70%. 
+                      Попробуйте ещё раз! 
                     </p>
                   </div>
                 )}
 
-                {/* Action buttons */}
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
                   <Button
                     onClick={() => router.push("/tests")}
@@ -289,11 +281,11 @@ export default function CombinedTestPage() {
   }
 
   // =========================================================================
-  // QUESTION SCREEN - TWO COLUMN LAYOUT WITH TestContentRenderer
+  // QUESTION SCREEN
   // =========================================================================
   const question = test.questions[currentQuestion];
   const progress = ((currentQuestion + 1) / test.questions.length) * 100;
-  const selectedAnswers = userAnswers.  get(question.question_id) || [];
+  const selectedAnswers = userAnswers. get(question.question_id) || [];
   const hasAnswered = selectedAnswers.length > 0;
 
   return (
@@ -302,11 +294,10 @@ export default function CombinedTestPage() {
 
       <main className="flex-1 pt-12 sm:pt-16 md:pt-20">
         <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-12">
-          {/* Progress */}
           <div className="mb-6 sm:mb-8">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs sm:text-sm font-medium text-gray-900">
-                Вопрос {currentQuestion + 1} из {test.questions.  length}
+                Вопрос {currentQuestion + 1} из {test.questions.length}
               </p>
               <p className="text-xs sm:text-sm font-medium text-blue-600">
                 Тема: {question.source_test_title}
@@ -320,21 +311,18 @@ export default function CombinedTestPage() {
             </div>
           </div>
 
-          {/* Two Column Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mb-6 sm:mb-8">
-            {/* Left Column - Question */}
+            {/* Left Column - Question Only */}
             <div className="lg:col-span-1">
               <Card>
                 <CardContent className="p-4 sm:pt-8">
-                  {/* Question text WITH TestContentRenderer */}
                   <div className="mb-4 sm:mb-6">
                     <TestContentRenderer
-                      content={question. question_text}
+                      content={question.question_text}
                       testMedia={test.media || []}
                     />
                   </div>
 
-                  {/* Points info */}
                   <div className="mb-4 sm:mb-6 pb-4 sm:pb-6 border-b border-gray-200">
                     <p className="text-xs sm:text-sm text-gray-600">
                       Баллов:{" "}
@@ -344,43 +332,25 @@ export default function CombinedTestPage() {
                     </p>
                   </div>
 
-                  {/* Question description with media support - if exists */}
-                  {question.  description && (
-                    <div className="mb-6 sm:mb-8 pb-6 sm:pb-8 border-b border-gray-200">
-                      <p className="text-xs sm:text-sm font-medium text-gray-600 mb-2 sm:mb-3">
-                        Описание вопроса
-                      </p>
-                      <TestContentRenderer
-                        content={question.description}
-                        testMedia={test.media || []}
-                      />
-                    </div>
-                  )}
-
-                  {/* Answers - touch-friendly */}
                   <div className="space-y-2 sm:space-y-3">
                     {question.options.map((option) => {
                       const isSelected = selectedAnswers.includes(option.id);
                       const isLocked = hasAnswered;
 
-                      // Determine styling based on answer state
                       let borderClass = "border-gray-200";
                       let bgClass = "";
                       let iconColor = "border-gray-300";
 
                       if (hasAnswered) {
                         if (option.is_correct) {
-                          // Always highlight correct answer in green
                           borderClass = "border-green-500";
                           bgClass = "bg-green-50";
                           iconColor = "border-green-500 bg-green-500";
                         } else if (isSelected && !option.is_correct) {
-                          // User selected wrong answer - red
                           borderClass = "border-red-500";
                           bgClass = "bg-red-50";
                           iconColor = "border-red-500 bg-red-500";
                         } else {
-                          // Not selected, not correct - gray out
                           borderClass = "border-gray-200";
                           bgClass = "bg-gray-50";
                         }
@@ -394,11 +364,11 @@ export default function CombinedTestPage() {
                         <button
                           key={option.id}
                           onClick={() =>
-                            !  isLocked &&
+                            ! isLocked &&
                             handleAnswerSelect(question.question_id, option.id)
                           }
                           disabled={isLocked}
-                          className={`w-full text-left p-3 sm:p-4 rounded-lg border-2 transition-all min-h-[48px] ${borderClass} ${bgClass} ${
+                          className={`w-full text-left p-3 sm: p-4 rounded-lg border-2 transition-all min-h-[48px] ${borderClass} ${bgClass} ${
                             isLocked
                               ? "cursor-default"
                               : "hover:border-gray-300 active:border-gray-400"
@@ -424,7 +394,7 @@ export default function CombinedTestPage() {
                               )}
                               {hasAnswered &&
                                 isSelected &&
-                                !  option.is_correct && (
+                                ! option.is_correct && (
                                   <svg
                                     xmlns="http://www.w3.org/2000/svg"
                                     width="14"
@@ -438,14 +408,13 @@ export default function CombinedTestPage() {
                                     />
                                   </svg>
                                 )}
-                              {!  hasAnswered && isSelected && (
+                              {! hasAnswered && isSelected && (
                                 <span className="text-white text-xs sm:text-sm font-bold">
                                   ✓
                                 </span>
                               )}
                             </div>
                             <div className="flex-1">
-                              {/* ✅ Вариант ответа WITH TestContentRenderer */}
                               <TestContentRenderer
                                 content={option.option_text}
                                 testMedia={test.media || []}
@@ -460,19 +429,35 @@ export default function CombinedTestPage() {
               </Card>
             </div>
 
-            {/* Right Column - Descriptions Panel (appears only after answer) */}
+            {/* Right Column - Descriptions (appears only after answer) */}
             {hasAnswered && (
               <div className="lg:col-span-1">
                 <Card>
-                  <CardContent className="p-4 sm:p-6">
-                    <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-6">
+                  <CardContent className="p-4 sm:p-6 max-h-[600px] overflow-y-auto">
+                    <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-6 sticky top-0 bg-white pb-3">
                       Пояснения
                     </h3>
 
-                    {/* All Options Descriptions with TestContentRenderer */}
+                    {/* ✅ Описание вопроса */}
+                    {question.description && (
+                      <div className="mb-6 pb-6 border-b border-gray-200">
+                        <p className="text-xs sm:text-sm text-gray-600 font-medium mb-2">
+                          Описание вопроса
+                        </p>
+                        <TestContentRenderer
+                          content={question.description}
+                          testMedia={test.media || []}
+                        />
+                      </div>
+                    )}
+
+                    {/* Описание ответов */}
                     <div className="space-y-4">
-                      {question.options.  map((option) => {
-                        const isSelected = selectedAnswers.includes(option.id);
+                      <p className="text-xs sm:text-sm text-gray-600 font-medium">
+                        Варианты ответов
+                      </p>
+                      {question.options.map((option) => {
+                        const isSelected = selectedAnswers.includes(option. id);
                         const isCorrect = option.is_correct;
 
                         return (
@@ -486,7 +471,6 @@ export default function CombinedTestPage() {
                                 : "bg-gray-50 border-gray-300"
                             }`}
                           >
-                            {/* Option title */}
                             <div className="flex items-start gap-2 mb-3">
                               <div className="flex-shrink-0 mt-0.5">
                                 {isCorrect && (
@@ -513,7 +497,6 @@ export default function CombinedTestPage() {
                               </p>
                             </div>
 
-                            {/* Option description with media support */}
                             {option.description && (
                               <div className="ml-6">
                                 <TestContentRenderer
@@ -532,7 +515,6 @@ export default function CombinedTestPage() {
             )}
           </div>
 
-          {/* Navigation - touch-friendly */}
           <div className="flex gap-3 sm:gap-4 justify-between">
             <Button
               variant="secondary"
@@ -548,7 +530,7 @@ export default function CombinedTestPage() {
               >
                 <path
                   fill="currentColor"
-                  d="M168.  49,199.51a12,12,0,0,1-17,17l-80-80a12,12,0,0,1,0-17l80-80a12,12,0,0,1,17,17L97,128Z"
+                  d="M168. 49,199.51a12,12,0,0,1-17,17l-80-80a12,12,0,0,1,0-17l80-80a12,12,0,0,1,17,17L97,128Z"
                 />
               </svg>
               <span className="hidden sm:inline">Предыдущий</span>
@@ -556,19 +538,19 @@ export default function CombinedTestPage() {
             </Button>
 
             <div className="hidden sm:block text-xs sm:text-sm font-medium text-gray-600">
-              Отвечено: {userAnswers. size} / {test.questions.length}
+              Отвечено: {userAnswers.size} / {test.questions.length}
             </div>
 
             <Button
               variant="primary"
               onClick={
-                currentQuestion === test.questions.  length - 1
-                  ?   finishTest
+                currentQuestion === test.questions. length - 1
+                  ?  finishTest
                   : handleNext
               }
               className="flex items-center gap-2 min-h-[44px] sm:min-h-[40px]"
             >
-              {currentQuestion === test.questions. length - 1
+              {currentQuestion === test.questions.length - 1
                 ? "Завершить"
                 : "Далее"}
               {currentQuestion !== test.questions.length - 1 && (
@@ -580,7 +562,7 @@ export default function CombinedTestPage() {
                 >
                   <path
                     fill="currentColor"
-                    d="M184.  49,136.49l-80,80a12,12,0,0,1-17-17L159,128,87.51,56. 49a12,12,0,1,1,17-17l80,80A12,12,0,0,1,184.49,136.49Z"
+                    d="M184. 49,136.49l-80,80a12,12,0,0,1-17-17L159,128,87.51,56.49a12,12,0,1,1,17-17l80,80A12,12,0,0,1,184.49,136.49Z"
                   />
                 </svg>
               )}

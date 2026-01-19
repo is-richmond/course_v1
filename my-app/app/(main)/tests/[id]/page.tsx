@@ -66,9 +66,8 @@ export default function TestPage() {
     const newAnswers = new Map(userAnswers);
 
     if (question.question_type === "single_choice") {
-      newAnswers.set(question.id, [optionId]);
+      newAnswers. set(question.id, [optionId]);
     } else {
-      // multiple choice
       const current = newAnswers.get(question.id) || [];
       if (current.includes(optionId)) {
         newAnswers.set(
@@ -101,21 +100,18 @@ export default function TestPage() {
     if (!test) return;
 
     try {
-      // Prepare submission
       const submission: TestSubmission = {
-        answers: test.questions. map((q) => ({
+        answers: test.questions.map((q) => ({
           question_id: q.id,
           selected_option_ids: userAnswers.get(q.id) || [],
         })),
       };
 
-      // Submit to API
       const apiResult:  TestResult = await testsAPI. submit(
         parseInt(testId),
         submission
       );
 
-      // CRITICAL: Calculate percentage ourselves (don't trust backend `passed`)
       const percentage = calculatePercentage(
         apiResult.score,
         apiResult.total_points
@@ -127,13 +123,11 @@ export default function TestPage() {
         totalPoints: apiResult.total_points,
         percentage,
         passed,
-        passingScore: apiResult. passing_score,
+        passingScore: apiResult.passing_score,
       });
 
-      // Save to localStorage with proper structure
-      // Load existing status to check if user has ever passed
       const existingStatus = loadTestStatusFromStorage(parseInt(testId));
-      const hasEverPassed = passed || (existingStatus?. hasEverPassed ?? false);
+      const hasEverPassed = passed || (existingStatus?. hasEverPassed ??  false);
       const bestPercentage = Math.max(
         percentage,
         existingStatus?.bestPercentage ??  0
@@ -153,7 +147,6 @@ export default function TestPage() {
       setIsFinished(true);
     } catch (err) {
       console.error("Failed to submit test:", err);
-      // Fallback:  calculate locally
       if (! test) return;
 
       let correctCount = 0;
@@ -186,10 +179,9 @@ export default function TestPage() {
         passingScore: test.passing_score,
       });
 
-      // Save to localStorage
       const existingStatus = loadTestStatusFromStorage(parseInt(testId));
       const hasEverPassed = passed || (existingStatus?.hasEverPassed ?? false);
-      const bestPercentage = Math.max(
+      const bestPercentage = Math. max(
         percentage,
         existingStatus?.bestPercentage ?? 0
       );
@@ -198,7 +190,7 @@ export default function TestPage() {
         hasEverPassed,
         currentAttemptPassed: passed,
         currentPercentage: percentage,
-        passingPercentage: test.passing_score,
+        passingPercentage:  test.passing_score,
         currentScore: correctCount,
         totalPoints,
         bestPercentage,
@@ -259,11 +251,8 @@ export default function TestPage() {
     );
   }
 
-  // =========================================================================
-  // RESULT SCREEN - Show pass/fail clearly
-  // =========================================================================
   if (isFinished && result) {
-    const statusColors = getStatusColorClass(result. passed);
+    const statusColors = getStatusColorClass(result.passed);
 
     return (
       <div className="bg-white min-h-screen flex flex-col">
@@ -272,7 +261,6 @@ export default function TestPage() {
           <div className="max-w-2xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-12">
             <Card>
               <CardContent className="p-6 sm:pt-12 sm:pb-12 text-center">
-                {/* Pass/Fail Icon */}
                 {result.passed ? (
                   <div className="w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
                     <svg
@@ -305,7 +293,6 @@ export default function TestPage() {
                   </div>
                 )}
 
-                {/* Status Title */}
                 <h1
                   className={`text-2xl sm:text-3xl md:text-4xl font-bold mb-2 ${
                     result.passed ? "text-green-600" : "text-red-600"
@@ -317,7 +304,6 @@ export default function TestPage() {
                   {test.title}
                 </p>
 
-                {/* Score display */}
                 <div className="mb-6 sm:mb-8">
                   <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">
                     Ваш результат
@@ -331,7 +317,6 @@ export default function TestPage() {
                   </p>
                 </div>
 
-                {/* Progress bar */}
                 <div className="relative w-full bg-gray-200 rounded-full h-3 sm:h-4 mb-4 sm:mb-6">
                   <div
                     className={`h-3 sm:h-4 rounded-full transition-all ${
@@ -339,14 +324,12 @@ export default function TestPage() {
                     }`}
                     style={{ width: `${Math.min(result.percentage, 100)}%` }}
                   />
-                  {/* Passing threshold marker */}
                   <div
-                    className="absolute top-0 h-full w-0.5 bg-gray-500"
+                    className="absolute top-0 h-full w-0. 5 bg-gray-500"
                     style={{ left: `${result.passingScore}%` }}
                   />
                 </div>
 
-                {/* Info row */}
                 <div className="flex justify-center gap-4 sm:gap-8 mb-6 sm:mb-8 text-xs sm:text-sm">
                   <div>
                     <p className="text-gray-600">Набрано баллов</p>
@@ -362,7 +345,6 @@ export default function TestPage() {
                   </div>
                 </div>
 
-                {/* Status message */}
                 {! result.passed && (
                   <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 sm:p-4 mb-6 sm:mb-8">
                     <p className="text-orange-700 text-sm sm:text-base">
@@ -372,7 +354,6 @@ export default function TestPage() {
                   </div>
                 )}
 
-                {/* Action buttons */}
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
                   <Button
                     onClick={() => router.push("/tests")}
@@ -402,13 +383,9 @@ export default function TestPage() {
       </div>
     );
   }
-// ...  (весь файл остаётся как есть до QUESTION SCREEN)
 
-  // =========================================================================
-  // QUESTION SCREEN - TWO COLUMN LAYOUT WITH TestContentRenderer
-  // =========================================================================
   const question = test.questions[currentQuestion];
-  const answeredQuestions = userAnswers. size;
+  const answeredQuestions = userAnswers.size;
   const progress = Math.round(
     ((currentQuestion + 1) / test.questions.length) * 100
   );
@@ -421,7 +398,6 @@ export default function TestPage() {
 
       <main className="flex-1 pt-12 sm:pt-16 md:pt-20">
         <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-12">
-          {/* Progress */}
           <div className="mb-6 sm:mb-8">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs sm:text-sm font-medium text-gray-900">
@@ -439,57 +415,37 @@ export default function TestPage() {
             </div>
           </div>
 
-          {/* Two Column Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mb-6 sm:mb-8">
-            {/* Left Column - Question */}
+            {/* Left Column - Question Only */}
             <div className="lg:col-span-1">
               <Card>
                 <CardContent className="p-4 sm:pt-8">
-                  {/* Question text WITH TestContentRenderer */}
-                  <div className="mb-4 sm: mb-6">
+                  <div className="mb-4 sm:mb-6">
                     <TestContentRenderer
                       content={question.question_text}
                       testMedia={test.media || []}
                     />
                   </div>
 
-                  {/* Question description with media support - if exists */}
-                  {question.  description && (
-                    <div className="mb-6 sm:mb-8 pb-6 sm:pb-8 border-b border-gray-200">
-                      <p className="text-xs sm:text-sm font-medium text-gray-600 mb-2 sm:mb-3">
-                        Описание вопроса
-                      </p>
-                      <TestContentRenderer
-                        content={question.description}
-                        testMedia={test.media || []}
-                      />
-                    </div>
-                  )}
-
-                  {/* Answers - touch-friendly */}
                   <div className="space-y-2 sm:space-y-3">
                     {question.options.map((option) => {
                       const isSelected = selectedOptions.includes(option.id);
                       const isLocked = hasAnswered;
 
-                      // Determine styling based on answer state
                       let borderClass = "border-gray-200";
                       let bgClass = "";
                       let iconColor = "border-gray-300";
 
                       if (hasAnswered) {
                         if (option.is_correct) {
-                          // Always highlight correct answer in green
                           borderClass = "border-green-500";
                           bgClass = "bg-green-50";
                           iconColor = "border-green-500 bg-green-500";
                         } else if (isSelected && !option.is_correct) {
-                          // User selected wrong answer - red
                           borderClass = "border-red-500";
                           bgClass = "bg-red-50";
                           iconColor = "border-red-500 bg-red-500";
                         } else {
-                          // Not selected, not correct - gray out
                           borderClass = "border-gray-200";
                           bgClass = "bg-gray-50";
                         }
@@ -503,10 +459,10 @@ export default function TestPage() {
                         <button
                           key={option.id}
                           onClick={() =>
-                            !  isLocked && handleAnswerSelect(option.id)
+                            ! isLocked && handleAnswerSelect(option.id)
                           }
                           disabled={isLocked}
-                          className={`w-full text-left p-3 sm:  p-4 rounded-lg border-2 transition-all min-h-[48px] ${borderClass} ${bgClass} ${
+                          className={`w-full text-left p-3 sm:p-4 rounded-lg border-2 transition-all min-h-[48px] ${borderClass} ${bgClass} ${
                             isLocked
                               ? "cursor-default"
                               : "hover:border-gray-300 active:border-gray-400"
@@ -532,7 +488,7 @@ export default function TestPage() {
                               )}
                               {hasAnswered &&
                                 isSelected &&
-                                !  option.is_correct && (
+                                ! option.is_correct && (
                                   <svg
                                     xmlns="http://www.w3.org/2000/svg"
                                     width="14"
@@ -546,29 +502,18 @@ export default function TestPage() {
                                     />
                                   </svg>
                                 )}
-                              {!  hasAnswered && isSelected && (
+                              {! hasAnswered && isSelected && (
                                 <span className="text-white text-xs sm:text-sm font-bold">
                                   ✓
                                 </span>
                               )}
                             </div>
-                            <span
-                              className={`text-sm sm:text-base font-medium flex-1 ${
-                                hasAnswered && option.is_correct
-                                  ? "text-green-800"
-                                  : hasAnswered &&
-                                    isSelected &&
-                                    ! option.is_correct
-                                  ? "text-red-800"
-                                  : "text-gray-900"
-                              }`}
-                            >
-                              {/* ✅ Вариант ответа WITH TestContentRenderer */}
+                            <div className="flex-1">
                               <TestContentRenderer
                                 content={option.option_text}
                                 testMedia={test.media || []}
                               />
-                            </span>
+                            </div>
                           </div>
                         </button>
                       );
@@ -578,17 +523,33 @@ export default function TestPage() {
               </Card>
             </div>
 
-            {/* Right Column - Descriptions Panel (appears only after answer) */}
+            {/* Right Column - Descriptions (appears only after answer) */}
             {hasAnswered && (
               <div className="lg:col-span-1">
                 <Card>
-                  <CardContent className="p-4 sm:p-6">
-                    <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-6">
+                  <CardContent className="p-4 sm:p-6 max-h-[600px] overflow-y-auto">
+                    <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-6 sticky top-0 bg-white pb-3">
                       Пояснения
                     </h3>
 
-                    {/* All Options Descriptions with TestContentRenderer */}
+                    {/* ✅ Описание вопроса */}
+                    {question.description && (
+                      <div className="mb-6 pb-6 border-b border-gray-200">
+                        <p className="text-xs sm:text-sm text-gray-600 font-medium mb-2">
+                          Описание вопроса
+                        </p>
+                        <TestContentRenderer
+                          content={question.description}
+                          testMedia={test.media || []}
+                        />
+                      </div>
+                    )}
+
+                    {/* Описание ответов */}
                     <div className="space-y-4">
+                      <p className="text-xs sm:text-sm text-gray-600 font-medium">
+                        Варианты ответов
+                      </p>
                       {question.options.map((option) => {
                         const isSelected = selectedOptions.includes(option.id);
                         const isCorrect = option.is_correct;
@@ -604,7 +565,6 @@ export default function TestPage() {
                                 : "bg-gray-50 border-gray-300"
                             }`}
                           >
-                            {/* Option title */}
                             <div className="flex items-start gap-2 mb-3">
                               <div className="flex-shrink-0 mt-0.5">
                                 {isCorrect && (
@@ -612,7 +572,7 @@ export default function TestPage() {
                                     ✓
                                   </span>
                                 )}
-                                {isSelected && !isCorrect && (
+                                {isSelected && ! isCorrect && (
                                   <span className="text-red-600 font-bold text-lg">
                                     ✗
                                   </span>
@@ -631,11 +591,10 @@ export default function TestPage() {
                               </p>
                             </div>
 
-                            {/* Option description with media support */}
                             {option.description && (
                               <div className="ml-6">
                                 <TestContentRenderer
-                                  content={option. description}
+                                  content={option.description}
                                   testMedia={test.media || []}
                                 />
                               </div>
@@ -650,7 +609,6 @@ export default function TestPage() {
             )}
           </div>
 
-          {/* Navigation - touch-friendly */}
           <div className="flex gap-3 sm:gap-4 justify-between">
             <Button
               variant="secondary"
@@ -679,7 +637,7 @@ export default function TestPage() {
               className="flex items-center gap-2 min-h-[44px] sm:min-h-[40px]"
             >
               {currentQuestion === test.questions.length - 1
-                ?  "Завершить"
+                ? "Завершить"
                 : "Далее"}
               {currentQuestion !== test.questions.length - 1 && (
                 <svg
