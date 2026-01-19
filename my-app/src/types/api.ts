@@ -485,32 +485,7 @@ export interface AvailableTestForCombining {
   test_type: string;
 }
 
-
-export interface TestAttemptDetailResponse extends TestAttemptResponse {
-  test_title: string;
-  answers: TestAnswerResult[];
-}
-
-export interface TestTopicStatistics {
-  test_id: number;
-  test_title: string;
-  total_attempts: number;
-  best_score: number;
-  average_score: number;
-  total_questions:  number;
-}
-
-export interface TestOverallStatistics {
-  total_attempts: number;
-  total_tests_taken: number;
-  average_score: number;
-  best_score: number;
-  total_questions_answered: number;
-  total_correct_answers: number;
-  tests:  TestTopicStatistics[];
-}
-
 export interface TestAttemptWithTestInfo extends TestAttemptResponse {
-  test_title: string;
-  passing_score: number;
+  test_title?:  string;
+  passing_score?: number;
 }

@@ -5,30 +5,56 @@ import Link from "next/link";
 import { Footer } from "@/src/components/layout/Footer";
 import { Button } from "@/src/components/ui/Button";
 import { Card, CardContent } from "@/src/components/ui/Card";
-import { testsAPI } from "@/src/lib/api";
-import type {
-  TestAttemptWithTestInfo,
-  TestOverallStatistics,
-} from "@/src/types/api";
+import { tests } from "@/src/lib/api";
+import {
+  calculateDashboardStats,
+  getAttemptInfo,
+  type TestDashboardStats,
+} from "@/src/lib/testDashboardUtils";
+import type { TestAttemptResponse, TestResponse } from "@/src/types/api";
 
 export default function TestsDashboardPage() {
-  const [attempts, setAttempts] = useState<TestAttemptWithTestInfo[]>([]);
-  const [overallStats, setOverallStats] = useState<TestOverallStatistics | null>(
-    null
-  );
+  const [attempts, setAttempts] = useState<TestAttemptResponse[]>([]);
+  const [testsMap, setTestsMap] = useState<Map<number, TestResponse>>(new Map());
+  const [stats, setStats] = useState<TestDashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [attemptsData, statsData] = await Promise.all([
-          testsAPI.getAllUserAttempts(),
-          testsAPI.getOverallStatistics(),
-        ]);
+        // Получаем user_id из localStorage (или из контекста авторизации)
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          setError("Необходима авторизация");
+          setIsLoading(false);
+          return;
+        }
 
+        // Декодируем токен чтобы получить user_id
+        const payload = JSON.parse(atob(token.split(". ")[1]));
+        const userId = payload.sub || payload.user_id;
+
+        // Загружаем попытки пользователя
+        const attemptsData = await tests.getUserAllAttempts(userId);
         setAttempts(attemptsData);
-        setOverallStats(statsData);
+
+        // Загружаем информацию о тестах
+        const uniqueTestIds = [... new Set(attemptsData. map((a) => a.test_id))];
+        const testsData = await Promise.all(
+          uniqueTestIds.map((id) => tests.get(id))
+        );
+
+        const testsMapData = new Map<number, TestResponse>();
+        testsData.forEach((test) => {
+          testsMapData. set(test.id, test);
+        });
+        setTestsMap(testsMapData);
+
+        // Рассчитываем статистику
+        const calculatedStats = calculateDashboardStats(attemptsData, testsMapData);
+        setStats(calculatedStats);
+
         setError(null);
       } catch (err) {
         console.error("Failed to load dashboard data:", err);
@@ -50,11 +76,6 @@ export default function TestsDashboardPage() {
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
-
-  const calculatePercentage = (score: number, totalPoints: number) => {
-    if (totalPoints === 0) return 0;
-    return (score / totalPoints) * 100;
   };
 
   const getScoreColor = (percentage: number) => {
@@ -86,8 +107,7 @@ export default function TestsDashboardPage() {
           {/* Loading State */}
           {isLoading && (
             <>
-              {/* Stats Cards Skeleton */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="grid grid-cols-1 md: grid-cols-2 lg: grid-cols-4 gap-6 mb-8">
                 {[1, 2, 3, 4].map((i) => (
                   <div
                     key={i}
@@ -95,21 +115,6 @@ export default function TestsDashboardPage() {
                   >
                     <div className="h-4 w-24 bg-gray-200 rounded mb-2" />
                     <div className="h-8 w-16 bg-gray-200 rounded" />
-                  </div>
-                ))}
-              </div>
-
-              {/* Attempts Skeleton */}
-              <div className="grid grid-cols-1 md: grid-cols-2 lg: grid-cols-3 gap-6">
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="bg-white rounded-xl border border-gray-200 p-6 animate-pulse"
-                  >
-                    <div className="h-6 w-3/4 bg-gray-200 rounded mb-4" />
-                    <div className="h-4 w-full bg-gray-200 rounded mb-2" />
-                    <div className="h-4 w-2/3 bg-gray-200 rounded mb-4" />
-                    <div className="h-10 w-full bg-gray-200 rounded" />
                   </div>
                 ))}
               </div>
@@ -147,128 +152,126 @@ export default function TestsDashboardPage() {
           )}
 
           {/* Content */}
-          {!isLoading && !error && (
+          {!isLoading && !error && stats && (
             <>
               {/* Overall Statistics Cards */}
-              {overallStats && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                  {/* Total Attempts */}
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm text-gray-600">Всего попыток</p>
-                        <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 256 256"
-                            className="text-blue-600"
-                          >
-                            <path
-                              fill="currentColor"
-                              d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,160H40V56H216V200ZM184,96a8,8,0,0,1-8,8H80a8,8,0,0,1,0-16h96A8,8,0,0,1,184,96Zm0,32a8,8,0,0,1-8,8H80a8,8,0,0,1,0-16h96A8,8,0,0,1,184,128Zm0,32a8,8,0,0,1-8,8H80a8,8,0,0,1,0-16h96A8,8,0,0,1,184,160Z"
-                            />
-                          </svg>
-                        </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                {/* Total Attempts */}
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm text-gray-600">Всего попыток</p>
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="24"
+                          height="24"
+                          viewBox="0 0 256 256"
+                          className="text-blue-600"
+                        >
+                          <path
+                            fill="currentColor"
+                            d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,160H40V56H216V200ZM184,96a8,8,0,0,1-8,8H80a8,8,0,0,1,0-16h96A8,8,0,0,1,184,96Zm0,32a8,8,0,0,1-8,8H80a8,8,0,0,1,0-16h96A8,8,0,0,1,184,128Zm0,32a8,8,0,0,1-8,8H80a8,8,0,0,1,0-16h96A8,8,0,0,1,184,160Z"
+                          />
+                        </svg>
                       </div>
-                      <p className="text-3xl font-bold text-gray-900">
-                        {overallStats.total_attempts}
-                      </p>
-                    </CardContent>
-                  </Card>
+                    </div>
+                    <p className="text-3xl font-bold text-gray-900">
+                      {stats. total_attempts}
+                    </p>
+                  </CardContent>
+                </Card>
 
-                  {/* Average Score */}
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm text-gray-600">Средний балл</p>
-                        <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 256 256"
-                            className="text-purple-600"
-                          >
-                            <path
-                              fill="currentColor"
-                              d="M234.5,114.38l-45.1,39.36,13.51,58.6a16,16,0,0,1-23.84,17.34l-51.11-31-51,31a16,16,0,0,1-23.84-17.34l13.49-58.54L21.5,114.38a16,16,0,0,1,9.11-28.06l59.46-5.15,23.21-55.36a15.95,15.95,0,0,1,29.44,0h0L166,81.17l59.44,5.15a16,16,0,0,1,9.11,28.06Z"
-                            />
-                          </svg>
-                        </div>
+                {/* Average Score */}
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm text-gray-600">Средний балл</p>
+                      <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="24"
+                          height="24"
+                          viewBox="0 0 256 256"
+                          className="text-purple-600"
+                        >
+                          <path
+                            fill="currentColor"
+                            d="M234.5,114.38l-45.1,39.36,13.51,58.6a16,16,0,0,1-23.84,17.34l-51.11-31-51,31a16,16,0,0,1-23.84-17.34l13.49-58.54L21.5,114.38a16,16,0,0,1,9.11-28.06l59.46-5.15,23.21-55.36a15.95,15.95,0,0,1,29.44,0h0L166,81.17l59.44,5.15a16,16,0,0,1,9.11,28.06Z"
+                          />
+                        </svg>
                       </div>
-                      <p className="text-3xl font-bold text-gray-900">
-                        {overallStats.average_score. toFixed(1)}%
-                      </p>
-                    </CardContent>
-                  </Card>
+                    </div>
+                    <p className="text-3xl font-bold text-gray-900">
+                      {stats.average_score.toFixed(1)}%
+                    </p>
+                  </CardContent>
+                </Card>
 
-                  {/* Best Score */}
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm text-gray-600">Лучший результат</p>
-                        <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 256 256"
-                            className="text-green-600"
-                          >
-                            <path
-                              fill="currentColor"
-                              d="M232,64H208V56a16,16,0,0,0-16-16H64A16,16,0,0,0,48,56v8H24A8,8,0,0,0,16,72V96a40,40,0,0,0,40,40h3. 65A80. 13,80.13,0,0,0,120,191.61V216H96a8,8,0,0,0,0,16h64a8,8,0,0,0,0-16H136V191.58c31.94-3.23,58.44-25.64,68.08-55.58H208a40,40,0,0,0,40-40V72A8,8,0,0,0,232,64Z"
-                            />
-                          </svg>
-                        </div>
+                {/* Best Score */}
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm text-gray-600">Лучший результат</p>
+                      <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="24"
+                          height="24"
+                          viewBox="0 0 256 256"
+                          className="text-green-600"
+                        >
+                          <path
+                            fill="currentColor"
+                            d="M232,64H208V56a16,16,0,0,0-16-16H64A16,16,0,0,0,48,56v8H24A8,8,0,0,0,16,72V96a40,40,0,0,0,40,40h3.65A80. 13,80.13,0,0,0,120,191.61V216H96a8,8,0,0,0,0,16h64a8,8,0,0,0,0-16H136V191.58c31.94-3.23,58.44-25.64,68.08-55.58H208a40,40,0,0,0,40-40V72A8,8,0,0,0,232,64Z"
+                          />
+                        </svg>
                       </div>
-                      <p className="text-3xl font-bold text-green-600">
-                        {overallStats.best_score?. toFixed(1) ??  0}%
-                      </p>
-                    </CardContent>
-                  </Card>
+                    </div>
+                    <p className="text-3xl font-bold text-green-600">
+                      {stats.best_score.toFixed(1)}%
+                    </p>
+                  </CardContent>
+                </Card>
 
-                  {/* Total Questions */}
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm text-gray-600">Всего вопросов</p>
-                        <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 256 256"
-                            className="text-orange-600"
-                          >
-                            <path
-                              fill="currentColor"
-                              d="M140,180a12,12,0,1,1-12-12A12,12,0,0,1,140,180ZM128,72c-22.06,0-40,16.15-40,36v4a8,8,0,0,0,16,0v-4c0-11,10.77-20,24-20s24,9,24,20-10.77,20-24,20a8,8,0,0,0-8,8v8a8,8,0,0,0,16,0v-. 72c18.24-3.35,32-17.9,32-35.28C168,88. 15,150.06,72,128,72Zm104,56A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"
-                            />
-                          </svg>
-                        </div>
+                {/* Total Questions */}
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm text-gray-600">Всего вопросов</p>
+                      <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="24"
+                          height="24"
+                          viewBox="0 0 256 256"
+                          className="text-orange-600"
+                        >
+                          <path
+                            fill="currentColor"
+                            d="M140,180a12,12,0,1,1-12-12A12,12,0,0,1,140,180ZM128,72c-22.06,0-40,16.15-40,36v4a8,8,0,0,0,16,0v-4c0-11,10.77-20,24-20s24,9,24,20-10.77,20-24,20a8,8,0,0,0-8,8v8a8,8,0,0,0,16,0v-. 72c18.24-3.35,32-17.9,32-35. 28C168,88.15,150.06,72,128,72Zm104,56A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"
+                          />
+                        </svg>
                       </div>
-                      <p className="text-3xl font-bold text-gray-900">
-                        {overallStats.total_questions_answered}
-                      </p>
-                      <p className="text-sm text-green-600 mt-1">
-                        {overallStats.total_correct_answers} правильных
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
+                    </div>
+                    <p className="text-3xl font-bold text-gray-900">
+                      {stats.total_questions_answered}
+                    </p>
+                    <p className="text-sm text-green-600 mt-1">
+                      {stats.total_correct_answers} правильных
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
 
               {/* Tests Statistics */}
-              {overallStats && overallStats.tests. length > 0 && (
+              {stats.tests. length > 0 && (
                 <div className="mb-8">
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">
                     Статистика по тестам
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {overallStats.tests.map((test) => (
+                    {stats.tests.map((test) => (
                       <Card key={test.test_id}>
                         <CardContent className="pt-6">
                           <h3 className="font-semibold text-gray-900 mb-3">
@@ -276,7 +279,7 @@ export default function TestsDashboardPage() {
                           </h3>
                           <div className="space-y-2">
                             <div className="flex justify-between text-sm">
-                              <span className="text-gray-600">Попыток: </span>
+                              <span className="text-gray-600">Попыток:</span>
                               <span className="font-medium">
                                 {test.total_attempts}
                               </span>
@@ -284,7 +287,7 @@ export default function TestsDashboardPage() {
                             <div className="flex justify-between text-sm">
                               <span className="text-gray-600">Лучший балл:</span>
                               <span className="font-medium text-green-600">
-                                {test.best_score. toFixed(1)}%
+                                {test.best_percentage.toFixed(1)}%
                               </span>
                             </div>
                             <div className="pt-2 border-t">
@@ -294,22 +297,24 @@ export default function TestsDashboardPage() {
                                 </span>
                                 <span
                                   className={`text-lg font-bold ${getScoreColor(
-                                    test.average_score
+                                    test.average_percentage
                                   )}`}
                                 >
-                                  {test.average_score.toFixed(1)}%
+                                  {test.average_percentage.toFixed(1)}%
                                 </span>
                               </div>
                               <div className="w-full bg-gray-200 rounded-full h-2">
                                 <div
                                   className={`h-2 rounded-full ${
-                                    test.average_score >= 80
+                                    test.average_percentage >= 80
                                       ? "bg-green-600"
-                                      : test. average_score >= 60
+                                      : test. average_percentage >= 60
                                       ? "bg-yellow-600"
                                       : "bg-red-600"
                                   }`}
-                                  style={{ width: `${test.average_score}%` }}
+                                  style={{
+                                    width: `${test.average_percentage}%`,
+                                  }}
                                 />
                               </div>
                             </div>
@@ -360,52 +365,58 @@ export default function TestsDashboardPage() {
                 {attempts.length > 0 && (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {attempts.map((attempt) => {
-                      const percentage = calculatePercentage(
-                        attempt.score,
-                        attempt.total_points
-                      );
-                      const isPassed = percentage >= attempt.passing_score;
+                      const attemptInfo = getAttemptInfo(attempt);
+                      const test = testsMap.get(attempt.test_id);
+                      const isPassed =
+                        test &&
+                        attemptInfo. percentage >= test.passing_score;
 
                       return (
                         <Link
                           key={attempt.id}
-                          href={`/tests-dashboard/attempts/${attempt.id}`}
+                          href={`/tests-dashboard/attempts/${attempt.test_id}/${attempt.id}`}
                         >
                           <Card className="h-full hover:shadow-lg transition cursor-pointer group">
                             <div
                               className={`h-2 ${getScoreBgColor(
-                                percentage
+                                attemptInfo.percentage
                               )} rounded-t-xl`}
                             />
                             <CardContent className="pt-4">
                               <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
-                                {attempt.test_title}
+                                {test?. title || `Тест #${attempt.test_id}`}
                               </h3>
 
                               <div className="space-y-2 mb-4">
                                 <div className="flex justify-between text-sm">
-                                  <span className="text-gray-600">Результат:</span>
+                                  <span className="text-gray-600">
+                                    Результат:
+                                  </span>
                                   <span
                                     className={`font-bold ${getScoreColor(
-                                      percentage
+                                      attemptInfo.percentage
                                     )}`}
                                   >
                                     {attempt.score}/{attempt.total_points} (
-                                    {percentage.toFixed(1)}%)
+                                    {attemptInfo.percentage.toFixed(1)}%)
                                   </span>
                                 </div>
-                                <div className="flex justify-between text-sm">
-                                  <span className="text-gray-600">Статус:</span>
-                                  <span
-                                    className={`font-medium ${
-                                      isPassed
-                                        ? "text-green-600"
-                                        :  "text-red-600"
-                                    }`}
-                                  >
-                                    {isPassed ? "Сдан" : "Не сдан"}
-                                  </span>
-                                </div>
+                                {test && (
+                                  <div className="flex justify-between text-sm">
+                                    <span className="text-gray-600">
+                                      Статус:
+                                    </span>
+                                    <span
+                                      className={`font-medium ${
+                                        isPassed
+                                          ? "text-green-600"
+                                          : "text-red-600"
+                                      }`}
+                                    >
+                                      {isPassed ? "Сдан" : "Не сдан"}
+                                    </span>
+                                  </div>
+                                )}
                                 <div className="flex justify-between text-sm">
                                   <span className="text-gray-600">Дата:</span>
                                   <span className="font-medium">

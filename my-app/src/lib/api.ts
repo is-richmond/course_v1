@@ -27,9 +27,7 @@ import type {
   CombinedTestAttemptDetailResponse,
   AttemptTopicStatistics,
   OverallStatistics,
-  TestAttemptDetailResponse,
-  TestOverallStatistics,
-  TestAttemptWithTestInfo,
+  TestAttemptWithTestInfo
 } from "@/src/types/api";
 
 // API Configuration
@@ -368,23 +366,16 @@ export const testsAPI = {
   },
 
 
-  getAllUserAttempts: async (): Promise<TestAttemptWithTestInfo[]> => {
+  getUserAllAttempts: async (userId:  string): Promise<TestAttemptResponse[]> => {
     const response = await testsClient.get(`/attempts/user/${userId}`);
     return response.data;
   },
 
-  // Получить детальную информацию о попытке
-  getAttemptDetail: async (attemptId: number): Promise<TestAttemptDetailResponse> => {
-    const response = await testsClient.get(`/attempts/${attemptId}/detail`);
+  // Получить детальную информацию о попытке с результатами
+  getAttemptDetail: async (testId: number, attemptId: number): Promise<TestResult> => {
+    const response = await testsClient.get(`/${testId}/result/${attemptId}`);
     return response.data;
   },
-
-  // Получить общую статистику по всем тестам пользователя
-  getOverallStatistics: async (): Promise<TestOverallStatistics> => {
-    const response = await testsClient.get('/statistics/overall');
-    return response.data;
-  },
-
 
   getCourseTests: async (courseId: number): Promise<TestResponse[]> => {
     const response = await testsClient.get(`/course/${courseId}`);
