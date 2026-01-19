@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Footer } from "@/src/components/layout/Footer";
 import { Button } from "@/src/components/ui/Button";
 import { Card, CardContent } from "@/src/components/ui/Card";
-import { testsAPI } from "@/src/lib/api";
+import { testsAPI } from "@/src/lib/api"; // ✅ Правильный импорт
 import {
   calculateDashboardStats,
   getAttemptInfo,
@@ -23,7 +23,7 @@ export default function TestsDashboardPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Получаем user_id из localStorage (или из контекста авторизации)
+        // Получаем user_id из localStorage
         const token = localStorage.getItem("access_token");
         if (!token) {
           setError("Необходима авторизация");
@@ -32,17 +32,17 @@ export default function TestsDashboardPage() {
         }
 
         // Декодируем токен чтобы получить user_id
-        const payload = JSON.parse(atob(token.split(". ")[1]));
+        const payload = JSON.parse(atob(token.split(".")[1]));
         const userId = payload.sub || payload.user_id;
 
         // Загружаем попытки пользователя
-        const attemptsData = await tests.getUserAllAttempts(userId);
+        const attemptsData = await testsAPI.getUserAllAttempts(userId); // ✅
         setAttempts(attemptsData);
 
         // Загружаем информацию о тестах
         const uniqueTestIds = [... new Set(attemptsData. map((a) => a.test_id))];
         const testsData = await Promise.all(
-          uniqueTestIds.map((id) => tests.get(id))
+          uniqueTestIds.map((id) => testsAPI.get(id)) // ✅
         );
 
         const testsMapData = new Map<number, TestResponse>();

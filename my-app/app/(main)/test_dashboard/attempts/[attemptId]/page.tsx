@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Footer } from "@/src/components/layout/Footer";
 import { Button } from "@/src/components/ui/Button";
 import { Card, CardContent } from "@/src/components/ui/Card";
-import { testAPI } from "@/src/lib/api";
+import { testsAPI } from "@/src/lib/api"; // ✅ Правильный импорт
 import type { TestResult } from "@/src/types/api";
 
 export default function TestAttemptDetailPage() {
@@ -21,7 +21,7 @@ export default function TestAttemptDetailPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const resultData = await tests.getAttemptDetail(testId, attemptId);
+        const resultData = await testsAPI.getAttemptDetail(testId, attemptId); // ✅
         setResult(resultData);
         setError(null);
       } catch (err) {
