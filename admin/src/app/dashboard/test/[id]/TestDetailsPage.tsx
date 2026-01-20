@@ -333,13 +333,19 @@ const TestDetailsPage = ({ testId }: TestDetailsPageProps) => {
                                 {question.points} {question.points === 1 ? 'point' : 'points'}
                               </Badge>
                             </div>
-                            <p className="text-lg font-medium mb-2">{question.question_text}</p>
                             
-                            {/* Question Description */}
+                            {/* Question Text with HTML rendering */}
+                            <div 
+                              className="text-lg font-medium mb-2 prose prose-sm max-w-none [&_strong]:font-bold [&_em]:italic [&_p]:my-1"
+                              dangerouslySetInnerHTML={{ __html: question.question_text }}
+                            />
+                            
+                            {/* Question Description with HTML rendering */}
                             {question.description && (
-                              <p className="text-sm text-gray-600 mb-2 italic">
-                                {question.description}
-                              </p>
+                              <div 
+                                className="text-sm text-gray-600 mb-2 italic prose prose-sm max-w-none [&_strong]:font-bold [&_em]:italic [&_p]:my-1"
+                                dangerouslySetInnerHTML={{ __html: question.description }}
+                              />
                             )}
 
                             {/* Question Images */}
@@ -381,14 +387,22 @@ const TestDetailsPage = ({ testId }: TestDetailsPageProps) => {
                                         <XCircle className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
                                       )}
                                       <div className="flex-1">
-                                        <span className={option.is_correct ? 'font-medium text-green-900' : ''}>
-                                          {option.option_text}
-                                        </span>
+                                        {/* Option Text with HTML rendering */}
+                                        <div 
+                                          className={`prose prose-sm max-w-none [&_strong]:font-bold [&_em]:italic [&_p]:my-1 ${
+                                            option.is_correct ? 'font-medium text-green-900' : ''
+                                          }`}
+                                          dangerouslySetInnerHTML={{ __html: option.option_text }}
+                                        />
+                                        
+                                        {/* Option Description with HTML rendering */}
                                         {option.description && (
-                                          <div className="text-sm text-gray-600 mt-1 italic">
-                                            {option.description}
-                                          </div>
+                                          <div 
+                                            className="text-sm text-gray-600 mt-1 italic prose prose-sm max-w-none [&_strong]:font-bold [&_em]:italic [&_p]:my-1"
+                                            dangerouslySetInnerHTML={{ __html: option.description }}
+                                          />
                                         )}
+                                        
                                         {/* Option Images */}
                                         {option.description_media && option.description_media.length > 0 && (
                                           <div className="mt-2 flex flex-wrap gap-2">
