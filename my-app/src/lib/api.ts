@@ -454,6 +454,11 @@ export const mediaAPI = {
   delete: async (mediaId: string): Promise<void> => {
     await s3Client.delete(`/media/${mediaId}`);
   },
+
+  getMediaById: async (mediaId: string): Promise<CourseMediaResponse> => {
+    const response = await s3Client.get(`/media/${mediaId}`);
+    return response.data;
+  },
 };
 
 // =============================================================================
@@ -540,17 +545,3 @@ export const combinedTestsAPI = {
 };
 
 
-const mediaClient = axios.create({
-  baseURL: `${API_BASE_URL}/v1/s3`,
-});
-
-export const mediaAPI = {
-  // Получить медиа по ID
-  getMediaById: async (mediaId: string): Promise<CourseMediaResponse> => {
-    const response = await mediaClient.get(`/media/${mediaId}`);
-    return response.data;
-  },
-};
-
-// Также экспортируйте для использования
-export { mediaAPI };
