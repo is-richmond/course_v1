@@ -526,8 +526,8 @@ export default function TestPage() {
             {/* Right Column - Descriptions (appears only after answer) */}
             {hasAnswered && (
               <div className="lg:col-span-1">
-                <Card>
-                  <CardContent className="p-4 sm:p-6 max-h-[600px] overflow-y-auto">
+                <Card className="h-full">
+                  <CardContent className="p-4 sm:p-6 h-full overflow-y-auto">
                     <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-6 sticky top-0 bg-white pb-3">
                       Пояснения
                     </h3>
