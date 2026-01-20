@@ -126,6 +126,44 @@ async def upload_media(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Неожиданная ошибка: {str(e)}"
         )
+    
+
+
+@router.get("/media/{media_id}", response_model=CourseMediaResponse)
+async def get_media_by_id(
+    media_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Получить медиа-файл по ID"""
+    try:
+        result = await db.execute(
+            select(CourseMedia).where(CourseMedia.id == media_id)
+        )
+        media = result.scalar_one_or_none()
+        
+        if not media:
+            raise HTTPException(
+                status_code=status. HTTP_404_NOT_FOUND,
+                detail=f"Медиа с ID {media_id} не найдено"
+            )
+        
+        # Генерируем presigned URL для скачивания
+        download_url = media_s3_service.generate_presigned_url(media.s3_key)
+        
+        response = CourseMediaResponse.from_orm(media)
+        response.download_url = download_url
+        
+        logger.info(f"Media retrieved successfully: {media_id}")
+        return response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger. error(f"Error fetching media by ID: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ошибка получения медиа: {str(e)}"
+        )
 
 @router.get("/media", response_model=MediaListResponse)
 async def get_all_media(

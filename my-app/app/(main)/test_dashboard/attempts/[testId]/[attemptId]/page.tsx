@@ -5,7 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { Footer } from "@/src/components/layout/Footer";
 import { Button } from "@/src/components/ui/Button";
 import { Card, CardContent } from "@/src/components/ui/Card";
-import { testsAPI } from "@/src/lib/api"; // ✅ Правильный импорт
+import { TestContentRenderer } from "@/src/components/TestContentRenderer"; // ✅ Импорт
+import { testsAPI } from "@/src/lib/api";
 import type { TestResult } from "@/src/types/api";
 
 export default function TestAttemptDetailPage() {
@@ -21,7 +22,7 @@ export default function TestAttemptDetailPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const resultData = await testsAPI.getAttemptDetail(testId, attemptId); // ✅
+        const resultData = await testsAPI.getAttemptDetail(testId, attemptId);
         setResult(resultData);
         setError(null);
       } catch (err) {
@@ -166,7 +167,7 @@ export default function TestAttemptDetailPage() {
                         >
                           <path
                             fill="currentColor"
-                            d="M234. 5,114.38l-45.1,39.36,13.51,58.6a16,16,0,0,1-23.84,17.34l-51.11-31-51,31a16,16,0,0,1-23.84-17.34l13.49-58.54L21.5,114.38a16,16,0,0,1,9.11-28.06l59.46-5.15,23.21-55.36a15.95,15.95,0,0,1,29.44,0h0L166,81.17l59.44,5.15a16,16,0,0,1,9.11,28.06Z"
+                            d="M234.5,114.38l-45.1,39.36,13.51,58.6a16,16,0,0,1-23.84,17.34l-51.11-31-51,31a16,16,0,0,1-23.84-17.34l13.49-58.54L21.5,114.38a16,16,0,0,1,9.11-28.06l59.46-5.15,23.21-55.36a15.95,15.95,0,0,1,29.44,0h0L166,81.17l59.44,5.15a16,16,0,0,1,9.11,28.06Z"
                           />
                         </svg>
                       </div>
@@ -176,7 +177,7 @@ export default function TestAttemptDetailPage() {
                         percentage
                       )}`}
                     >
-                      {percentage.toFixed(1)}%
+                      {percentage. toFixed(1)}%
                     </p>
                     <p className="text-sm text-gray-600 mt-1">
                       {result.score} из {result.total_points}
@@ -217,7 +218,7 @@ export default function TestAttemptDetailPage() {
                           >
                             <path
                               fill="currentColor"
-                              d="M165.66,101.66,139.31,128l26.35,26.34a8,8,0,0,1-11.32,11.32L128,139.31l-26.34,26.35a8,8,0,0,1-11.32-11.32L116. 69,128,90.34,101.66a8,8,0,0,1,11.32-11.32L128,116.69l26.34-26.35a8,8,0,0,1,11.32,11.32ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"
+                              d="M165.66,101.66,139.31,128l26.35,26.34a8,8,0,0,1-11.32,11.32L128,139.31l-26.34,26.35a8,8,0,0,1-11.32-11.32L116.69,128,90.34,101.66a8,8,0,0,1,11.32-11.32L128,116.69l26.34-26.35a8,8,0,0,1,11.32,11.32ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"
                             />
                           </svg>
                         )}
@@ -257,7 +258,7 @@ export default function TestAttemptDetailPage() {
                       </div>
                     </div>
                     <p className="text-3xl font-bold text-green-600">
-                      {result.answers.filter((a) => a.is_correct).length}
+                      {result.answers. filter((a) => a.is_correct).length}
                     </p>
                     <p className="text-sm text-gray-600 mt-1">ответов</p>
                   </CardContent>
@@ -319,9 +320,15 @@ export default function TestAttemptDetailPage() {
                                 баллов
                               </span>
                             </div>
-                            <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                              {answer.question_text}
-                            </h3>
+                            
+                            {/* ✅ Используем TestContentRenderer для текста вопроса */}
+                            <div className="mb-3">
+                              <TestContentRenderer
+                                content={answer.question_text}
+                                testMedia={[]}
+                                urlMedia={[]}
+                              />
+                            </div>
                           </div>
 
                           <div
@@ -379,9 +386,12 @@ export default function TestAttemptDetailPage() {
                               Ваш текстовый ответ:
                             </p>
                             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                              <p className="text-gray-900">
-                                {answer.text_answer}
-                              </p>
+                              {/* ✅ Используем TestContentRenderer для текстового ответа */}
+                              <TestContentRenderer
+                                content={answer.text_answer}
+                                testMedia={[]}
+                                urlMedia={[]}
+                              />
                             </div>
                           </div>
                         )}
