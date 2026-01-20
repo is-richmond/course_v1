@@ -6,10 +6,10 @@ import { mediaAPI } from "@/src/lib/api";
 
 interface TestMedia {
   id: string;
-  download_url?:  string | null;
+  download_url? :  string | null;
   original_filename?: string | null;
   custom_name?: string | null;
-  media_type:  "image" | "video";
+  media_type:   "image" | "video";
 }
 
 interface UrlMedia {
@@ -20,12 +20,12 @@ interface UrlMedia {
 
 interface TestContentRendererProps {
   content: string;
-  testMedia?:  TestMedia[];
-  urlMedia?: UrlMedia[];
+  testMedia? :  TestMedia[];
+  urlMedia?:  UrlMedia[];
 }
 
 interface HoverPreview {
-  url:  string;
+  url:   string;
   x: number;
   y: number;
   type: "image" | "video";
@@ -90,7 +90,7 @@ export function TestContentRenderer({
               newMediaMap.set(mediaId, mediaData.download_url);
             }
           } catch (error) {
-            console.error(`Failed to load media ${mediaId}: `, error);
+            console.error(`Failed to load media ${mediaId}:`, error);
           } finally {
             loading.delete(mediaId);
           }
@@ -106,32 +106,11 @@ export function TestContentRenderer({
     }
   }, [content, testMedia, urlMedia, extractMediaIds]);
 
-  const handleMouseEnter = useCallback(
-    (e: React.MouseEvent, url: string, type: "image" | "video") => {
-      if (window.matchMedia("(hover: hover)").matches) {
-        const rect = (e.target as HTMLElement).getBoundingClientRect();
-        setHoverPreview({
-          url,
-          x: rect.left + rect.width / 2,
-          y: rect.bottom + 10,
-          type,
-        });
-      }
-    },
-    []
-  );
-
-  const handleMouseLeave = useCallback(() => {
-    setHoverPreview(null);
-  }, []);
-
   const handleImageClick = useCallback((url: string, alt: string) => {
-    setHoverPreview(null);
     setModalImage({ url, alt });
   }, []);
 
-  const handleVideoClick = useCallback((url: string, alt: string) => {
-    setHoverPreview(null);
+  const handleVideoClick = useCallback((url:  string, alt: string) => {
     setModalVideo({ url, alt });
   }, []);
 
@@ -181,145 +160,114 @@ export function TestContentRenderer({
         parts.push(renderText(textBefore, `text-${lastIndex}`));
       }
 
-      const mediaUrl = mediaMap.get(mediaId);
-      const isLoading = loadingMedia.has(mediaId);
+      const mediaUrl = mediaMap. get(mediaId);
+      const isLoading = loadingMedia. has(mediaId);
 
       if (isLoading) {
         // Показываем индикатор загрузки
         parts.push(
-          <span
+          <div
             key={`loading-${mediaId}-${matchStart}`}
-            className="inline-flex items-center gap-1.5 px-2 py-1 sm:px-3 sm:py-1.5 mx-0.5 sm:mx-1 my-0.5 
-                       bg-gray-100 border border-gray-200 rounded-md sm:rounded-lg 
-                       text-gray-500 text-xs sm:text-sm"
+            className="my-4 flex items-center justify-center p-8 bg-gray-50 rounded-lg border border-gray-200"
           >
-            <svg
-              className="animate-spin h-3 w-3 sm:h-4 sm:w-4"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
-            <span className="hidden xs:inline">Загрузка...</span>
-          </span>
+            <div className="flex flex-col items-center gap-3">
+              <svg
+                className="animate-spin h-8 w-8 text-gray-400"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              <span className="text-sm text-gray-500">Загрузка...</span>
+            </div>
+          </div>
         );
       } else if (mediaUrl) {
         if (mediaType === "IMAGE") {
+          // ✅ Показываем само изображение
           parts.push(
-            <button
+            <div
               key={`image-${mediaId}-${matchStart}`}
-              onClick={() =>
-                handleImageClick(mediaUrl, `Изображение ${mediaId}`)
-              }
-              onMouseEnter={(e) => handleMouseEnter(e, mediaUrl, "image")}
-              onMouseLeave={handleMouseLeave}
-              className="inline-flex items-center gap-1.5 px-2 py-1 sm:px-3 sm:py-1.5 mx-0.5 sm:mx-1 my-0.5 
-                         bg-blue-50 hover:bg-blue-100 active:bg-blue-200
-                         border border-blue-200 hover:border-blue-300
-                         rounded-md sm:rounded-lg 
-                         text-blue-600 hover:text-blue-700
-                         text-xs sm:text-sm 
-                         transition-all duration-200 
-                         cursor-pointer
-                         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1
-                         touch-manipulation"
-              title="Нажмите для просмотра изображения"
-              aria-label="Открыть изображение"
+              className="my-4"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="14"
-                height="14"
-                viewBox="0 0 256 256"
-                className="shrink-0 sm:w-4 sm:h-4"
-              >
-                <path
-                  fill="currentColor"
-                  d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,160H40V56H216V200ZM176,88a12,12,0,1,1-12-12A12,12,0,0,1,176,88Zm36,72v40H44V184l52-52a8,8,0,0,1,11.31,0l44. 69,44.69L191,137l. 66-. 66a8,8,0,0,1,11.31,0Z"
-                />
-              </svg>
-              <span className="hidden xs:inline">Изображение</span>
-            </button>
+              <img
+                src={mediaUrl}
+                alt={`Изображение ${mediaId}`}
+                onClick={() => handleImageClick(mediaUrl, `Изображение ${mediaId}`)}
+                className="max-w-full h-auto rounded-lg shadow-md cursor-pointer 
+                           hover:shadow-xl hover:scale-[1.02] transition-all duration-200
+                           border border-gray-200"
+                loading="lazy"
+              />
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                Нажмите для увеличения
+              </p>
+            </div>
           );
         } else if (mediaType === "VIDEO") {
+          // ✅ Показываем само видео
           parts.push(
-            <button
+            <div
               key={`video-${mediaId}-${matchStart}`}
-              onClick={() => handleVideoClick(mediaUrl, `Видео ${mediaId}`)}
-              onMouseEnter={(e) => handleMouseEnter(e, mediaUrl, "video")}
-              onMouseLeave={handleMouseLeave}
-              className="inline-flex items-center gap-1.5 px-2 py-1 sm:px-3 sm:py-1.5 mx-0.5 sm:mx-1 my-0.5 
-                         bg-red-50 hover:bg-red-100 active:bg-red-200
-                         border border-red-200 hover:border-red-300
-                         rounded-md sm:rounded-lg 
-                         text-red-600 hover:text-red-700
-                         text-xs sm:text-sm 
-                         transition-all duration-200 
-                         cursor-pointer
-                         focus: outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1
-                         touch-manipulation"
-              title="Нажмите для просмотра видео"
-              aria-label="Открыть видео"
+              className="my-4"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="14"
-                height="14"
-                viewBox="0 0 256 256"
-                className="shrink-0 sm:w-4 sm: h-4"
-              >
-                <path
-                  fill="currentColor"
-                  d="M224,56v144a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V56A16,16,0,0,1,48,40h160A16,16,0,0,1,224,56Zm-16,0H48V200h160ZM102,140l44-32a8,8,0,0,0,0-13.06l-44-32A8,8,0,0,0,88,64V176A8,8,0,0,0,102,140Z"
-                />
-              </svg>
-              <span className="hidden xs:inline">Видео</span>
-            </button>
+              <video
+                src={mediaUrl}
+                controls
+                onClick={() => handleVideoClick(mediaUrl, `Видео ${mediaId}`)}
+                className="max-w-full h-auto rounded-lg shadow-md cursor-pointer
+                           hover:shadow-xl transition-shadow duration-200
+                           border border-gray-200"
+                preload="metadata"
+              />
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                Нажмите для полноэкранного просмотра
+              </p>
+            </div>
           );
         }
       } else {
+        // Медиа не найдено
         const mediaLabel = mediaType === "IMAGE" ?  "Изображение" : "Видео";
         parts. push(
-          <span
+          <div
             key={`missing-${mediaId}-${matchStart}`}
-            className="inline-flex items-center gap-1 px-2 py-1 mx-0.5 my-0.5
-                       bg-gray-100 border border-gray-200 rounded-md 
-                       text-gray-500 text-xs sm:text-sm"
+            className="my-4 p-4 bg-gray-50 border border-gray-200 rounded-lg flex items-center gap-3"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
+              width="20"
+              height="20"
               viewBox="0 0 256 256"
+              className="text-gray-400 flex-shrink-0"
             >
               <path
                 fill="currentColor"
                 d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm-8-80V80a8,8,0,0,1,16,0v56a8,8,0,0,1-16,0Zm20,36a12,12,0,1,1-12-12A12,12,0,0,1,140,172Z"
               />
             </svg>
-            <span className="hidden sm:inline">{mediaLabel} недоступно</span>
-            <span className="sm:hidden">N/A</span>
-          </span>
+            <span className="text-sm text-gray-500">{mediaLabel} недоступно</span>
+          </div>
         );
       }
 
       lastIndex = matchStart + fullMatch.length;
     }
 
-    if (lastIndex < content.length) {
+    if (lastIndex < content. length) {
       const textAfter = content.slice(lastIndex);
       parts.push(renderText(textAfter, `text-end-${lastIndex}`));
     }
@@ -332,8 +280,6 @@ export function TestContentRenderer({
     isHtmlContent,
     handleImageClick,
     handleVideoClick,
-    handleMouseEnter,
-    handleMouseLeave,
   ]);
 
   return (
@@ -352,37 +298,8 @@ export function TestContentRenderer({
         {renderContent}
       </div>
 
-      {hoverPreview && (
-        <div
-          className="hidden md:block fixed pointer-events-none animate-fadeIn"
-          style={{
-            left: hoverPreview.x,
-            top: hoverPreview.y,
-            transform: "translateX(-50%)",
-            zIndex: 100,
-          }}
-        >
-          <div className="bg-white p-1 rounded-xl shadow-2xl border border-gray-200">
-            {hoverPreview.type === "image" ?  (
-              <img
-                src={hoverPreview.url}
-                alt="Preview"
-                className="max-w-[200px] lg:max-w-[280px] max-h-[150px] lg:max-h-[200px] object-contain rounded-lg"
-              />
-            ) : (
-              <video
-                src={hoverPreview. url}
-                className="max-w-[200px] lg:max-w-[280px] max-h-[150px] lg:max-h-[200px] object-contain rounded-lg"
-                controls
-              />
-            )}
-          </div>
-          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-l border-t border-gray-200 rotate-45" />
-        </div>
-      )}
-
       <ImageModal
-        isOpen={!!modalImage}
+        isOpen={!! modalImage}
         imageUrl={modalImage?.url || ""}
         alt={modalImage?.alt}
         onClose={() => setModalImage(null)}
@@ -390,11 +307,11 @@ export function TestContentRenderer({
 
       {modalVideo && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4"
           onClick={() => setModalVideo(null)}
         >
           <div
-            className="relative bg-black rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh]"
+            className="relative bg-black rounded-lg shadow-2xl max-w-5xl w-full"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -409,7 +326,7 @@ export function TestContentRenderer({
                 viewBox="0 0 256 256"
                 fill="currentColor"
               >
-                <path d="M202.83,74.83a8,8,0,0,0-11.66,0L128,137. 17,64.83,74.83a8,8,0,0,0-11.66,11.66L116. 34,128,53.17,191.17a8,8,0,0,0,11.66,11.66L128,139.83l63.17,63.17a8,8,0,0,0,11.66-11.66L139.66,128l63.17-63.17A8,8,0,0,0,202.83,74.83Z" />
+                <path d="M202.83,74.83a8,8,0,0,0-11.66,0L128,137.17,64.83,74.83a8,8,0,0,0-11.66,11.66L116.34,128,53.17,191.17a8,8,0,0,0,11.66,11.66L128,139.83l63.17,63.17a8,8,0,0,0,11.66-11.66L139.66,128l63.17-63.17A8,8,0,0,0,202.83,74.83Z" />
               </svg>
             </button>
             <video

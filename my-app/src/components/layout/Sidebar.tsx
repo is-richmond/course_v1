@@ -8,12 +8,12 @@ import { useAuth } from "@/src/contexts/AuthContext";
 interface NavItem {
   label: string;
   href?: string;
-  icon?: React.ReactNode;
+  icon?:  React.ReactNode;
   children?: NavItem[];
 }
 
 interface SidebarProps {
-  isOpen?: boolean;
+  isOpen?:  boolean;
   onClose?: () => void;
 }
 
@@ -44,7 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   };
 
   // Navigation items for authenticated users
-  const authNavItems: NavItem[] = [
+  const authNavItems:  NavItem[] = [
     {
       label: "Мои курсы",
       href: "/",
@@ -80,8 +80,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       ),
     },
     {
-      label: "Дэшборд",
-      href: "/dashboard",
+      label: "Дашборды тестов",
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -95,23 +94,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           />
         </svg>
       ),
-    },
-    {
-      label: "Дэшборд",
-      href: "/test_dashboard",
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="15"
-          height="15"
-          viewBox="0 0 256 256"
-        >
-          <path
-            fill="currentColor"
-            d="M232,208H24a8,8,0,0,1,0-16H32V48a8,8,0,0,1,16,0V192h32V80a8,8,0,0,1,16,0V192h32V112a8,8,0,0,1,16,0V192h32V64a8,8,0,0,1,16,0V192h32a8,8,0,0,1,0,16Z"
-          />
-        </svg>
-      ),
+      children: [
+        { label: "Комбо-тесты", href: "/dashboard" },
+        { label: "Обычные тесты", href: "/test_dashboard" },
+      ],
     },
     {
       label: "Профиль",
@@ -124,12 +110,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         >
           <path
             fill="currentColor"
-            d="M230.92,212c-15.23-26.33-38.7-45.21-66.09-54.16a72,72,0,1,0-73.66,0C63.78,166.78,40.31,185.66,25.08,212a8,8,0,1,0,13.85,8c18.84-32.56,52.14-52,89.07-52s70.23,19.44,89.07,52a8,8,0,1,0,13.85-8ZM72,96a56,56,0,1,1,56,56A56.06,56.06,0,0,1,72,96Z"
+            d="M230.92,212c-15.23-26.33-38.7-45.21-66.09-54.16a72,72,0,1,0-73.66,0C63.78,166.78,40. 31,185.66,25.08,212a8,8,0,1,0,13.85,8c18.84-32.56,52.14-52,89.07-52s70.23,19.44,89.07,52a8,8,0,1,0,13.85-8ZM72,96a56,56,0,1,1,56,56A56.06,56.06,0,0,1,72,96Z"
           />
         </svg>
       ),
       children: [
-        { label: "Мой профиль", href: "/profile" },
+        { label:  "Мой профиль", href: "/profile" },
         { label: "Смена пароля", href: "/auth/change-password" },
       ],
     },
@@ -158,7 +144,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   // Navigation items for non-authenticated users
   const guestNavItems: NavItem[] = [
     {
-      label: "Главная",
+      label:  "Главная",
       href: "/",
       icon: (
         <svg
@@ -191,7 +177,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </svg>
       ),
     },
-
     {
       label: "FAQ",
       href: "/faq",
@@ -204,7 +189,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         >
           <path
             fill="currentColor"
-            d="M140,180a12,12,0,1,1-12-12A12,12,0,0,1,140,180ZM128,72c-22.06,0-40,16.15-40,36v4a8,8,0,0,0,16,0v-4c0-11,10.77-20,24-20s24,9,24,20-10.77,20-24,20a8,8,0,0,0-8,8v8a8,8,0,0,0,16,0v-.72c18.24-3.35,32-17.9,32-35.28C168,88.15,150.06,72,128,72Zm104,56A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"
+            d="M140,180a12,12,0,1,1-12-12A12,12,0,0,1,140,180ZM128,72c-22.06,0-40,16.15-40,36v4a8,8,0,0,0,16,0v-4c0-11,10.77-20,24-20s24,9,24,20-10.77,20-24,20a8,8,0,0,0-8,8v8a8,8,0,0,0,16,0v-. 72c18.24-3.35,32-17.9,32-35.28C168,88.15,150.06,72,128,72Zm104,56A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"
           />
         </svg>
       ),
@@ -213,7 +198,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   const navItems = mounted && user ? authNavItems : guestNavItems;
 
-  const isActive = (href?: string) => href && pathname === href;
+  const isActive = (href?:  string) => href && pathname === href;
 
   const handleLogout = () => {
     logout();
@@ -241,7 +226,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           transition-all duration-300 ease-out
           ${
             isMobileMode
-              ? isOpen
+              ?  isOpen
                 ? "translate-x-0 opacity-100"
                 : "-translate-x-full opacity-0"
               : "hidden lg:block lg:w-64"
@@ -290,7 +275,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   href={item.href}
                   onClick={onClose}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                    isActive(item.href)
+                    isActive(item. href)
                       ? "bg-blue-600 text-white shadow-lg"
                       : "text-blue-100 hover:bg-blue-700/60"
                   }`}
@@ -304,7 +289,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     onClick={() => toggleExpand(item.label)}
                     className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-blue-100 hover:bg-blue-700/60 hover:text-white"
                   >
-                    {item.icon}
+                    {item. icon}
                     <span className="text-sm flex-1 text-left">
                       {item.label}
                     </span>
@@ -329,12 +314,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   {/* Submenu */}
                   {item.children && expandedItems.includes(item.label) && (
                     <div className="ml-4 mt-1 space-y-1 border-l-2 border-blue-500">
-                      {item.children.map((child) => (
+                      {item.children. map((child) => (
                         <Link
                           key={child.label}
                           href={child.href || "#"}
                           onClick={onClose}
-                          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 text-[12.2px] font-medium ${
+                          className={`flex items-center gap-2 px-4 py-2. 5 rounded-lg transition-all duration-200 text-[12. 2px] font-medium ${
                             isActive(child.href)
                               ? "bg-blue-600 text-white shadow-md translate-x-1"
                               : "text-blue-200 hover:text-white hover:bg-blue-700/50"
@@ -365,7 +350,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   >
                     <path
                       fill="currentColor"
-                      d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Zm88-29.84q.06-2.16,0-4.32l14.92-18.64a8,8,0,0,0,1.48-7.06,107.21,107.21,0,0,0-10.88-26.25,8,8,0,0,0-6-3.93l-23.72-2.64q-1.48-1.56-3-3L186,40.54a8,8,0,0,0-3.94-6,107.71,107.71,0,0,0-26.25-10.87,8,8,0,0,0-7.06,1.49L130.16,40Q128,40,125.84,40L107.2,25.11a8,8,0,0,0-7.06-1.48A107.6,107.6,0,0,0,73.89,34.51a8,8,0,0,0-3.93,6L67.32,64.27q-1.56,1.49-3,3L40.54,70a8,8,0,0,0-6,3.94,107.71,107.71,0,0,0-10.87,26.25,8,8,0,0,0,1.49,7.06L40,125.84Q40,128,40,130.16L25.11,148.8a8,8,0,0,0-1.48,7.06,107.21,107.21,0,0,0,10.88,26.25,8,8,0,0,0,6,3.93l23.72,2.64q1.49,1.56,3,3L70,215.46a8,8,0,0,0,3.94,6,107.71,107.71,0,0,0,26.25,10.87,8,8,0,0,0,7.06-1.49L125.84,216q2.16.06,4.32,0l18.64,14.92a8,8,0,0,0,7.06,1.48,107.21,107.21,0,0,0,26.25-10.88,8,8,0,0,0,3.93-6l2.64-23.72q1.56-1.48,3-3L215.46,186a8,8,0,0,0,6-3.94,107.71,107.71,0,0,0,10.87-26.25,8,8,0,0,0-1.49-7.06Z"
+                      d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Zm88-29.84q. 06-2.16,0-4.32l14.92-18.64a8,8,0,0,0,1.48-7.06,107.21,107.21,0,0,0-10.88-26.25,8,8,0,0,0-6-3.93l-23.72-2.64q-1.48-1.56-3-3L186,40.54a8,8,0,0,0-3.94-6,107.71,107.71,0,0,0-26.25-10.87,8,8,0,0,0-7.06,1.49L130.16,40Q128,40,125.84,40L107.2,25.11a8,8,0,0,0-7.06-1.48A107.6,107.6,0,0,0,73.89,34.51a8,8,0,0,0-3.93,6L67.32,64. 27q-1.56,1.49-3,3L40.54,70a8,8,0,0,0-6,3.94,107.71,107.71,0,0,0-10.87,26.25,8,8,0,0,0,1.49,7.06L40,125.84Q40,128,40,130.16L25.11,148.8a8,8,0,0,0-1.48,7.06,107.21,107.21,0,0,0,10.88,26.25,8,8,0,0,0,6,3.93l23.72,2.64q1.49,1.56,3,3L70,215.46a8,8,0,0,0,3.94,6,107.71,107.71,0,0,0,26.25,10.87,8,8,0,0,0,7.06-1.49L125.84,216q2.16.06,4.32,0l18.64,14.92a8,8,0,0,0,7.06,1.48,107.21,107.21,0,0,0,26.25-10.88,8,8,0,0,0,3.93-6l2.64-23.72q1.56-1.48,3-3L215.46,186a8,8,0,0,0,6-3.94,107.71,107.71,0,0,0,10.87-26.25,8,8,0,0,0-1.49-7.06Z"
                     />
                   </svg>
                   <span className="font-semibold">Настройки</span>
@@ -389,10 +374,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 <span className="font-semibold">Выход</span>
               </button>
             </>
-          ) : mounted ? (
+          ) : mounted ?  (
             <>
               <Link href="/auth/login" className="w-full" onClick={onClose}>
-                <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-white bg-blue-600 hover:bg-blue-700">
+                <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-white bg-blue-600 hover: bg-blue-700">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="20"
