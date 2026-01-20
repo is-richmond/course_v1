@@ -538,3 +538,19 @@ export const combinedTestsAPI = {
     await combinedTestsClient.delete(`/${testId}`);
   },
 };
+
+
+const mediaClient = axios.create({
+  baseURL: `${API_BASE_URL}/v1/s3`,
+});
+
+export const mediaAPI = {
+  // Получить медиа по ID
+  getMediaById: async (mediaId: string): Promise<CourseMediaResponse> => {
+    const response = await mediaClient.get(`/media/${mediaId}`);
+    return response.data;
+  },
+};
+
+// Также экспортируйте для использования
+export { mediaAPI };
