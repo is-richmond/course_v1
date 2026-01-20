@@ -75,7 +75,7 @@ const EditQuestionPage = ({ testId, questionId }: EditQuestionPageProps) => {
     setLoading(prev => ({ ...prev, fetch: true }));
     try {
       const question = await questionApi.getQuestionWithMedia(questionId);
-      const optionsData = await optionApi.getOptionsByQuestionWithMedia(questionId);
+      const optionsData = await optionApi.getOptionsByQuestion(questionId); // Убрали WithMedia
       
       setOriginalQuestion(question);
       setFormData({
