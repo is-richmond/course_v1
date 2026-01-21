@@ -315,9 +315,6 @@ export default function HomeContent({
             <ContinueLearning />
           </div>
           <div className="mt-8 sm:mt-10 md:mt-12 px-2 sm:px-4">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">
-              Все доступные курсы
-            </h3>
             <CoursesGrid />
           </div>
         </div>

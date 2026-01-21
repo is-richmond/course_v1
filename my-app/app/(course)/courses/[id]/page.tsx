@@ -154,7 +154,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
     setIsLoadingLessons(true);
     try {
       const modulesData = await Promise.all(
-        moduleIds. map(async (moduleId) => {
+        moduleIds.map(async (moduleId) => {
           try {
             const moduleWithLessons = await modulesAPI.getWithLessons(moduleId);
             return { id: moduleId, data: moduleWithLessons };
@@ -170,7 +170,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
 
       const newMap = new Map<number, any>();
       modulesData.forEach(({ id, data }) => {
-        if (data?. lessons) {
+        if (data?.lessons) {
           console.log(`✅ Loaded module ${id} with ${data.lessons.length} lessons`, data);
           newMap.set(id, data);
         } else {
@@ -409,22 +409,22 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
   // Use modules from API
   const modules = course.modules || [];
 
-  // Helper to get lessons for a module from loaded data
-  const getModuleLessons = (moduleId:  number) => {
-    // Сначала проверяем Map
+  // ✅ ИСПРАВЛЕНО: Helper to get lessons for a module from loaded data
+  const getModuleLessons = (moduleId: number) => {
+    // Сначала проверяем Map - это актуальные данные с сервера
     const moduleData = modulesWithLessons.get(moduleId);
-    if (moduleData?. lessons) {
-      return [...moduleData.lessons]. sort(
-        (a:  any, b: any) => (a.order_index ??  a.id) - (b.order_index ?? b.id)
+    if (moduleData?.lessons) {
+      return [...moduleData.lessons].sort(
+        (a: any, b: any) => (a.order_index ?? a.id) - (b.order_index ?? b.id)
       );
     }
     
     // Если нет в Map, проверяем исходные данные из API
-    if (course?. modules) {
-      const moduleFromCourse = course.modules.find((m:  any) => m.id === moduleId);
+    if (course?.modules) {
+      const moduleFromCourse = course.modules.find((m: any) => m.id === moduleId);
       if (moduleFromCourse?.lessons) {
         return [...moduleFromCourse.lessons].sort(
-          (a: any, b: any) => (a.order_index ?? a. id) - (b.order_index ?? b.id)
+          (a: any, b: any) => (a.order_index ?? a.id) - (b.order_index ?? b.id)
         );
       }
     }
@@ -436,12 +436,10 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
   const getTotalLessons = () => {
     let total = 0;
     const modules = course?.modules || [];
-    modules. forEach((m: any) => {
-      const lessons = getModuleLessons(m. id);
-      console.log(`Module ${m.id} (${m.title}): ${lessons.length} lessons`);
+    modules.forEach((m: any) => {
+      const lessons = getModuleLessons(m.id);
       total += lessons.length;
     });
-    console.log(`Total lessons: ${total}`);
     return total;
   };
 
@@ -500,102 +498,51 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
               />
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-24">
-              <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-                {/* Left: Course Image */}
-                <div className="animate-slideInLeft order-1 lg:order-1">
-                  <div className="relative group">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-xl sm:rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-500" />
-                    <div className="relative aspect-video rounded-lg sm:rounded-xl overflow-hidden shadow-2xl">
-                      <img
-                        src={`https://images.unsplash.com/photo-1559757175-5700dde675bc?w=800&h=450&fit=crop`}
-                        alt={course.title}
-                        className="w-full h-full object-cover transform group-hover:scale-105 transition duration-700"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                      <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 flex items-center gap-2">
-                        <Badge variant="primary">
-                          {courseLevel === "beginner"
-                            ? "Начинающий"
-                            : courseLevel === "intermediate"
-                            ? "Средний"
-                            : "Продвинутый"}
-                        </Badge>
-                      </div>
-                    </div>
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-24">
+              {/* Course Info - Full Width */}
+              <div className="animate-slideInRight text-center">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-3 sm:mb-4 leading-tight">
+                  {course.title}
+                </h1>
+
+                <p className="text-sm sm:text-base lg:text-lg text-blue-100 mb-6 sm:mb-8 leading-relaxed max-w-3xl mx-auto">
+                  {course.description}
+                </p>
+
+                {/* Price Card - Centered */}
+                <div className="bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/20 max-w-lg mx-auto">
+                  <div className="flex items-baseline justify-center gap-2 mb-3 sm:mb-4">
+                    <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">
+                      ₸{coursePrice.toLocaleString("ru-RU")}
+                    </span>
                   </div>
-                </div>
 
-                {/* Right: Course Info */}
-                <div className="animate-slideInRight order-2 lg:order-2">
-                  <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-3 sm:mb-4 leading-tight">
-                    {course.title}
-                  </h1>
-
-                  <p className="text-sm sm:text-base lg:text-lg text-blue-100 mb-4 sm:mb-6 leading-relaxed">
-                    {course.description}
-                  </p>
-
-                  <div className="flex flex-wrap items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
-                    <div className="flex items-center gap-2">
-                      <Rating rating={courseRating} />
-                      <span className="text-white font-medium text-sm sm:text-base">
-                        {courseRating}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-blue-200 text-sm sm:text-base">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 256 256"
-                        className="sm:w-[18px] sm:h-[18px]"
+                  <ul className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
+                    {[
+                      `${modules.length} модулей`,
+                      "Пожизненный доступ",
+                      "Сертификат по окончании",
+                    ].map((item, idx) => (
+                      <li
+                        key={idx}
+                        className="flex items-center gap-2 sm:gap-3 text-white text-sm sm:text-base"
                       >
-                        <path
-                          fill="currentColor"
-                          d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm64-88a8,8,0,0,1-8,8H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48A8,8,0,0,1,192,128Z"
-                        />
-                      </svg>
-                      <span>{courseDuration}</span>
-                    </div>
-                  </div>
-
-                  {/* Price Card */}
-                  <div className="bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/20">
-                    <div className="flex items-baseline gap-2 mb-3 sm:mb-4">
-                      <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">
-                        ₸{coursePrice.toLocaleString("ru-RU")}
-                      </span>
-                    </div>
-
-                    <ul className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
-                      {[
-                        `${modules.length} модулей`,
-                        "Пожизненный доступ",
-                        "Сертификат по окончании",
-                      ].map((item, idx) => (
-                        <li
-                          key={idx}
-                          className="flex items-center gap-2 sm:gap-3 text-white text-sm sm:text-base"
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="18"
+                          height="18"
+                          viewBox="0 0 256 256"
+                          className="text-green-400 shrink-0 sm:w-5 sm:h-5"
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="18"
-                            height="18"
-                            viewBox="0 0 256 256"
-                            className="text-green-400 shrink-0 sm:w-5 sm:h-5"
-                          >
-                            <path
-                              fill="currentColor"
-                              d="M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"
-                            />
-                          </svg>
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    {/* Show appropriate message and button based on access status */}
+                          <path
+                            fill="currentColor"
+                            d="M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"
+                          />
+                        </svg>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
                     {accessDeniedReason === "login" ? (
                       <Button
                         variant="primary"
@@ -655,15 +602,13 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                         Оплатить и начать обучение
                       </Button>
                     )}
-                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Course Details - RESPONSIVE */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
-            <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
+            <div className="grid lg:grid-cols-1 gap-8 lg:gap-12">
               {/* Syllabus Preview */}
               <div
                 className="animate-fadeInUp"
@@ -673,26 +618,87 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                   Программа курса
                 </h2>
                 <div className="grid gap-3 sm:gap-4">
-                  {modules.map((module: any, idx: number) => (
-                    <div
-                      key={module.id}
-                      className="bg-white rounded-lg sm:rounded-xl border border-gray-100 p-3 sm:p-4 shadow-sm"
-                    >
-                      <div className="flex items-center gap-3 sm:gap-4">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-md text-sm sm:text-base">
-                          {idx + 1}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
-                            {module.title}
-                          </h3>
-                          <p className="text-xs sm:text-sm text-gray-500">
-                            {(module.lessons || []).length} уроков
-                          </p>
-                        </div>
+                  {modules.map((module: any, idx: number) => {
+                    // ✅ ИСПРАВЛЕНО: Используем getModuleLessons вместо module.lessons
+                    const moduleLessons = getModuleLessons(module.id);
+                    const isExpanded = expandedModules.has(String(module.id));
+                    
+                    return (
+                      <div
+                        key={module.id}
+                        className="bg-white rounded-lg sm:rounded-xl border border-gray-100 shadow-sm overflow-hidden"
+                      >
+                        {/* Module Header - Clickable */}
+                        <button
+                          onClick={() => toggleModule(String(module.id))}
+                          className="w-full p-3 sm:p-4 hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex items-center gap-3 sm:gap-4">
+                            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-md text-sm sm:text-base shrink-0">
+                              {idx + 1}
+                            </div>
+                            <div className="flex-1 min-w-0 text-left">
+                              <h3 className="font-semibold text-gray-900 text-sm sm:text-base">
+                                {module.title}
+                              </h3>
+                              <p className="text-xs sm:text-sm text-gray-500">
+                                {moduleLessons.length} {moduleLessons.length === 1 ? 'урок' : moduleLessons.length > 1 && moduleLessons.length < 5 ? 'урока' : 'уроков'}
+                              </p>
+                            </div>
+                            {/* Expand/Collapse Icon */}
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="20"
+                              height="20"
+                              viewBox="0 0 256 256"
+                              className={`text-gray-400 transition-transform duration-200 shrink-0 ${
+                                isExpanded ? 'rotate-180' : ''
+                              }`}
+                            >
+                              <path
+                                fill="currentColor"
+                                d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"
+                              />
+                            </svg>
+                          </div>
+                        </button>
+
+                        {/* Lessons List - Expandable */}
+                        {isExpanded && moduleLessons.length > 0 && (
+                          <div className="border-t border-gray-100 bg-gray-50/50">
+                            <div className="p-3 sm:p-4 space-y-2">
+                              {moduleLessons.map((lesson: any, lessonIdx: number) => (
+                                <div
+                                  key={lesson.id || lessonIdx}
+                                  className="flex items-start gap-3 p-2 sm:p-3 bg-white rounded-lg border border-gray-100"
+                                >
+                                  {/* Lesson Number */}
+                                  <div className="w-6 h-6 bg-blue-100 rounded-md flex items-center justify-center text-blue-700 font-semibold text-xs shrink-0">
+                                    {lessonIdx + 1}
+                                  </div>
+                                  {/* Lesson Info */}
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="font-medium text-gray-900 text-sm">
+                                      {lesson.title}
+                                    </h4>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Empty State */}
+                        {isExpanded && moduleLessons.length === 0 && (
+                          <div className="border-t border-gray-100 bg-gray-50/50 p-4 text-center">
+                            <p className="text-sm text-gray-500">
+                              Уроки скоро появятся
+                            </p>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -991,7 +997,7 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
           </div>
         </aside>
 
-        {/* Main Content Area - Lesson Content */}
+        {/* Main Content Area - остальной код без изменений... */}
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-7xl ml-5 px-4 sm:px-6 py-4 sm:py-6 lg:py-8">
             {currentLesson ? (
