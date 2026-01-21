@@ -1,41 +1,46 @@
 import React from "react";
+import Image from "next/image";
 import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/src/components/ui/Button";
 
 export const HeroSection: React.FC = () => (
-  <section className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100">
-    {/* Responsive container with adaptive padding */}
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20 text-center">
-      {/* Responsive typography: mobile → tablet → desktop */}
-      <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 sm:mb-6 leading-tight">
+  <section className="relative min-h-screen">
+    {/* Background image (Next/Image) */}
+    <Image
+      src="/backgr1.jpg"              // положите файл public/hero-bg.jpg
+      alt="Лекарства и обучение"     // важный alt для доступности
+      fill                           // занять весь блок (требует position:relative у родителя)
+      className="object-cover object-center"
+      priority                       // загрузить быстро
+    />
+
+    {/* Overlay — затемняет фон для контраста текста */}
+    <div className="absolute inset-0 bg-gradient-to-br from-[#122240]/70 to-[#0f3050]/40" />
+
+    {/* Контент поверх фона */}
+    <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-20 text-center">
+      <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight">
         Медицинские курсы для врачей и студентов
       </h1>
-      <p className="text-base sm:text-lg md:text-xl text-gray-700 mb-6 sm:mb-8 max-w-2xl mx-auto px-2">
+      <p className="text-base sm:text-lg md:text-xl text-white/90 mb-6 sm:mb-8 max-w-2xl mx-auto px-2">
         Повысьте квалификацию с помощью практических онлайн-курсов от экспертов
         медицины. Получите сертификат и применяйте знания сразу же на практике.
       </p>
 
-      {/* Responsive button layout: stack on mobile, row on sm+ */}
       <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-8 sm:mb-12 px-4 sm:px-0">
-        {/* <Button
-          size="lg"
-          variant="primary"
-          className="w-full sm:w-auto min-h-[48px]"
-        >
-          Посмотреть курсы
-        </Button> */}
         <Button
-          size="lg"
-          variant="outline"
-          className="w-full sm:w-auto min-h-[48px]"
-          onClick={() => {
-            window.open(
-              'https://wa.me/77075934615?text=' + encodeURIComponent('Здравствуйте! Хочу узнать больше о ваших курсах'),
-              '_blank',
-              'noopener,noreferrer'
-            );
-          }}
+          className="
+            w-full max-w-[461px]
+            h-[64px] sm:h-[107px]
+            bg-transparent
+            border-[4px] sm:border-[8px] border-white
+            rounded-[32px] sm:rounded-[50px]
+            text-white text-base sm:text-lg
+            hover:bg-white/10
+            transition
+          "
         >
+
           <svg 
             className="w-5 h-5 mr-2" 
             viewBox="0 0 24 24" 
@@ -47,32 +52,43 @@ export const HeroSection: React.FC = () => (
         </Button>
       </div>
 
-      {/* Responsive grid: 1 col mobile, 2 cols tablet, 3 cols desktop */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mt-12 sm:mt-16 md:mt-20">
         {[
           {
-            icon: "✓",
+            src: "/11.png",
+            alt: "Сертификация",
             title: "Сертификация",
             desc: "Официальные сертификаты признаны в сфере здравоохранения",
           },
           {
-            icon: "✓",
+            src: "/22.png",
+            alt: "Практики",
             title: "Практики",
             desc: "Преподаватели с 15+ годами опыта работают с реальными пациентами",
           },
           {
-            icon: "✓",
+            src: "/44.png",
+            alt: "Доступ навсегда",
             title: "Доступ навсегда",
             desc: "Учитесь в удобном темпе с пожизненным доступом к материалам",
           },
         ].map((benefit, idx) => (
           <div
             key={idx}
-            className="bg-white p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300"
+            className="bg-white p-6 sm:p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col items-center text-center"
           >
-            <div className="text-3xl sm:text-4xl mb-3 sm:mb-4 text-blue-600">
-              {benefit.icon}
+            {/* Фото вместо иконки */}
+            <div className="w-20 h-20 sm:w-24 sm:h-24 mb-3 rounded-lg overflow-hidden">
+              <Image
+                src={benefit.src}
+                alt={benefit.alt}
+                width={96}      // указываем реальные размеры для оптимизации next/image
+                height={96}
+                className="object-cover w-full h-full"
+                priority={false}
+              />
             </div>
+
             <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
               {benefit.title}
             </h3>

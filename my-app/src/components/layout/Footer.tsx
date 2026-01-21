@@ -57,19 +57,19 @@ export const Footer: React.FC = () => (
             <li className="flex items-center gap-2 justify-center sm:justify-start">
               <Phone size={18} className="shrink-0" />
               <a
-                href="tel:+7-999-999-99-99"
+                href="tel:+7-707-593-46-15"
                 className="hover:text-white transition"
               >
-                +7 (999) 999-99-99
+                +7 (707) 593-46-15
               </a>
             </li>
             <li className="flex items-center gap-2 justify-center sm:justify-start">
               <Mail size={18} className="shrink-0" />
               <a
-                href="mailto:hello@medicourse.ru"
+                href="mailto:info@plexus.kz"
                 className="hover:text-white transition"
               >
-                hello@medicourse.ru
+                info@plexus.kz
               </a>
             </li>
             <li className="flex items-center gap-2 justify-center sm:justify-start">

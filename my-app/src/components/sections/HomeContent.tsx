@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Tabs } from "@/src/components/ui/Tabs";
 import { CoursesGrid } from "./CoursesGrid";
@@ -29,86 +30,94 @@ export default function HomeContent({
         {heroComponent}
 
         {/* Features Section - Responsive */}
-        <section className="py-12 sm:py-16 md:py-20 bg-gray-50">
+        {/* Сделал фо�� чуть голубее, чтобы соответствовать макету */}
+        <section className="py-12 sm:py-16 md:py-20 bg-[#eef8ff]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="text-center mb-10 sm:mb-12 md:mb-16">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
-                Почему выбирают нас
-              </h2>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">
+                <span className="text-[#29416D]">Почему выбирают</span>{" "}
+                <span className="text-[#59A9CC]">нас ?</span>
+              </h1>
               <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto px-2">
-                Современная платформа для медицинского образования с лучшими
+                Современная платформа для медицинного образования с лучшими
                 преподавателями
               </p>
             </div>
 
+            {/* Images: background (full width of the block) + overlay (sits over the background) */}
+            <div className="w-full flex justify-center mb-2">
+              {/* Родитель relative с overflow-visible — позволяет оверлею выходить за границы фонового блока */}
+              <div className="relative w-full max-w-6xl overflow-visible">
+                {/* Контейнер с соотношением сторон для фонового изображения */}
+                <div className="relative w-full" style={{ paddingTop: "48.208333%" }}>
+                  {/* Фоновый блок — закруглённый, обрезающий содержимое */}
+                  <div className="absolute inset-0 rounded-2xl overflow-hidden">
+                    <Image
+                      src="/why1.png"
+                      alt="Фон"
+                      fill
+                      className="object-cover object-center"
+                      priority
+                    />
+                  </div>
+                </div>
+
+                {/* Оверлей — находится на уровне родителя (не внутри overflow-hidden), поэтому не будет обрезан */}
+                {/* -left/-top и width заданы в процентах/классах, подгоняйте под макет */}
+                <div className="absolute z-20 left-[17.97%] -top-12 w-[64%]">
+                  <Image
+                    src="/why3.png"
+                    alt="Оверлей"
+                    width={1232}
+                    height={862}
+                    className="w-full h-auto rounded-lg"
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Responsive grid: 1 col mobile, 2 cols tablet, 3 cols desktop */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+            {/* Поднял грид вверх -mt-20 и поставил z-10 чтобы карточки были поверх фоновой картинки */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10 -mt-20 relative z-10">
               {[
                 {
-                  icon: (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="28"
-                      height="28"
-                      viewBox="0 0 256 256"
-                      className="text-blue-600 sm:w-8 sm:h-8"
-                    >
-                      <path
-                        fill="currentColor"
-                        d="M251.76,88.94l-120-64a8,8,0,0,0-7.52,0l-120,64a8,8,0,0,0,0,14.12L32,117.87v48.42a15.91,15.91,0,0,0,4.06,10.65C49.16,191.53,78.51,216,128,216a130,130,0,0,0,48-8.76V240a8,8,0,0,0,16,0V199.51a115.63,115.63,0,0,0,27.94-22.57A15.91,15.91,0,0,0,224,166.29V117.87l27.76-14.81a8,8,0,0,0,0-14.12Z"
-                      />
-                    </svg>
-                  ),
+                  img: "/Ellipse 9.png",
                   title: "Качественное образование",
                   description:
                     "Курсы разработаны ведущими специалистами в области медицины",
                 },
                 {
-                  icon: (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="28"
-                      height="28"
-                      viewBox="0 0 256 256"
-                      className="text-blue-600 sm:w-8 sm:h-8"
-                    >
-                      <path
-                        fill="currentColor"
-                        d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm64-88a8,8,0,0,1-8,8H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48A8,8,0,0,1,192,128Z"
-                      />
-                    </svg>
-                  ),
+                  img: "/Ellipse 9.png",
                   title: "Гибкий график",
                   description:
                     "Учитесь в удобное время, материалы доступны 24/7",
                 },
                 {
-                  icon: (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="28"
-                      height="28"
-                      viewBox="0 0 256 256"
-                      className="text-blue-600 sm:w-8 sm:h-8"
-                    >
-                      <path
-                        fill="currentColor"
-                        d="M224,48H32A16,16,0,0,0,16,64V192a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V64A16,16,0,0,0,224,48Zm0,144H32V64H224V192ZM48,104a8,8,0,0,1,8-8H200a8,8,0,0,1,0,16H56A8,8,0,0,1,48,104Zm0,32a8,8,0,0,1,8-8H200a8,8,0,0,1,0,16H56A8,8,0,0,1,48,136Zm0,32a8,8,0,0,1,8-8H136a8,8,0,0,1,0,16H56A8,8,0,0,1,48,168Z"
-                      />
-                    </svg>
-                  ),
+                  img: "/Ellipse 9.png",
                   title: "Сертификаты",
                   description:
                     "Получите подтверждение квалификации после прохождения курса",
                 },
               ].map((feature, idx) => (
+                // Карточка становится relative чтобы иконка могла позиционироваться абсолютно относительно неё
                 <div
                   key={idx}
-                  className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm hover:shadow-lg transition-all text-center"
+                  className="relative bg-white rounded-2xl p-6 sm:p-8 pt-12 shadow-sm hover:shadow-lg transition-all text-center"
                 >
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                    {feature.icon}
+                  {/* Иконка позиционируется абсолютной и перекрывает верхнюю грань карточки */}
+                  <div className="absolute -top-10 left-1/2 transform -translate-x-1/2">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16">
+                      <Image
+                        src={feature.img}
+                        alt={feature.title}
+                        width={64}
+                        height={64}
+                        className="w-14 h-14 sm:w-16 sm:h-16"
+                        priority
+                      />
+                    </div>
                   </div>
+
                   <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3">
                     {feature.title}
                   </h3>
@@ -122,59 +131,115 @@ export default function HomeContent({
         </section>
 
         {/* How It Works - Responsive */}
-        <section className="py-12 sm:py-16 md:py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <div className="text-center mb-10 sm:mb-12 md:mb-16">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
-                Как это работает
-              </h2>
-              <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
-                Простой путь к новым знаниям
-              </p>
-            </div>
+        {/* <-- REPLACED: new dark variant matching the provided mockup (uses photos instead of svg icons) --> */}
+        <section className="py-16 bg-[#0e2540]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white">
+              Как это <span className="text-[#85b8ff]">работает?</span>
+            </h2>
+            <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto mt-3">
+              Простой путь к новым знаниям
+            </p>
 
-            {/* Responsive grid: 2 cols mobile, 4 cols desktop */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
-              {[
-                {
-                  step: "1",
-                  title: "Регистрация",
-                  description: "Создайте аккаунт за 1 минуту",
-                },
-                {
-                  step: "2",
-                  title: "Выбор курса",
-                  description: "Выберите интересующий вас курс",
-                },
-                {
-                  step: "3",
-                  title: "Обучение",
-                  description: "Изучайте материалы и проходите тесты",
-                },
-                {
-                  step: "4",
-                  title: "Сертификат",
-                  description: "Получите сертификат по окончании",
-                },
-              ].map((item, idx) => (
-                <div key={idx} className="text-center">
-                  <div className="w-12 h-12 sm:w-14 md:w-16 sm:h-14 md:h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 text-white text-xl sm:text-2xl font-bold shadow-lg">
-                    {item.step}
+            {/* Desktop: horizontal flow with arrows.
+                Mobile: 2 columns grid without arrows */}
+            <div className="mt-12">
+              <div className="hidden md:flex items-center justify-between gap-8">
+                {[
+                  {
+                    img: "/ноут.png",
+                    title: "Регистрация",
+                    description: "Создайте аккаунт за 1 минуту",
+                  },
+                  {
+                    img: "/экран.png",
+                    title: "Выбор курса",
+                    description: "Выберите интересующий вас курс",
+                  },
+                  {
+                    img: "/док.png",
+                    title: "Обучение",
+                    description: "Изучайте материалы и проходите тесты",
+                  },
+                  {
+                    img: "/спектр1.png",
+                    title: "Сертификат",
+                    description: "Получите сертификат по окончании",
+                  },
+                ].map((item, i, arr) => (
+                  <React.Fragment key={i}>
+                    <div className="flex-1 flex flex-col items-center text-center">
+                      <div className="w-20 h-20 flex items-center justify-center overflow-hidden">
+                        <Image
+                          src={item.img}
+                          alt={item.title}
+                          width={90}
+                          height={90}
+                          className="object-cover w-full h-full"
+                          priority
+                        />
+                      </div>
+                      <h3 className="mt-6 text-white font-semibold text-lg">{item.title}</h3>
+                      <p className="mt-2 text-sm text-slate-300 max-w-xs">{item.description}</p>
+                    </div>
+
+                    {i < arr.length - 1 && (
+                      <div className="flex items-center justify-center w-12">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M7 12h10M13 6l6 6-6 6" />
+                        </svg>
+                      </div>
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+
+              {/* Mobile / tablet layout (2 columns grid) — photos above titles */}
+              <div className="mt-8 grid grid-cols-2 gap-6 md:hidden">
+                {[
+                  {
+                    img: "/ноут.png",
+                    title: "Регистрация",
+                    description: "Создайте аккаунт за 1 минуту",
+                  },
+                  {
+                    img: "/экран.png",
+                    title: "Выбор курса",
+                    description: "Выберите интересующий вас курс",
+                  },
+                  {
+                    img: "/док.png",
+                    title: "Обучение",
+                    description: "Изучайте материалы и проходите тесты",
+                  },
+                  {
+                    img: "/спектр1.png",
+                    title: "Сертификат",
+                    description: "Получите сертификат по окончании",
+                  },
+                ].map((it, idx) => (
+                  <div key={idx} className="flex flex-col items-center text-center bg-transparent">
+                    <div className="w-14 h-14 flex items-center justify-center overflow-hidden">
+                      <Image
+                        src={it.img}
+                        alt={it.title}
+                        width={56}
+                        height={56}
+                        className="object-cover w-full h-full"
+                        priority
+                      />
+                    </div>
+                    <h4 className="mt-4 text-white font-semibold text-sm">{it.title}</h4>
+                    <p className="mt-2 text-xs text-slate-300">{it.description}</p>
                   </div>
-                  <h3 className="text-sm sm:text-base md:text-lg font-bold text-gray-900 mb-1 sm:mb-2">
-                    {item.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-600">
-                    {item.description}
-                  </p>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </section>
 
         {/* CTA Section - Responsive */}
-        <section className="py-12 sm:py-16 md:py-20 bg-gradient-to-br from-blue-600 to-indigo-700">
+        <section className="py-12 sm:py-16 md:py-20 bg-[#1468C2]">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4 sm:mb-6">
               Готовы начать обучение?
@@ -185,28 +250,47 @@ export default function HomeContent({
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0">
               <Link href="/auth/register" className="w-full sm:w-auto">
-                <Button
-                  variant="primary"
-                  size="lg"
-                  className="w-full sm:w-auto bg-blue-600 text-white hover:bg-blue-700 min-h-[48px]"
-                >
-                  Зарегистрироваться бесплатно
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-8 sm:mb-12 px-4 sm:px-0">
+                  <Button
+                    className="
+                      w-full max-w-[461px]
+                      h-[64px]
+                      bg-transparent
+                      border-[2px] sm:border-[3px] border-white
+                      rounded-[16px] sm:rounded-[24px]
+                      text-white text-base sm:text-lg
+                      hover:bg-white/10
+                      transition
+                    "
+                  >
+
+                    Зарегистрироваться бесплатно
+                  </Button>
+                </div>
               </Link>
-              <Link href="/auth/login" className="w-full sm:w-auto">
-                <Button
-                  variant="primary"
-                  size="lg"
-                  className="w-full sm:w-auto bg-blue-600 text-white hover:bg-blue-700/10 min-h-[48px]"
-                >
-                  Войти
-                </Button>
+              <Link href="/auth/register" className="w-full sm:w-auto">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-8 sm:mb-12 px-4 sm:px-0">
+                  <Button
+                    className="
+                      w-full max-w-[4610000px]
+                      h-[64px]
+                      bg-transparent
+                      border-[2px] sm:border-[3px] border-white
+                      rounded-[16px] sm:rounded-[24px]
+                      text-white text-base sm:text-lg
+                      px-12 sm:px-20
+                      hover:bg-white/10
+                      transition
+                    "
+                  >
+
+                    Войти
+                  </Button>
+                </div>
               </Link>
             </div>
           </div>
         </section>
-
-        {reviewsComponent}
         {faqComponent}
       </div>
     );

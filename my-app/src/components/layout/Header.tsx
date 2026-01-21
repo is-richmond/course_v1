@@ -44,7 +44,7 @@ export const Header: React.FC<HeaderProps> = ({ showUserMenu = true }) => {
   const HamburgerButton = () => (
     <button
       onClick={() => sidebarContext?.toggle()}
-      className="lg:hidden p-2 -ml-2 mr-1 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+      className="lg:hidden p-2 -ml-2 mr-1 text-white hover:bg-white/10 rounded-lg transition-colors"
       aria-label="Открыть меню"
     >
       <Menu size={22} />
@@ -53,7 +53,7 @@ export const Header: React.FC<HeaderProps> = ({ showUserMenu = true }) => {
 
   if (isLoading || !mounted) {
     return (
-      <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 shadow-sm z-30">
+      <header className="fixed top-0 left-0 right-0 bg-[#122240] border-b border-[#0f2438] shadow-sm z-30">
         <div className="px-3 sm:px-4 py-2 flex items-center justify-between">
           <div className="flex items-center">
             {/* Hamburger placeholder for layout consistency - only for authenticated */}
@@ -61,23 +61,23 @@ export const Header: React.FC<HeaderProps> = ({ showUserMenu = true }) => {
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2">
               <Image
-                src="/plexus-logo.png"
+                src="/logo1.png"
                 alt="Plexus"
-                width={28}
-                height={28}
-                className="w-7 h-7"
+                width={48}
+                height={48}
+                className="w-10 h-10"
               />
-              <span className="font-bold text-gray-900 text-base">Plexus</span>
+              <span className="font-bold text-white text-base">Plexus</span>
             </Link>
           </div>
-          <div className="text-gray-600 text-xs sm:text-sm">Загрузка...</div>
+          <div className="text-gray-200 text-xs sm:text-sm">Загрузка...</div>
         </div>
       </header>
     );
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 shadow-sm z-30">
+    <header className="fixed top-0 left-0 right-0 bg-[#122240] border-b border-[#0f2438] shadow-sm z-30">
       <div className="px-3 sm:px-4 py-2 flex items-center justify-between">
         {/* Left Section - Hamburger, Logo & Brand */}
         <div className="flex items-center">
@@ -90,13 +90,13 @@ export const Header: React.FC<HeaderProps> = ({ showUserMenu = true }) => {
             className="flex items-center gap-2.5 hover:opacity-80 transition"
           >
             <Image
-              src="/plexus-logo.png"
+              src="/logo1.png"
               alt="Plexus"
-              width={28}
-              height={28}
-              className="w-7 h-7 sm:w-8 sm:h-8"
+              width={48}
+              height={48}
+              className="w-10 h-10 sm:w-10 sm:h-10"
             />
-            <span className="font-bold text-gray-900 text-base sm:text-lg tracking-tight">
+            <span className="font-bold text-white text-base sm:text-lg tracking-tight">
               Plexus
             </span>
           </Link>
@@ -109,7 +109,7 @@ export const Header: React.FC<HeaderProps> = ({ showUserMenu = true }) => {
               {/* Settings - hidden on very small screens */}
               <Link href="/profile" className="hidden sm:block">
                 <button
-                  className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                  className="p-2 text-white/90 hover:bg-white/10 rounded-lg transition"
                   aria-label="Настройки профиля"
                 >
                   <Settings size={18} />
@@ -120,16 +120,16 @@ export const Header: React.FC<HeaderProps> = ({ showUserMenu = true }) => {
               <div className="relative">
                 <button
                   onClick={() => setShowDropdown(!showDropdown)}
-                  className="flex items-center gap-2 sm:pl-3 sm:border-l border-gray-200 hover:bg-gray-50 py-1.5 px-2 rounded-lg transition"
+                  className="flex items-center gap-2 sm:pl-3 sm:border-l border-white/10 hover:bg-white/5 py-1.5 px-2 rounded-lg transition"
                   aria-expanded={showDropdown}
                   aria-haspopup="true"
                 >
                   {/* User info - hidden on mobile, shown on sm+ */}
                   <div className="text-right hidden sm:block">
-                    <p className="font-medium text-gray-900 text-sm">
+                    <p className="font-medium text-white text-sm">
                       {user?.first_name || "Пользователь"}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-white/80">
                       {user?.is_superuser ? "Админ" : "Студент"}
                     </p>
                   </div>
@@ -220,13 +220,13 @@ export const Header: React.FC<HeaderProps> = ({ showUserMenu = true }) => {
             <>
               <button
                 onClick={() => router.push("/auth/login")}
-                className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition"
               >
                 Войти
               </button>
               <button
                 onClick={() => router.push("/auth/register")}
-                className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 rounded-lg shadow-md hover:shadow-lg transition"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm font-medium text-white bg-gradient-to-r from-[#83B4FF] to-[#1468C2] hover:from-[#6AA1FF] hover:to-[#1257A6] rounded-lg shadow-md hover:shadow-lg transition"
               >
                 Регистрация
               </button>
