@@ -192,7 +192,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
       <aside
         className={`
-          fixed left-0 top-0 h-screen w-72 bg-blue-900
+          fixed left-0 top-0 h-screen w-72 bg-gradient-to-r from-[#122240] to-[#0f2438]
           text-white shadow-2xl z-50 overflow-y-auto
           transition-all duration-300 ease-out
           ${
@@ -226,7 +226,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         )}
 
         {/* Logo - sticky header */}
-        <div className="sticky top-0 bg-blue-900 backdrop-blur-md px-4 py-4 border-b border-white/10">
+        <div className="sticky top-0 bg-gradient-to-r from-[#122240] to-[#0f2438] backdrop-blur-md px-4 py-4 border-b border-white/10">
           <Link href="/" className="flex items-center gap-3" onClick={onClose}>
             <img
               src="/logo1.png"
@@ -309,7 +309,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </nav>
 
         {/* Bottom Section */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-blue-950 to-blue-900 border-t border-blue-700 px-3 py-4 space-y-1">
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#122240] to-[#0f2438] border-t border-[#0f2438] px-3 py-4 space-y-1">
           {mounted && user ? (
             <>
               <Link href="/profile" onClick={onClose}>
