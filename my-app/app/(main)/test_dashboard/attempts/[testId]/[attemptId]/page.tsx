@@ -6,7 +6,7 @@ import { Footer } from "@/src/components/layout/Footer";
 import { Button } from "@/src/components/ui/Button";
 import { Card, CardContent } from "@/src/components/ui/Card";
 import { TestContentRenderer } from "@/src/components/test/TestContentRendere"; // ✅ Импорт
-import { testsAPI } from "@/src/lib/api";
+import { testsAPI, optionsAPI } from "@/src/lib/api";
 import type { TestResult } from "@/src/types/api";
 
 export default function TestAttemptDetailPage() {
@@ -18,6 +18,8 @@ export default function TestAttemptDetailPage() {
   const [result, setResult] = useState<TestResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [optionsMap, setOptionsMap] = useState<Record<number, string[]>>({});
+
 
   useEffect(() => {
     const loadData = async () => {
@@ -35,6 +37,36 @@ export default function TestAttemptDetailPage() {
 
     loadData();
   }, [testId, attemptId]);
+
+
+  useEffect(() => {
+    if (!result) return;
+
+    const fetchAllOptions = async () => {
+      const newOptionsMap: Record<number, string[]> = {};
+
+      for (const answer of result.answers) {
+        if (answer.selected_option_ids?.length) {
+          try {
+            const options = await optionsAPI.getByQuestion(answer.question_id);
+            const texts = options
+              .filter((opt) => answer.selected_option_ids?.includes(opt.id))
+              .map((opt) => opt.option_text);
+            newOptionsMap[answer.question_id] = texts;
+          } catch (err) {
+            console.error("Failed to load options for question", answer.question_id, err);
+            newOptionsMap[answer.question_id] = [];
+          }
+        }
+      }
+
+      setOptionsMap(newOptionsMap);
+    };
+
+    fetchAllOptions();
+  }, [result]);
+
+
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -370,15 +402,15 @@ export default function TestAttemptDetailPage() {
                         </div>
 
                         {/* Answer Info */}
-                        {answer.selected_option_ids &&
-                        answer.selected_option_ids. length > 0 ? (
+                        {answer.selected_option_ids && answer.selected_option_ids.length > 0 && (
                           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                             <p className="text-sm text-gray-600">
-                              Выбранные варианты:{" "}
-                              {answer.selected_option_ids.join(", ")}
+                              Выбранные варианты: {optionsMap[answer.question_id]?.length
+                                ? optionsMap[answer.question_id].join(", ")
+                                : "Загрузка..."}
                             </p>
                           </div>
-                        ) : null}
+                        )}
 
                         {answer.text_answer && (
                           <div className="mt-4">
@@ -386,7 +418,6 @@ export default function TestAttemptDetailPage() {
                               Ваш текстовый ответ:
                             </p>
                             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                              {/* ✅ Используем TestContentRenderer для текстового ответа */}
                               <TestContentRenderer
                                 content={answer.text_answer}
                                 testMedia={[]}

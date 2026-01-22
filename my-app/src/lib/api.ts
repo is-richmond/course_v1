@@ -545,3 +545,13 @@ export const combinedTestsAPI = {
 };
 
 
+
+
+export const optionsAPI = {
+  getByQuestion: async (questionId: number): Promise<QuestionOptionResponse[]> => {
+    const response = await axios.get(`${API_BASE_URL}/options/question/${questionId}`, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data;
+  },
+};

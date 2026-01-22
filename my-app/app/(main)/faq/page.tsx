@@ -10,7 +10,7 @@ import { Button } from "@/src/components/ui/Button";
 // FAQ items - can be fetched from API later
 const faqItems = [
   {
-    question: "Как проходит обучение?",
+    question: "Как проходит sdsdsdобучение?",
     answer:
       "Обучение проходит в онлайн-формате. Вы получаете доступ к видеолекциям, материалам и тестам.",
   },
