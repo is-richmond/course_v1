@@ -15,7 +15,7 @@ logger = get_logger(__name__)
 router = Router()
 
 # Admin ID - измени на свой ID
-ADMIN_IDS = [894877615]  # Добавь IDs админов
+ADMIN_IDS = [894877615, 631950456]  # Добавь IDs админов
 
 class ReminderState(StatesGroup):
     waiting_for_title = State()
