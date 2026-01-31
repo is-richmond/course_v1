@@ -147,11 +147,12 @@ const UsersPage: React.FC = () => {
     }
   }, [addToast]);
 
-  // Fetch users with course details
+  // Fetch users with course details - ИСПРАВЛЕНО: загружает всех пользователей
   const fetchUsers = useCallback(async () => {
     setLoading(prev => ({ ...prev, users: true }));
     try {
-      const data = await userApi.getUsers(pagination.page, pagination.limit);
+      // Загружаем всех пользователей - используем большой limit
+      const data = await userApi.getUsers(0, 10000);
       
       // Fetch course details for each user
       const usersWithCourses = await Promise.all(
@@ -187,7 +188,7 @@ const UsersPage: React.FC = () => {
     } finally {
       setLoading(prev => ({ ...prev, users: false }));
     }
-  }, [pagination.page, pagination.limit, addToast]);
+  }, [addToast]);
 
   // Apply filters
   useEffect(() => {
@@ -224,14 +225,14 @@ const UsersPage: React.FC = () => {
   const handleEnrollUser = async (userId: string, courseId: string) => {
     setLoading(prev => ({ ...prev, enrollment: true }));
     try {
-      await enrollmentApi.enrollInCourse(courseId, userId); // ← передаем userId
+      await enrollmentApi.enrollInCourse(courseId, userId);
       addToast({
         type: 'success',
         title: 'Enrollment Success',
         message: 'User enrolled in course successfully',
       });
       fetchUsers();
-      setIsEnrollModalOpen(false); // Закрываем модалку после успешной записи
+      setIsEnrollModalOpen(false);
     } catch (error) {
       console.error('Error enrolling user:', error);
       addToast({
@@ -249,7 +250,7 @@ const UsersPage: React.FC = () => {
   const handleUnenrollUser = async (userId: string, courseId: string) => {
     setLoading(prev => ({ ...prev, enrollment: true }));
     try {
-      await enrollmentApi.unenrollFromCourse(courseId, userId); // ← передаем userId
+      await enrollmentApi.unenrollFromCourse(courseId, userId);
       addToast({
         type: 'success',
         title: 'Unenrollment Success',
@@ -1071,4 +1072,3 @@ const UsersPage: React.FC = () => {
 };
 
 export default UsersPage;
-                            
