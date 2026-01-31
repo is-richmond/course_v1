@@ -42,7 +42,7 @@ export const authApi = {
   refreshToken: async (
     refreshData: RefreshTokenRequest
   ): Promise<TokenResponse> => {
-    const response = await axios. post("/auth/refresh", refreshData);
+    const response = await axios.post("/auth/refresh", refreshData);
     const { access_token, refresh_token } = response.data;
 
     // Update tokens
@@ -74,7 +74,7 @@ export const authApi = {
     const response = await axios.post("/auth/reset-password", null, {
       params: { token, new_password: newPassword },
     });
-    return response. data;
+    return response.data;
   },
 
   // Change password (authenticated)
@@ -100,7 +100,7 @@ export const userApi = {
   // Get current user
   getCurrentUser:  async (): Promise<User> => {
     const response = await axios.get("/user/me");
-    return response. data;
+    return response.data;
   },
 
   // Update current user
@@ -126,7 +126,7 @@ export const userApi = {
     const response = await axios.get("/user/all", {
       params: { skip, limit },
     });
-    return response. data;
+    return response.data;
   },
 
   // Get user by ID (admin only)
@@ -146,12 +146,15 @@ export const userApi = {
 
   // Delete user by ID (admin only)
   deleteUserById: async (userId: string): Promise<void> => {
-    await axios. delete(`/user/${userId}`);
+    await axios.delete(`/user/${userId}`);
   },
 
   // Helper:  Get users with pagination
+  // ИСПРАВЛЕНО: добавлена проверка на минимальное значение page
   getUsers: (page: number = 1, limit: number = 20) => {
-    const skip = (page - 1) * limit;
+    // Ensure page is at least 1 to avoid negative skip values
+    const safePage = Math.max(1, page);
+    const skip = (safePage - 1) * limit;
     return userApi.getAllUsers(skip, limit);
   },
 };
@@ -251,7 +254,7 @@ export const courseApi = {
 export const moduleApi = {
   // Get module by ID
   getModule: async (moduleId: number) => {
-    const response = await axios. get(`/modules/${moduleId}`);
+    const response = await axios.get(`/modules/${moduleId}`);
     return response.data;
   },
 
@@ -398,7 +401,7 @@ export const testApi = {
 
   // Delete test
   deleteTest: async (testId: number) => {
-    await axios. delete(`/tests/${testId}`);
+    await axios.delete(`/tests/${testId}`);
   },
 
   // Start test (authenticated)
@@ -433,7 +436,7 @@ export const testApi = {
 
   // Assign test to course (by updating test's course_id)
   assignTestToCourse: async (testId: number, courseId: number) => {
-    const response = await axios. put(`/tests/${testId}`, {
+    const response = await axios.put(`/tests/${testId}`, {
       course_id: courseId,
     });
     return response.data;
@@ -471,13 +474,13 @@ export const questionApi = {
 
   // Create question
   createQuestion:  async (data: any) => {
-    const response = await axios. post("/questions/", data);
+    const response = await axios.post("/questions/", data);
     return response.data;
   },
 
   // Update question
   updateQuestion: async (questionId:  number, data: any) => {
-    const response = await axios. put(`/questions/${questionId}`, data);
+    const response = await axios.put(`/questions/${questionId}`, data);
     return response.data;
   },
 
@@ -577,8 +580,8 @@ export const apiClient = {
     const response = await axios({
       method,
       url: endpoint,
-      data: options?.body ?  JSON.parse(options. body) : undefined,
-      ... options,
+      data: options?.body ?  JSON.parse(options.body) : undefined,
+      ...options,
     });
     return response.data;
   },
@@ -663,7 +666,7 @@ export const s3Api = {
     formData.append("file", file);
     formData.append("media_type", mediaType);
 
-    if (courseId) formData.append("course_id", courseId. toString());
+    if (courseId) formData.append("course_id", courseId.toString());
     if (lessonId) formData.append("lesson_id", lessonId.toString());
     if (customName) formData.append("custom_name", customName);
 
@@ -701,7 +704,7 @@ export const s3Api = {
       // ✅ ЛУЧШАЯ ОБРАБОТКА ОШИБОК
       if (error.code === "ECONNABORTED") {
         throw new Error(
-          `Загрузка заняла слишком много времени. Попробуйте файл поменьше или проверьте интернет. `
+          `Загрузка заняла слишком много времени. Попробуйте файл поменьше или проверьте интернет.`
         );
       }
 
@@ -743,7 +746,7 @@ export const s3Api = {
     if (lessonId) params.lesson_id = lessonId;
 
     const response = await axios.get("/s3/media", { params });
-    return response. data;
+    return response.data;
   },
 
   // Delete media file
@@ -772,6 +775,6 @@ export const photosApi = {
     const response = await axios.get(`/photos/user/${userId}`, {
       params: { skip, limit },
     });
-    return response. data;
+    return response.data;
   },
 };
