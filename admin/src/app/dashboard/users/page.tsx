@@ -151,8 +151,8 @@ const UsersPage: React.FC = () => {
   const fetchUsers = useCallback(async () => {
     setLoading(prev => ({ ...prev, users: true }));
     try {
-      // Загружаем всех пользователей - используем большой limit
-      const data = await userApi.getUsers(0, 10000);
+      // Загружаем всех пользователей - максимальный лимит API = 1000
+      const data = await userApi.getUsers(0, 1000);
       
       // Fetch course details for each user
       const usersWithCourses = await Promise.all(
