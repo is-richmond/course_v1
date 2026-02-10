@@ -66,7 +66,11 @@ const UserPhotosPage:  React.FC = () => {
   const fetchUsers = useCallback(async () => {
     setLoading(prev => ({ ...prev, users: true }));
     try {
-      const data = await userApi.getUsers(pagination.page, pagination.limit);
+      // API принимает: skip (от 0), limit (от 1 до 1000)
+      // getUsers(skip, limit) - skip должен быть >= 0
+      const skip = 0;  // начинаем с первого пользователя
+      const limit = 1000;  // максимальный лимит API
+      const data = await userApi.getUsers(skip, limit);
       setUsers(data);
       setFilteredUsers(data);
     } catch (error) {
@@ -79,7 +83,7 @@ const UserPhotosPage:  React.FC = () => {
     } finally {
       setLoading(prev => ({ ...prev, users: false }));
     }
-  }, [pagination.page, pagination. limit, addToast]);
+  }, [addToast]); // убираем pagination из зависимостей
 
   // Fetch user photos
   const fetchUserPhotos = useCallback(async (userId:  string) => {
