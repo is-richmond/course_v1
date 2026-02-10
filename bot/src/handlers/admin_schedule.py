@@ -53,7 +53,7 @@ async def create_schedule_start(message: types.Message, state: FSMContext):
     await message.answer(
         "📝 <b>Создание расписания ДЗ</b>\n\n"
         "Введите название расписания:\n"
-        "Наприме��: 'Основное' или 'Летний курс'",
+        "Например: 'Основное' или 'Летний курс'",
         parse_mode="HTML"
     )
     await state.set_state(ScheduleState.waiting_for_name)

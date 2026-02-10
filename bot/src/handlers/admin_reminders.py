@@ -532,7 +532,7 @@ async def delete_message_start(message: types.Message, state: FSMContext):
     keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
     
     await message.answer(
-        "🗑️ <b>У��аление сообщения</b>\n\n"
+        "🗑️ <b>Удаление сообщения</b>\n\n"
         "Выберите тип напоминания:",
         reply_markup=keyboard,
         parse_mode="HTML"
@@ -692,7 +692,7 @@ async def confirm_type_deletion(callback: types.CallbackQuery):
         f"⚠️ <b>Подтвердите удаление типа:</b>\n\n"
         f"📝 {reminder_type.name}\n"
         f"⏰ {reminder_type.time.strftime('%H:%M')}\n"
-        f"���� Сообщений: {messages_count}\n\n"
+        f"📩 Сообщений: {messages_count}\n\n"
         f"⚠️ Будут удалены ВСЕ сообщения!\n"
         f"Это действие нельзя отменить!",
         reply_markup=keyboard,
