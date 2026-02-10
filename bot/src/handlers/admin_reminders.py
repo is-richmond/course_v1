@@ -47,12 +47,18 @@ async def cmd_admin_reminders(message: types.Message):
     
     text = (
         "🔐 <b>Админ-панель: Напоминания</b>\n\n"
+        "<b>📝 Создание:</b>\n"
         "/create_reminder_type - Создать тип напоминания\n"
-        "/list_reminder_types - Список типов\n"
         "/add_message - Добавить сообщение в пулл\n"
+        "/create_streak_msg - Создать поздравление за стрик\n\n"
+        "<b>📋 Просмотр:</b>\n"
+        "/list_reminder_types - Список типов\n"
         "/list_messages - Список сообщений\n"
-        "/create_streak_msg - Создать поздравление за стрик\n"
-        "/list_streak_msgs - Список поздравлений"
+        "/list_streak_msgs - Список поздравлений\n\n"
+        "<b>🗑️ Удаление:</b>\n"
+        "/delete_message - Удалить сообщение\n"
+        "/delete_reminder_type - Удалить тип (и все его сообщения)\n"
+        "/delete_streak_msg - Удалить поздравление"
     )
     
     await message.answer(text, parse_mode="HTML")
@@ -488,3 +494,303 @@ async def list_streak_messages(message: types.Message):
         )
     
     await message.answer(text, parse_mode="HTML")
+
+
+
+# ========== DELETE OPERATIONS ==========
+
+@router.message(Command("delete_message"))
+async def delete_message_start(message: types.Message, state: FSMContext):
+    """Start deleting message from pool"""
+    if not is_admin(message.from_user.id):
+        await message.answer("❌ У вас нет доступа")
+        return
+    
+    # Get all reminder types
+    types_list = reminder_type_service.get_all_reminder_types()
+    
+    if not types_list:
+        await message.answer("📭 Нет типов напоминаний")
+        return
+    
+    # Create keyboard with types
+    keyboard_buttons = []
+    for rt in types_list:
+        messages_count = len(reminder_type_service.get_messages_for_type(rt.id))
+        if messages_count > 0:
+            keyboard_buttons.append([
+                InlineKeyboardButton(
+                    text=f"{rt.name} ({messages_count} сообщ.)",
+                    callback_data=f"del_msg_type_{rt.id}"
+                )
+            ])
+    
+    if not keyboard_buttons:
+        await message.answer("📭 Нет сообщений для удаления")
+        return
+    
+    keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
+    
+    await message.answer(
+        "🗑️ <b>У��аление сообщения</b>\n\n"
+        "Выберите тип напоминания:",
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+
+
+@router.callback_query(F.data.startswith("del_msg_type_"))
+async def select_type_for_deletion(callback: types.CallbackQuery):
+    """Select type to show messages"""
+    type_id = int(callback.data.split('_')[-1])
+    
+    messages = reminder_type_service.get_messages_for_type(type_id)
+    
+    if not messages:
+        await callback.answer("📭 Нет сообщений", show_alert=True)
+        return
+    
+    # Create keyboard with messages
+    keyboard_buttons = []
+    for msg in messages:
+        preview = msg.message[:40] + "..." if len(msg.message) > 40 else msg.message
+        image_icon = "🖼️ " if msg.image_url else ""
+        keyboard_buttons.append([
+            InlineKeyboardButton(
+                text=f"{image_icon}{preview}",
+                callback_data=f"del_msg_{msg.id}"
+            )
+        ])
+    
+    keyboard_buttons.append([
+        InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_delete")
+    ])
+    
+    keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
+    
+    await callback.message.edit_text(
+        "🗑️ Выберите сообщение для удаления:",
+        reply_markup=keyboard
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("del_msg_"))
+async def confirm_message_deletion(callback: types.CallbackQuery):
+    """Confirm message deletion"""
+    if callback.data == "del_msg_type_":
+        return
+    
+    message_id = int(callback.data.split('_')[-1])
+    
+    # Get message details
+    message_obj = reminder_type_service.get_message_by_id(message_id)
+    
+    if not message_obj:
+        await callback.answer("❌ Сообщение не найдено", show_alert=True)
+        return
+    
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="✅ Да, удалить", callback_data=f"confirm_del_{message_id}"),
+            InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_delete")
+        ]
+    ])
+    
+    preview = message_obj.message[:100] + "..." if len(message_obj.message) > 100 else message_obj.message
+    
+    await callback.message.edit_text(
+        f"⚠️ <b>Подтвердите удаление:</b>\n\n"
+        f"{preview}\n\n"
+        f"Это действие нельзя отменить!",
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("confirm_del_"))
+async def execute_message_deletion(callback: types.CallbackQuery):
+    """Execute message deletion"""
+    message_id = int(callback.data.split('_')[-1])
+    
+    success = reminder_type_service.delete_message(message_id)
+    
+    if success:
+        await callback.message.edit_text("✅ Сообщение удалено!")
+    else:
+        await callback.message.edit_text("❌ Ошибка удаления")
+    
+    await callback.answer()
+
+
+@router.callback_query(F.data == "cancel_delete")
+async def cancel_deletion(callback: types.CallbackQuery):
+    """Cancel deletion"""
+    await callback.message.edit_text("❌ Удаление отменено")
+    await callback.answer()
+
+
+# ========== DELETE REMINDER TYPE ==========
+
+@router.message(Command("delete_reminder_type"))
+async def delete_reminder_type_start(message: types.Message):
+    """Start deleting reminder type"""
+    if not is_admin(message.from_user.id):
+        await message.answer("❌ У вас нет доступа")
+        return
+    
+    types_list = reminder_type_service.get_all_reminder_types()
+    
+    if not types_list:
+        await message.answer("📭 Нет типов напоминаний")
+        return
+    
+    # Create keyboard with types
+    keyboard_buttons = []
+    for rt in types_list:
+        messages_count = len(reminder_type_service.get_messages_for_type(rt.id))
+        keyboard_buttons.append([
+            InlineKeyboardButton(
+                text=f"{rt.name} ({messages_count} сообщ.)",
+                callback_data=f"del_type_{rt.id}"
+            )
+        ])
+    
+    keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
+    
+    await message.answer(
+        "🗑️ <b>Удаление типа напоминания</b>\n\n"
+        "⚠️ Будут удалены ВСЕ сообщения этого типа!\n\n"
+        "Выберите тип для удаления:",
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+
+
+@router.callback_query(F.data.startswith("del_type_"))
+async def confirm_type_deletion(callback: types.CallbackQuery):
+    """Confirm reminder type deletion"""
+    type_id = int(callback.data.split('_')[-1])
+    
+    reminder_type = reminder_type_service.get_reminder_type(type_id)
+    
+    if not reminder_type:
+        await callback.answer("❌ Тип не найден", show_alert=True)
+        return
+    
+    messages_count = len(reminder_type_service.get_messages_for_type(type_id))
+    
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="✅ Да, удалить всё", callback_data=f"confirm_del_type_{type_id}"),
+            InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_delete")
+        ]
+    ])
+    
+    await callback.message.edit_text(
+        f"⚠️ <b>Подтвердите удаление типа:</b>\n\n"
+        f"📝 {reminder_type.name}\n"
+        f"⏰ {reminder_type.time.strftime('%H:%M')}\n"
+        f"���� Сообщений: {messages_count}\n\n"
+        f"⚠️ Будут удалены ВСЕ сообщения!\n"
+        f"Это действие нельзя отменить!",
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("confirm_del_type_"))
+async def execute_type_deletion(callback: types.CallbackQuery):
+    """Execute reminder type deletion"""
+    type_id = int(callback.data.split('_')[-1])
+    
+    success = reminder_type_service.delete_reminder_type(type_id)
+    
+    if success:
+        await callback.message.edit_text("✅ Тип напоминания и все его сообщения удалены!")
+    else:
+        await callback.message.edit_text("❌ Ошибка удаления")
+    
+    await callback.answer()
+
+
+# ========== DELETE STREAK MESSAGE ==========
+
+@router.message(Command("delete_streak_msg"))
+async def delete_streak_message_start(message: types.Message):
+    """Start deleting streak message"""
+    if not is_admin(message.from_user.id):
+        await message.answer("❌ У вас нет доступа")
+        return
+    
+    messages = streak_service.get_all_streak_messages()
+    
+    if not messages:
+        await message.answer("📭 Нет поздравлений за стрики")
+        return
+    
+    # Create keyboard with streak messages
+    keyboard_buttons = []
+    for msg in messages:
+        preview = msg.message[:40] + "..." if len(msg.message) > 40 else msg.message
+        keyboard_buttons.append([
+            InlineKeyboardButton(
+                text=f"{msg.streak_days} дней: {preview}",
+                callback_data=f"del_streak_{msg.id}"
+            )
+        ])
+    
+    keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
+    
+    await message.answer(
+        "🗑️ <b>Удаление поздравления за стрик</b>\n\n"
+        "Выберите поздравление:",
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+
+
+@router.callback_query(F.data.startswith("del_streak_"))
+async def confirm_streak_deletion(callback: types.CallbackQuery):
+    """Confirm streak message deletion"""
+    streak_id = int(callback.data.split('_')[-1])
+    
+    streak_msg = streak_service.get_streak_message_by_id(streak_id)
+    
+    if not streak_msg:
+        await callback.answer("❌ Сообщение не найдено", show_alert=True)
+        return
+    
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="✅ Да, удалить", callback_data=f"confirm_del_streak_{streak_id}"),
+            InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_delete")
+        ]
+    ])
+    
+    await callback.message.edit_text(
+        f"⚠️ <b>Подтвердите удаление:</b>\n\n"
+        f"🎉 {streak_msg.streak_days} дней\n\n"
+        f"{streak_msg.message[:200]}...\n\n"
+        f"Это действие нельзя отменить!",
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("confirm_del_streak_"))
+async def execute_streak_deletion(callback: types.CallbackQuery):
+    """Execute streak message deletion"""
+    streak_id = int(callback.data.split('_')[-1])
+    
+    success = streak_service.delete_streak_message(streak_id)
+    
+    if success:
+        await callback.message.edit_text("✅ Поздравление за стрик удалено!")
+    else:
+        await callback.message.edit_text("❌ Ошибка удаления")
+    
+    await callback.answer()

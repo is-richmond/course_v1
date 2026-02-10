@@ -226,6 +226,56 @@ class ReminderTypeService:
         return self.db.query(WelcomeMessage).filter(
             WelcomeMessage.is_active == True
         ).all()
+    
+        # ========== DELETE OPERATIONS ==========
+    
+    def get_message_by_id(self, message_id: int) -> Optional[ReminderMessagePool]:
+        """Get message by ID"""
+        return self.db.query(ReminderMessagePool).filter(
+            ReminderMessagePool.id == message_id
+        ).first()
+    
+    def delete_message(self, message_id: int) -> bool:
+        """Delete message from pool"""
+        try:
+            message = self.get_message_by_id(message_id)
+            if not message:
+                return False
+            
+            self.db.delete(message)
+            self.db.commit()
+            
+            logger.info(f"✅ Deleted message {message_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Error deleting message: {e}")
+            self.db.rollback()
+            return False
+    
+    def delete_reminder_type(self, type_id: int) -> bool:
+        """Delete reminder type and all its messages"""
+        try:
+            # Delete all messages for this type
+            self.db.query(ReminderMessagePool).filter(
+                ReminderMessagePool.reminder_type_id == type_id
+            ).delete()
+            
+            # Delete the reminder type
+            reminder_type = self.get_reminder_type(type_id)
+            if reminder_type:
+                self.db.delete(reminder_type)
+                self.db.commit()
+                
+                logger.info(f"✅ Deleted reminder type {type_id} and all its messages")
+                return True
+            
+            return False
+        except Exception as e:
+            logger.error(f"Error deleting reminder type: {e}")
+            self.db.rollback()
+            return False
+
+
 
 # Global instance
 reminder_type_service = ReminderTypeService()

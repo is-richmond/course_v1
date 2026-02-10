@@ -182,6 +182,31 @@ class StreakService:
         return self.db.query(StreakMessage).filter(
             StreakMessage.is_active == True
         ).all()
+    
+
+
+    def get_streak_message_by_id(self, message_id: int) -> Optional[StreakMessage]:
+        """Get streak message by ID"""
+        return self.db.query(StreakMessage).filter(
+            StreakMessage.id == message_id
+        ).first()
+    
+    def delete_streak_message(self, message_id: int) -> bool:
+        """Delete streak message"""
+        try:
+            message = self.get_streak_message_by_id(message_id)
+            if not message:
+                return False
+            
+            self.db.delete(message)
+            self.db.commit()
+            
+            logger.info(f"✅ Deleted streak message {message_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Error deleting streak message: {e}")
+            self.db.rollback()
+            return False
 
 
 # Global instance
