@@ -14,7 +14,7 @@ logger = get_logger(__name__)
 router = Router()
 
 # Admin IDs
-ADMIN_IDS = [894877615]
+ADMIN_IDS = [894877615, 631950456]
 
 def is_admin(user_id: int) -> bool:
     """Check if user is admin"""

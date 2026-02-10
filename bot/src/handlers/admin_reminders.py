@@ -16,7 +16,7 @@ router = Router()
 api_service = APIService()
 
 # Admin IDs
-ADMIN_IDS = [894877615]  # Add your admin IDs here
+ADMIN_IDS = [894877615, 631950456]  # Add your admin IDs here
 
 def is_admin(user_id: int) -> bool:
     """Check if user is admin"""
