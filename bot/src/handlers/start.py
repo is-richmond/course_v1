@@ -183,7 +183,7 @@ async def handle_text_phone(message: Message, state: FSMContext):
     else:
         await message.answer(
             "❌ Пользователь не найден.\n\n"
-            "🔗 Зарегистрируйтесь: https://plexus.kz/register"
+            "🔗 Зарегистрируйтесь: https://plexus.kz/auth/register"
         )
 
 # ========== FAQ HANDLERS ==========
