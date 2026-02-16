@@ -129,7 +129,7 @@ async def handle_contact(message: Message, state: FSMContext):
         await message.answer(
             "❌ К сожалению, пользователь с таким номером не найден в системе.\n\n"
             "🔗 Пожалуйста, зарегистрируйтесь на сайте:\n"
-            "https://plexus.kz/register\n\n"
+            "https://plexus.kz/auth/register\n\n"
             "Или попробуйте еще раз с другим номером.",
             reply_markup=types.ReplyKeyboardRemove()
         )
