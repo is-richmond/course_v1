@@ -29,7 +29,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       "ru-RU"
     )}`;
     const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/77075934615?text=${encodedMessage}`, "_blank");
+    window.open(`https://wa.me/77775934615?text=${encodedMessage}`, "_blank");
     setIsSubmitted(true);
   };
 
@@ -134,7 +134,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 <p className="text-sm text-blue-900">
                   ✓ Сертификат по завершении
                 </p>
-                <p className="text-sm text-blue-900">✓ Пожизненный доступ</p>
               </div>
 
               <Button

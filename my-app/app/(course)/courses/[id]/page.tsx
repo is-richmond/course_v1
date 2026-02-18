@@ -520,7 +520,6 @@ export default function CoursePage({ params: paramsPromise }: PageProps) {
                   <ul className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
                     {[
                       `${modules.length} модулей`,
-                      "Пожизненный доступ",
                       "Сертификат по окончании",
                     ].map((item, idx) => (
                       <li

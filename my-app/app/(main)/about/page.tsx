@@ -170,7 +170,7 @@ export default function AboutPage() {
           </section>
 
           {/* Team */}
-          <section className="mb-20">
+          {/* <section className="mb-20">
             <h2 className="text-4xl font-bold text-gray-900 mb-12">
               Наша команда
             </h2>
@@ -205,10 +205,10 @@ export default function AboutPage() {
                 </Card>
               ))}
             </div>
-          </section>
+          </section> */}
 
           {/* Licenses */}
-          <section className="mb-20">
+          {/* <section className="mb-20">
             <h2 className="text-4xl font-bold text-gray-900 mb-8">
               Лицензии и сертификации
             </h2>
@@ -238,7 +238,7 @@ export default function AboutPage() {
                 </span>
               </div>
             </div>
-          </section>
+          </section> */}
         </div>
 
         {/* Reviews */}
