@@ -199,7 +199,7 @@ class MediaS3Service:
             logger.error(f"Error deleting media from S3: {e}")
             raise Exception(f"Failed to delete media: {e}")
     
-    def generate_presigned_url(self, s3_key: str, expires_in: int = 3600) -> str:
+    def generate_presigned_url(self, s3_key: str, expires_in: int = 86400) -> str:
         """Генерирует временную ссылку"""
         try:
             url = self. client.generate_presigned_url(

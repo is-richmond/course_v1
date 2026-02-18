@@ -147,14 +147,12 @@ const UsersPage: React.FC = () => {
     }
   }, [addToast]);
 
-  // Fetch users with course details - ИСПРАВЛЕНО: загружает всех пользователей
+  // Fetch users with course details
   const fetchUsers = useCallback(async () => {
     setLoading(prev => ({ ...prev, users: true }));
     try {
-      // API принимает: skip (от 0), limit (от 1 до 1000)
-      // getUsers(skip, limit) - skip должен быть >= 0
-      const skip = 0;  // начинаем с первого пользователя
-      const limit = 1000;  // максимальный лимит API
+      const skip = 0;
+      const limit = 1000;
       const data = await userApi.getUsers(skip, limit);
       
       // Fetch course details for each user
@@ -193,14 +191,19 @@ const UsersPage: React.FC = () => {
     }
   }, [addToast]);
 
-  // Apply filters
+  // Apply filters — ОБНОВЛЕНО: добавлен поиск по имени
   useEffect(() => {
     let filtered = users;
 
     if (filters.search) {
-      filtered = filtered.filter(user =>
-        user.email.toLowerCase().includes(filters.search.toLowerCase())
-      );
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(user => {
+        const fullName = `${user.first_name || ''} ${user.last_name || ''}`.toLowerCase();
+        const email = user.email.toLowerCase();
+        
+        // Поиск по email ИЛИ по имени
+        return email.includes(searchLower) || fullName.includes(searchLower);
+      });
     }
 
     if (filters.is_active !== undefined) {
@@ -504,7 +507,7 @@ const UsersPage: React.FC = () => {
             </Card>
           </div>
 
-          {/* Filters and Search */}
+          {/* Filters and Search — ОБНОВЛЕНО: изменён placeholder */}
           <Card>
             <CardContent className="p-6">
               <div className="flex flex-wrap gap-4 items-center">
@@ -512,7 +515,7 @@ const UsersPage: React.FC = () => {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <Input
-                      placeholder="Search users by email..."
+                      placeholder="Search users by name or email..."
                       value={filters.search}
                       onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
                       className="pl-10"
@@ -753,6 +756,7 @@ const UsersPage: React.FC = () => {
           </Card>
         </div>
 
+        {/* Все остальные модалы остаются без изменений */}
         {/* Enrollment Management Modal */}
         <Dialog open={isEnrollModalOpen} onOpenChange={setIsEnrollModalOpen}>
           <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
