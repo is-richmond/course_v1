@@ -42,6 +42,7 @@ async def cmd_admin_hw(message: types.Message):
     text = (
         "<b>Админ-панель: Домашние задания</b>\n\n"
         "/hw_stats - Общая статистика\n"
+        "/users - Список активных пользователей\n"
         "/user_hw [user_id] - ДЗ пользователя\n"
         "/guarantee_set - Установить гарантию\n"
         "/guarantee_list - Список гарантий\n"
@@ -55,35 +56,6 @@ async def cmd_admin_hw(message: types.Message):
     await message.answer(text, parse_mode="HTML")
 
 # ========== HOMEWORK STATS ==========
-
-@router.message(Command("hw_stats"))
-async def homework_stats(message: types.Message):
-    """Show homework statistics"""
-    if not is_admin(message.from_user.id):
-        await message.answer("❌ У вас нет доступа")
-        return
-    
-    # Get today's stats
-    completed_users = homework_service.get_completed_users_today()
-    incomplete_users = homework_service.get_incomplete_users_today()
-    total_users = session_service.get_user_count()
-    
-    completed_count = len(completed_users)
-    incomplete_count = len(incomplete_users)
-    not_started = total_users - completed_count - incomplete_count
-    
-    completion_rate = (completed_count / total_users * 100) if total_users > 0 else 0
-    
-    text = (
-        f"📊 <b>Статистика ДЗ на сегодня</b>\n\n"
-        f"👥 Всего пользователей: {total_users}\n\n"
-        f"✅ Выполнили: {completed_count}\n"
-        f"⏳ В процессе: {incomplete_count}\n"
-        f"❌ Не начали: {not_started}\n\n"
-        f"📈 Процент выполнения: {completion_rate:.1f}%"
-    )
-    
-    await message.answer(text, parse_mode="HTML")
 
 @router.message(Command("user_hw"))
 async def user_homework(message: types.Message):
@@ -107,18 +79,30 @@ async def user_homework(message: types.Message):
         await message.answer("❌ Неверный user_id")
         return
     
+    # Get user info
+    info = session_service.get_user_info(user_id)
+    name_parts = []
+    if info.get('first_name'):
+        name_parts.append(info['first_name'])
+    if info.get('last_name'):
+        name_parts.append(info['last_name'])
+    
+    display_name = " ".join(name_parts) if name_parts else f"User {user_id}"
+    username_str = f" (@{info.get('username')})" if info.get('username') else ""
+    
     # Get homework history
     history = homework_service.get_user_homework_history(user_id, days=7)
     
     if not history:
-        await message.answer(f"📭 Нет данных по ДЗ для пользователя {user_id}")
+        await message.answer(f"📭 Нет данных по ДЗ для пользователя {display_name}")
         return
     
     # Get streak info
     streak_info = streak_service.get_user_streak(user_id)
     
     text = (
-        f"📚 <b>Домашние задания пользователя {user_id}</b>\n\n"
+        f"📚 <b>ДЗ: {display_name}</b>{username_str}\n"
+        f"ID: <code>{user_id}</code>\n\n"
         f"🔥 Текущая серия: {streak_info['current_streak']} дней\n"
         f"🏆 Лучшая серия: {streak_info['longest_streak']} дней\n\n"
         f"<b>Последние 7 дней:</b>\n\n"
@@ -126,7 +110,7 @@ async def user_homework(message: types.Message):
     
     for hw in history:
         date_str = hw.date.strftime('%d.%m')
-        status = "✅" if hw.is_complete else "⏳"
+        status = "✅" if hw.is_complete else "��"
         
         anki = "✅" if hw.anki_submitted else "❌"
         test = "✅" if hw.test_submitted else "❌"
@@ -137,7 +121,17 @@ async def user_homework(message: types.Message):
             f"Anki {anki} | Тест {test} | Урок {lesson}\n"
         )
     
-    await message.answer(text, parse_mode="HTML")
+    # Add quick action button
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+        [
+            types.InlineKeyboardButton(
+                text="🔥 Управлять серией", 
+                callback_data=f"manage_streak_{user_id}"
+            )
+        ]
+    ])
+    
+    await message.answer(text, reply_markup=keyboard, parse_mode="HTML")
 
 # ========== GUARANTEE MANAGEMENT ==========
 
@@ -271,7 +265,7 @@ async def guarantee_list(message: types.Message):
 
 @router.message(Command("streak_stats"))
 async def streak_stats(message: types.Message):
-    """Show streak statistics"""
+    """Show streak statistics with user names"""
     if not is_admin(message.from_user.id):
         await message.answer("❌ У вас нет доступа")
         return
@@ -288,21 +282,56 @@ async def streak_stats(message: types.Message):
     for user_id in all_users:
         streak_info = streak_service.get_user_streak(user_id)
         if streak_info['current_streak'] > 0:
-            streaks.append((user_id, streak_info['current_streak']))
+            info = session_service.get_user_info(user_id)
+            streaks.append({
+                "user_id": user_id,
+                "streak": streak_info['current_streak'],
+                "username": info.get("username"),
+                "first_name": info.get("first_name"),
+                "last_name": info.get("last_name")
+            })
     
     # Sort by streak
-    streaks.sort(key=lambda x: x[1], reverse=True)
+    streaks.sort(key=lambda x: x['streak'], reverse=True)
     
     text = (
         f"🔥 <b>Статистика стриков</b>\n\n"
         f"Пользователей с активной серией: {len(streaks)}\n\n"
-        f"<b>Топ-10:</b>\n"
+        f"<b>Топ-10:</b>\n\n"
     )
     
-    for i, (user_id, streak) in enumerate(streaks[:10], 1):
-        text += f"{i}. User {user_id}: {streak} дней\n"
+    # Create inline buttons for top users
+    keyboard_buttons = []
     
-    await message.answer(text, parse_mode="HTML")
+    for i, user in enumerate(streaks[:10], 1):
+        # Format name
+        name_parts = []
+        if user['first_name']:
+            name_parts.append(user['first_name'])
+        if user['last_name']:
+            name_parts.append(user['last_name'])
+        
+        display_name = " ".join(name_parts) if name_parts else "Без имени"
+        username_str = f" @{user['username']}" if user['username'] else ""
+        
+        text += (
+            f"{i}. <b>{display_name}</b>{username_str}\n"
+            f"   <code>{user['user_id']}</code> • 🔥 {user['streak']} дней\n\n"
+        )
+        
+        # Add button for each user (первые 5)
+        if i <= 5:
+            button_text = f"{display_name[:15]} ({user['streak']} дней)"
+            keyboard_buttons.append([
+                types.InlineKeyboardButton(
+                    text=button_text,
+                    callback_data=f"manage_streak_{user['user_id']}"
+                )
+            ])
+    
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
+    
+    await message.answer(text, reply_markup=keyboard, parse_mode="HTML")
 
 
 
@@ -590,7 +619,7 @@ async def streak_manage_set_value(message: types.Message, state: FSMContext):
 
 @router.message(Command("users"))
 async def list_active_users(message: types.Message):
-    """List all active users with their IDs"""
+    """List all active users with their IDs, names and usernames"""
     if not is_admin(message.from_user.id):
         await message.answer("❌ У вас нет доступа")
         return
@@ -601,28 +630,54 @@ async def list_active_users(message: types.Message):
         await message.answer("📭 Нет активных пользователей")
         return
     
-    # Get additional info for each user
-    text = f"👥 <b>Активные пользователи ({len(all_users)}):</b>\n\n"
-    
-    for user_id in all_users[:20]:  # Показываем первых 20
-        # Get streak info
+    # Collect user data
+    users_data = []
+    for user_id in all_users:
+        info = session_service.get_user_info(user_id)
         streak_info = streak_service.get_user_streak(user_id)
-        
-        # Try to get homework to see if user is active
         recent_hw = homework_service.get_user_homework_history(user_id, days=1)
+        
         status = "✅" if recent_hw and recent_hw[0].is_complete else "⏳" if recent_hw else "❌"
         
+        users_data.append({
+            "user_id": user_id,
+            "status": status,
+            "streak": streak_info['current_streak'],
+            "username": info.get("username"),
+            "first_name": info.get("first_name"),
+            "last_name": info.get("last_name")
+        })
+    
+    # Sort by streak (descending)
+    users_data.sort(key=lambda x: x['streak'], reverse=True)
+    
+    text = f"👥 <b>Активные пользователи ({len(all_users)}):</b>\n\n"
+    
+    for user in users_data[:25]:  # Показываем первых 25
+        # Format name
+        name_parts = []
+        if user['first_name']:
+            name_parts.append(user['first_name'])
+        if user['last_name']:
+            name_parts.append(user['last_name'])
+        
+        display_name = " ".join(name_parts) if name_parts else "Без имени"
+        
+        # Format username
+        username_str = f"@{user['username']}" if user['username'] else ""
+        
+        # Build line
         text += (
-            f"{status} <code>{user_id}</code> "
-            f"🔥 {streak_info['current_streak']} дней\n"
+            f"{user['status']} <b>{display_name}</b> {username_str}\n"
+            f"   <code>{user['user_id']}</code> • 🔥 {user['streak']} дней\n\n"
         )
     
-    if len(all_users) > 20:
-        text += f"\n... и ещё {len(all_users) - 20} пользователей"
+    if len(all_users) > 25:
+        text += f"... и ещё {len(all_users) - 25} пользователей\n\n"
     
     text += (
-        "\n\n💡 <b>Использование:</b>\n"
-        "Скопируйте user_id и используйте:\n"
+        "💡 <b>Использование:</b>\n"
+        "Скопируйте <code>user_id</code> и используйте:\n"
         "/streak_set [user_id] [значение]\n"
         "/user_hw [user_id]"
     )
@@ -658,10 +713,17 @@ async def find_user_by_streak(message: types.Message):
         for user_id in all_users:
             streak_info = streak_service.get_user_streak(user_id)
             if streak_info['current_streak'] >= min_streak:
-                filtered_users.append((user_id, streak_info['current_streak']))
+                info = session_service.get_user_info(user_id)
+                filtered_users.append({
+                    "user_id": user_id,
+                    "streak": streak_info['current_streak'],
+                    "username": info.get("username"),
+                    "first_name": info.get("first_name"),
+                    "last_name": info.get("last_name")
+                })
         
         # Sort by streak
-        filtered_users.sort(key=lambda x: x[1], reverse=True)
+        filtered_users.sort(key=lambda x: x['streak'], reverse=True)
         
         if not filtered_users:
             await message.answer(f"📭 Не найдено пользователей с серией >= {min_streak}")
@@ -669,11 +731,24 @@ async def find_user_by_streak(message: types.Message):
         
         text = f"🔍 <b>Пользователи с серией >= {min_streak} дней:</b>\n\n"
         
-        for user_id, streak in filtered_users[:15]:
-            text += f"<code>{user_id}</code> - 🔥 {streak} дней\n"
+        for user in filtered_users[:20]:
+            # Format name
+            name_parts = []
+            if user['first_name']:
+                name_parts.append(user['first_name'])
+            if user['last_name']:
+                name_parts.append(user['last_name'])
+            
+            display_name = " ".join(name_parts) if name_parts else "Без имени"
+            username_str = f" @{user['username']}" if user['username'] else ""
+            
+            text += (
+                f"<b>{display_name}</b>{username_str}\n"
+                f"<code>{user['user_id']}</code> • 🔥 {user['streak']} дней\n\n"
+            )
         
-        if len(filtered_users) > 15:
-            text += f"\n... и ещё {len(filtered_users) - 15} пользователей"
+        if len(filtered_users) > 20:
+            text += f"... и ещё {len(filtered_users) - 20} пользователей"
         
         await message.answer(text, parse_mode="HTML")
         
