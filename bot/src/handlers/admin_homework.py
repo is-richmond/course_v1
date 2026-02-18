@@ -20,6 +20,11 @@ def is_admin(user_id: int) -> bool:
     """Check if user is admin"""
     return user_id in ADMIN_IDS
 
+
+class StreakManagementState(StatesGroup):
+    waiting_for_user_id = State()
+    waiting_for_action = State()
+    waiting_for_value = State()
 class GuaranteeState(StatesGroup):
     waiting_for_user_id = State()
     waiting_for_status = State()
@@ -35,12 +40,16 @@ async def cmd_admin_hw(message: types.Message):
         return
     
     text = (
-        "🔐 <b>Админ-панель: Домашние задания</b>\n\n"
+        "<b>Админ-панель: Домашние задания</b>\n\n"
         "/hw_stats - Общая статистика\n"
         "/user_hw [user_id] - ДЗ пользователя\n"
         "/guarantee_set - Установить гарантию\n"
         "/guarantee_list - Список гарантий\n"
-        "/streak_stats - Статистика стриков"
+        "/streak_stats - Статистика стриков\n\n"
+        "<b>Управление сериями:</b>\n"
+        "/streak_set [user_id] [значение] - Установить серию\n"
+        "/streak_adjust [user_id] [+/-число] - Изменить серию\n"
+        "/streak_manage - Интерактивное управление"
     )
     
     await message.answer(text, parse_mode="HTML")
@@ -294,3 +303,379 @@ async def streak_stats(message: types.Message):
         text += f"{i}. User {user_id}: {streak} дней\n"
     
     await message.answer(text, parse_mode="HTML")
+
+
+
+    # ========== MANUAL STREAK MANAGEMENT ==========
+
+@router.message(Command("streak_set"))
+async def streak_set_command(message: types.Message):
+    """Quick command to set streak: /streak_set [user_id] [value]"""
+    if not is_admin(message.from_user.id):
+        await message.answer("❌ У вас нет доступа")
+        return
+    
+    try:
+        parts = message.text.split()
+        if len(parts) < 3:
+            await message.answer(
+                "📝 <b>Использование:</b>\n"
+                "/streak_set [user_id] [значение]\n\n"
+                "<b>Примеры:</b>\n"
+                "/streak_set 123456 10 - установить серию в 10 дней\n"
+                "/streak_set 123456 0 - сбросить серию\n\n"
+                "Или используйте /streak_manage для пошагового ввода",
+                parse_mode="HTML"
+            )
+            return
+        
+        user_id = str(parts[1])
+        new_streak = int(parts[2])
+        
+        if new_streak < 0:
+            await message.answer("❌ Значение серии не может быть отрицательным")
+            return
+        
+        # Get current streak
+        current_info = streak_service.get_user_streak(user_id)
+        
+        # Set new streak
+        success = streak_service.set_streak_manually(user_id, new_streak)
+        
+        if success:
+            await message.answer(
+                f"✅ <b>Серия изменена для пользователя {user_id}</b>\n\n"
+                f"Было: {current_info['current_streak']} дней\n"
+                f"Стало: {new_streak} дней",
+                parse_mode="HTML"
+            )
+            logger.info(f"Admin {message.from_user.id} set streak for user {user_id}: {new_streak}")
+        else:
+            await message.answer("❌ Ошибка изменения серии")
+            
+    except ValueError:
+        await message.answer("❌ Неверный формат. Используйте числа.")
+    except Exception as e:
+        logger.error(f"Error in streak_set_command: {e}")
+        await message.answer("❌ Произошла ошибка")
+
+
+@router.message(Command("streak_adjust"))
+async def streak_adjust_command(message: types.Message):
+    """Quick command to adjust streak: /streak_adjust [user_id] [+/-value]"""
+    if not is_admin(message.from_user.id):
+        await message.answer("❌ У вас нет доступа")
+        return
+    
+    try:
+        parts = message.text.split()
+        if len(parts) < 3:
+            await message.answer(
+                "📝 <b>Использование:</b>\n"
+                "/streak_adjust [user_id] [изменение]\n\n"
+                "<b>Примеры:</b>\n"
+                "/streak_adjust 123456 +5 - добавить 5 дней\n"
+                "/streak_adjust 123456 -3 - убрать 3 дня\n\n"
+                "Или используйте /streak_manage для пошагового ввода",
+                parse_mode="HTML"
+            )
+            return
+        
+        user_id = str(parts[1])
+        adjustment = int(parts[2])
+        
+        # Get current streak
+        current_info = streak_service.get_user_streak(user_id)
+        
+        # Adjust streak
+        success = streak_service.adjust_streak(user_id, adjustment)
+        
+        if success:
+            new_info = streak_service.get_user_streak(user_id)
+            await message.answer(
+                f"✅ <b>Серия изменена для пользователя {user_id}</b>\n\n"
+                f"Было: {current_info['current_streak']} дней\n"
+                f"Изменение: {adjustment:+d} дней\n"
+                f"Стало: {new_info['current_streak']} дней",
+                parse_mode="HTML"
+            )
+            logger.info(f"Admin {message.from_user.id} adjusted streak for user {user_id}: {adjustment:+d}")
+        else:
+            await message.answer("❌ Ошибка изменения серии")
+            
+    except ValueError:
+        await message.answer("❌ Неверный формат. Используйте числа.")
+    except Exception as e:
+        logger.error(f"Error in streak_adjust_command: {e}")
+        await message.answer("❌ Произошла ошибка")
+
+
+@router.message(Command("streak_manage"))
+async def streak_manage_start(message: types.Message, state: FSMContext):
+    """Interactive streak management with step-by-step input"""
+    if not is_admin(message.from_user.id):
+        await message.answer("❌ У вас нет доступа")
+        return
+    
+    await message.answer(
+        "🔥 <b>Управление серией пользователя</b>\n\n"
+        "Введите user_id пользователя:",
+        parse_mode="HTML"
+    )
+    await state.set_state(StreakManagementState.waiting_for_user_id)
+
+
+@router.message(StreakManagementState.waiting_for_user_id)
+async def streak_manage_get_user(message: types.Message, state: FSMContext):
+    """Get user ID for streak management"""
+    try:
+        user_id = str(message.text.strip())
+        
+        # Get current streak info
+        streak_info = streak_service.get_user_streak(user_id)
+        
+        await state.update_data(user_id=user_id, current_streak=streak_info['current_streak'])
+        
+        # Create action keyboard
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+            [
+                types.InlineKeyboardButton(text="📝 Установить значение", callback_data="streak_action_set"),
+            ],
+            [
+                types.InlineKeyboardButton(text="➕ Добавить дни", callback_data="streak_action_add"),
+                types.InlineKeyboardButton(text="➖ Убрать дни", callback_data="streak_action_subtract"),
+            ],
+            [
+                types.InlineKeyboardButton(text="🔄 Сбросить в 0", callback_data="streak_action_reset"),
+            ],
+            [
+                types.InlineKeyboardButton(text="❌ Отмена", callback_data="streak_action_cancel"),
+            ]
+        ])
+        
+        await message.answer(
+            f"👤 <b>Пользователь:</b> {user_id}\n"
+            f"🔥 <b>Текущая серия:</b> {streak_info['current_streak']} дней\n"
+            f"🏆 <b>Лучшая серия:</b> {streak_info['longest_streak']} дней\n\n"
+            f"Выберите действие:",
+            reply_markup=keyboard,
+            parse_mode="HTML"
+        )
+        await state.set_state(StreakManagementState.waiting_for_action)
+        
+    except Exception as e:
+        logger.error(f"Error in streak_manage_get_user: {e}")
+        await message.answer("❌ Ошибка получения данных пользователя")
+        await state.clear()
+
+
+@router.callback_query(StreakManagementState.waiting_for_action)
+async def streak_manage_action(callback: types.CallbackQuery, state: FSMContext):
+    """Handle action selection"""
+    data = await state.get_data()
+    user_id = data['user_id']
+    current_streak = data['current_streak']
+    
+    action = callback.data.replace("streak_action_", "")
+    
+    if action == "cancel":
+        await callback.message.edit_text("❌ Отменено")
+        await state.clear()
+        await callback.answer()
+        return
+    
+    if action == "reset":
+        # Reset immediately
+        success = streak_service.set_streak_manually(user_id, 0)
+        
+        if success:
+            await callback.message.edit_text(
+                f"✅ <b>Серия сброшена</b>\n\n"
+                f"Пользователь: {user_id}\n"
+                f"Было: {current_streak} дней\n"
+                f"Стало: 0 дней",
+                parse_mode="HTML"
+            )
+            logger.info(f"Admin {callback.from_user.id} reset streak for user {user_id}")
+        else:
+            await callback.message.edit_text("❌ Ошибка сброса серии")
+        
+        await state.clear()
+        await callback.answer()
+        return
+    
+    # Store action and ask for value
+    await state.update_data(action=action)
+    
+    prompt_text = {
+        "set": "📝 Введите новое значение серии (например: 10):",
+        "add": "➕ Введите количество дней для добавления (например: 5):",
+        "subtract": "➖ Введите количество дней для вычитания (например: 3):",
+    }
+    
+    await callback.message.edit_text(
+        f"👤 Пользователь: {user_id}\n"
+        f"🔥 Текущая серия: {current_streak} дней\n\n"
+        f"{prompt_text.get(action, 'Введите значение:')}",
+        parse_mode="HTML"
+    )
+    await state.set_state(StreakManagementState.waiting_for_value)
+    await callback.answer()
+
+
+@router.message(StreakManagementState.waiting_for_value)
+async def streak_manage_set_value(message: types.Message, state: FSMContext):
+    """Set the streak value"""
+    try:
+        value = int(message.text.strip())
+        data = await state.get_data()
+        user_id = data['user_id']
+        action = data['action']
+        current_streak = data['current_streak']
+        
+        success = False
+        new_value = 0
+        
+        if action == "set":
+            if value < 0:
+                await message.answer("❌ Значение не может быть отрицательным")
+                return
+            success = streak_service.set_streak_manually(user_id, value)
+            new_value = value
+            
+        elif action == "add":
+            if value <= 0:
+                await message.answer("❌ Значение должно быть положительным")
+                return
+            success = streak_service.adjust_streak(user_id, value)
+            new_value = current_streak + value
+            
+        elif action == "subtract":
+            if value <= 0:
+                await message.answer("❌ Значение должно быть положительным")
+                return
+            success = streak_service.adjust_streak(user_id, -value)
+            new_value = max(0, current_streak - value)
+        
+        if success:
+            action_text = {
+                "set": "установлена",
+                "add": f"увеличена на {value}",
+                "subtract": f"уменьшена на {value}"
+            }
+            
+            await message.answer(
+                f"✅ <b>Серия {action_text[action]}</b>\n\n"
+                f"Пользователь: {user_id}\n"
+                f"Было: {current_streak} дней\n"
+                f"Стало: {new_value} дней",
+                parse_mode="HTML"
+            )
+            logger.info(f"Admin {message.from_user.id} changed streak for user {user_id}: {current_streak} -> {new_value}")
+        else:
+            await message.answer("❌ Ошибка изменения серии")
+        
+        await state.clear()
+        
+    except ValueError:
+        await message.answer("❌ Введите корректное число")
+    except Exception as e:
+        logger.error(f"Error in streak_manage_set_value: {e}")
+        await message.answer("❌ Произошла ошибка")
+        await state.clear()
+
+
+
+# ========== USER LOOKUP ==========
+
+@router.message(Command("users"))
+async def list_active_users(message: types.Message):
+    """List all active users with their IDs"""
+    if not is_admin(message.from_user.id):
+        await message.answer("❌ У вас нет доступа")
+        return
+    
+    all_users = list(session_service.user_chats.keys())
+    
+    if not all_users:
+        await message.answer("📭 Нет активных пользователей")
+        return
+    
+    # Get additional info for each user
+    text = f"👥 <b>Активные пользователи ({len(all_users)}):</b>\n\n"
+    
+    for user_id in all_users[:20]:  # Показываем первых 20
+        # Get streak info
+        streak_info = streak_service.get_user_streak(user_id)
+        
+        # Try to get homework to see if user is active
+        recent_hw = homework_service.get_user_homework_history(user_id, days=1)
+        status = "✅" if recent_hw and recent_hw[0].is_complete else "⏳" if recent_hw else "❌"
+        
+        text += (
+            f"{status} <code>{user_id}</code> "
+            f"🔥 {streak_info['current_streak']} дней\n"
+        )
+    
+    if len(all_users) > 20:
+        text += f"\n... и ещё {len(all_users) - 20} пользователей"
+    
+    text += (
+        "\n\n💡 <b>Использование:</b>\n"
+        "Скопируйте user_id и используйте:\n"
+        "/streak_set [user_id] [значение]\n"
+        "/user_hw [user_id]"
+    )
+    
+    await message.answer(text, parse_mode="HTML")
+
+
+@router.message(Command("find_user"))
+async def find_user_by_streak(message: types.Message):
+    """Find users by streak range"""
+    if not is_admin(message.from_user.id):
+        await message.answer("❌ У вас нет доступа")
+        return
+    
+    try:
+        parts = message.text.split()
+        if len(parts) < 2:
+            await message.answer(
+                "📝 <b>Использование:</b>\n"
+                "/find_user [мин_серия] - найти пользователей с серией >= значения\n\n"
+                "<b>Примеры:</b>\n"
+                "/find_user 10 - пользователи с серией от 10 дней\n"
+                "/find_user 0 - все пользователи",
+                parse_mode="HTML"
+            )
+            return
+        
+        min_streak = int(parts[1])
+        all_users = list(session_service.user_chats.keys())
+        
+        # Filter by streak
+        filtered_users = []
+        for user_id in all_users:
+            streak_info = streak_service.get_user_streak(user_id)
+            if streak_info['current_streak'] >= min_streak:
+                filtered_users.append((user_id, streak_info['current_streak']))
+        
+        # Sort by streak
+        filtered_users.sort(key=lambda x: x[1], reverse=True)
+        
+        if not filtered_users:
+            await message.answer(f"📭 Не найдено пользователей с серией >= {min_streak}")
+            return
+        
+        text = f"🔍 <b>Пользователи с серией >= {min_streak} дней:</b>\n\n"
+        
+        for user_id, streak in filtered_users[:15]:
+            text += f"<code>{user_id}</code> - 🔥 {streak} дней\n"
+        
+        if len(filtered_users) > 15:
+            text += f"\n... и ещё {len(filtered_users) - 15} пользователей"
+        
+        await message.answer(text, parse_mode="HTML")
+        
+    except ValueError:
+        await message.answer("❌ Введите корректное число")

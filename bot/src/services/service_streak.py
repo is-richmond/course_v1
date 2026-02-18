@@ -207,6 +207,63 @@ class StreakService:
             logger.error(f"Error deleting streak message: {e}")
             self.db.rollback()
             return False
+        
+    def set_streak_manually(self, user_id: str, new_streak: int, schedule_id: int = None) -> bool:
+        """Manually set user's current streak"""
+        try:
+            if schedule_id is None:
+                # Get active schedule
+                streak = self.get_user_active_streak(user_id)
+                if not streak:
+                    logger.error(f"No active schedule found for user {user_id}")
+                    return False
+            else:
+                streak = self.get_or_create_streak(user_id, schedule_id)
+            
+            old_streak = streak.current_streak
+            streak.current_streak = max(0, new_streak)  # Не даем отрицательные значения
+            
+            # Update longest if needed
+            if streak.current_streak > streak.longest_streak:
+                streak.longest_streak = streak.current_streak
+            
+            streak.updated_at = datetime.now()
+            self.db.commit()
+            
+            logger.info(f"✅ Manually set streak for user {user_id}: {old_streak} -> {streak.current_streak}")
+            return True
+        except Exception as e:
+            logger.error(f"Error setting streak manually: {e}")
+            self.db.rollback()
+            return False
+    
+    def adjust_streak(self, user_id: str, adjustment: int, schedule_id: int = None) -> bool:
+        """Adjust user's streak by adding/subtracting value"""
+        try:
+            if schedule_id is None:
+                streak = self.get_user_active_streak(user_id)
+                if not streak:
+                    logger.error(f"No active schedule found for user {user_id}")
+                    return False
+            else:
+                streak = self.get_or_create_streak(user_id, schedule_id)
+            
+            old_streak = streak.current_streak
+            streak.current_streak = max(0, streak.current_streak + adjustment)
+            
+            # Update longest if needed
+            if streak.current_streak > streak.longest_streak:
+                streak.longest_streak = streak.current_streak
+            
+            streak.updated_at = datetime.now()
+            self.db.commit()
+            
+            logger.info(f"✅ Adjusted streak for user {user_id}: {old_streak} -> {streak.current_streak} ({adjustment:+d})")
+            return True
+        except Exception as e:
+            logger.error(f"Error adjusting streak: {e}")
+            self.db.rollback()
+            return False
 
 
 # Global instance
