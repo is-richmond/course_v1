@@ -384,6 +384,34 @@ export default function TestPage() {
     );
   }
 
+  if (!test.questions || test.questions.length === 0) {
+      return (
+        <div className="bg-white min-h-screen flex flex-col">
+          <Header />
+          <main className="flex-1 flex items-center justify-center px-4">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 256 256" className="text-yellow-500">
+                  <path fill="currentColor" d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm-8-80V80a8,8,0,0,1,16,0v56a8,8,0,0,1-16,0Zm20,36a12,12,0,1,1-12-12A12,12,0,0,1,140,172Z"/>
+                </svg>
+              </div>
+              <p className="text-xl font-bold text-gray-900 mb-2">
+                В этом тесте пока нет вопросов
+              </p>
+              <p className="text-gray-500 text-sm mb-6">
+                Вопросы ещё не добавлены администратором
+              </p>
+              <Button onClick={() => router.push("/tests")} className="min-h-[44px]">
+                К списку тестов
+              </Button>
+            </div>
+          </main>
+          <Footer />
+        </div>
+      );
+    }
+
+
   const question = test.questions[currentQuestion];
   const answeredQuestions = userAnswers.size;
   const progress = Math.round(
