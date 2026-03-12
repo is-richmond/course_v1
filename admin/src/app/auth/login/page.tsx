@@ -30,7 +30,6 @@ const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Validate form
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
@@ -52,7 +51,6 @@ const LoginPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
@@ -64,20 +62,48 @@ const LoginPage: React.FC = () => {
     setLoading(true);
 
     try {
+      // Step 1: Login and get token
       const response = await authApi.login({
         email: formData.email,
         password: formData.password,
       });
 
-      if (response.access_token) {
-        // Success - redirect to dashboard
-        router.push('/dashboard/home');
-      } else {
+      if (!response.access_token) {
         setErrorMessage('Login failed. Please try again.');
+        return;
       }
+
+      // Step 2: Check if user is superuser via /v1/user/me
+      const meResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/v1/user/me`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${response.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!meResponse.ok) {
+        setErrorMessage('Failed to verify user permissions. Please try again.');
+        return;
+      }
+
+      const userData = await meResponse.json();
+
+      // Step 3: Check is_superuser flag
+      if (!userData.is_superuser) {
+        setErrorMessage('Access denied. You do not have administrator privileges.');
+        return;
+      }
+
+      // Step 4: All checks passed — redirect to dashboard
+      router.push('/dashboard/home');
+
     } catch (error: any) {
       console.error('Login failed:', error);
-      
+
       if (error.response?.data?.detail) {
         setErrorMessage(error.response.data.detail);
       } else if (error.response?.data?.message) {
@@ -152,9 +178,7 @@ const LoginPage: React.FC = () => {
                       setErrors({ ...errors, email: undefined });
                       setErrorMessage(null);
                     }}
-                    className={`mt-2 ${
-                      errors.email ? 'border-red-500' : ''
-                    }`}
+                    className={`mt-2 ${errors.email ? 'border-red-500' : ''}`}
                   />
                   {errors.email && (
                     <p className="text-red-500 text-sm mt-1 flex items-center">
@@ -182,9 +206,7 @@ const LoginPage: React.FC = () => {
                         setErrors({ ...errors, password: undefined });
                         setErrorMessage(null);
                       }}
-                      className={`pr-12 ${
-                        errors.password ? 'border-red-500' : ''
-                      }`}
+                      className={`pr-12 ${errors.password ? 'border-red-500' : ''}`}
                     />
                     <button
                       type="button"
@@ -249,7 +271,7 @@ const LoginPage: React.FC = () => {
           {/* Features */}
           <div className="grid grid-cols-3 gap-4 mt-8">
             {features.map((feature, index) => (
-              <div 
+              <div
                 key={index}
                 className="bg-white rounded-lg p-4 text-center shadow-sm border"
               >
